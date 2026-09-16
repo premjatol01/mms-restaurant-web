@@ -16,7 +16,7 @@ const initialState = {
   // cart items keyed by id -> { id, title, price, imageUrl, quantity }
   items: {},
   favorites: [],
-  activeTab: "Menu",
+  activeTab: "Home",
   selectedCategoryId: 1,
   searchQuery: "",
   isCartExpanded: true,
