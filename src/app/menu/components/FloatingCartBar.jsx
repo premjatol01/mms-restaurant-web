@@ -21,7 +21,7 @@ export default function FloatingCartBar() {
     <div className="fixed bottom-20 inset-x-4 max-w-md mx-auto z-40">
       {isCartExpanded ? (
         /* Expanded Cart Bar */
-        <div className="relative w-[95%] bg-text-primary text-text-on-primary rounded-lg p-2.5 flex items-center justify-between gap-3 shadow-xl border border-white/10 backdrop-blur-md mx-auto">
+        <div className="relative w-[98%] bg-text-primary text-text-on-primary rounded-lg p-2.5 flex items-center justify-between gap-3 shadow-xl border border-white/10 backdrop-blur-md mx-auto">
           <button
             type="button"
             aria-label="Minimize cart"

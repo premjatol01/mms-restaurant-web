@@ -10,7 +10,7 @@ export default function MenuLayout({ children }) {
     <MenuOrderProvider>
       <div className="max-w-md mx-auto bg-background">
         <Header />
-        <main className="h-[calc(100vh-136px)] overflow-y-auto border-x border-gray-200">
+        <main className="h-[calc(100vh-136px)] overflow-y-auto border-x border-gray-200 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {children}
         </main>
         <Footer />
