@@ -1,0 +1,270 @@
+@import "tailwindcss";
+
+/*
+|--------------------------------------------------------------------------
+| Café Order Portal Theme
+|--------------------------------------------------------------------------
+| Primary:   #2A7C13 - Deep Green
+| Secondary: #76C457 - Fresh Green
+| Cream:     #FFF8CF - Warm Cream
+| Beige:     #FBE6C2 - Soft Beige
+|--------------------------------------------------------------------------
+*/
+
+:root {
+  /* =========================================================
+     Brand Colors
+     ========================================================= */
+
+  --color-primary: #2a7c13;
+  --color-primary-hover: #236910;
+  --color-primary-light: #76c457;
+
+  --color-secondary: #76c457;
+  --color-secondary-hover: #65b449;
+
+  --color-cream: #fff8cf;
+  --color-beige: #fbe6c2;
+
+  /* =========================================================
+     Application Colors
+     ========================================================= */
+
+  /* Main page */
+  --color-background: #fff8cf;
+  --color-foreground: #1f2a1c;
+
+  /* Cards / surfaces */
+  --color-surface: #ffffff;
+  --color-surface-soft: #fbe6c2;
+
+  /* Borders */
+  --color-border: #e8dcae;
+  --color-border-light: #f1e9c9;
+
+  /* =========================================================
+     Text Colors
+     ========================================================= */
+
+  --color-text-primary: #1f2a1c;
+  --color-text-secondary: #53604d;
+  --color-text-muted: #7b8475;
+  --color-text-on-primary: #ffffff;
+
+  /* =========================================================
+     Order Status Colors
+     ========================================================= */
+
+  --color-success: #2a7c13;
+  --color-success-light: #e4f4dc;
+
+  --color-warning: #c88719;
+  --color-warning-light: #fff1cc;
+
+  --color-danger: #c0392b;
+  --color-danger-light: #fde5e2;
+
+  --color-info: #3b82a0;
+  --color-info-light: #e1f1f6;
+
+  /* =========================================================
+     Cart / Ordering
+     ========================================================= */
+
+  --color-cart: #2a7c13;
+  --color-cart-badge: #c0392b;
+
+  /* =========================================================
+     Shadows
+     ========================================================= */
+
+  --shadow-sm: 0 1px 3px rgba(42, 124, 19, 0.08);
+  --shadow-md: 0 4px 12px rgba(42, 124, 19, 0.12);
+  --shadow-lg: 0 10px 30px rgba(42, 124, 19, 0.15);
+
+  /* =========================================================
+     Border Radius
+     ========================================================= */
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+}
+
+@theme inline {
+  /* Brand */
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-light: var(--color-primary-light);
+
+  --color-secondary: var(--color-secondary);
+  --color-secondary-hover: var(--color-secondary-hover);
+
+  --color-cream: var(--color-cream);
+  --color-beige: var(--color-beige);
+
+  /* Application */
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-foreground);
+
+  --color-surface: var(--color-surface);
+  --color-surface-soft: var(--color-surface-soft);
+
+  --color-border: var(--color-border);
+  --color-border-light: var(--color-border-light);
+
+  /* Text */
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-on-primary: var(--color-text-on-primary);
+
+  /* Status */
+  --color-success: var(--color-success);
+  --color-success-light: var(--color-success-light);
+
+  --color-warning: var(--color-warning);
+  --color-warning-light: var(--color-warning-light);
+
+  --color-danger: var(--color-danger);
+  --color-danger-light: var(--color-danger-light);
+
+  --color-info: var(--color-info);
+  --color-info-light: var(--color-info-light);
+
+  /* Cart */
+  --color-cart: var(--color-cart);
+  --color-cart-badge: var(--color-cart-badge);
+
+  /* Radius */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-full: var(--radius-full);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Base
+|--------------------------------------------------------------------------
+*/
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Links
+|--------------------------------------------------------------------------
+*/
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Forms
+|--------------------------------------------------------------------------
+*/
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Images
+|--------------------------------------------------------------------------
+*/
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Selection
+|--------------------------------------------------------------------------
+*/
+
+::selection {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Scrollbar
+|--------------------------------------------------------------------------
+*/
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-cream);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary-light);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Menu Ordering Portal utilities
+|--------------------------------------------------------------------------
+| Small additions used by the ordering portal components (horizontal
+| scrolling offer/category rails that hide their scrollbar).
+*/
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
