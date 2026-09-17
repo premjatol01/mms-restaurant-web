@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import SearchBar from "../components/SearchBar";
 import MenuCategories from "../components/MenuCategories";
 import OfferCarousel from "../components/OfferCarousel";
@@ -8,6 +8,8 @@ import RecentlyOrders from "../components/RecentlyOrders";
 import UnlockOffersModal from "../modals/UnlockOffersModal";
 
 export default function Home() {
+  const [offersModal, setOffersModal] = useState(true);
+  
   return (
     <div className="pb-24 pt-4 px-4">
       <SearchBar />
@@ -21,6 +23,10 @@ export default function Home() {
       <PopularItems />
       {/* Recently ordered */}
       <RecentlyOrders />
+
+      {offersModal && (
+        <UnlockOffersModal onClose={() => setOffersModal(false)} />
+      )}
     </div>
   );
 }

@@ -27,7 +27,7 @@ export default function AllItems() {
       <div className="flex items-center justify-between py-2">
         <div className="flex items-center gap-2">
           <h2 className="text-xl font-bold tracking-tight text-slate-900">
-            Popular Items
+            All Items
           </h2>
           <span className="flex h-2 w-2 rounded-full bg-emerald-500 mt-0.5" />
         </div>

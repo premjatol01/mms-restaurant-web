@@ -7,8 +7,6 @@ import { MenuOrderProvider } from "@/context/Menuordercontext";
 import UnlockOffersModal from "./[id]/modals/UnlockOffersModal";
 
 export default function MenuLayout({ children }) {
-  const [offersModal, setOffersModal] = useState(true);
-
   return (
     <MenuOrderProvider>
       <div className="relative max-w-md mx-auto bg-background flex flex-col h-[100dvh] overflow-hidden">
@@ -21,11 +19,6 @@ export default function MenuLayout({ children }) {
 
         {/* Footer stays at the bottom */}
         <Footer />
-
-        {/* Modal Overlay */}
-        {offersModal && (
-          <UnlockOffersModal onClose={() => setOffersModal(false)} />
-        )}
       </div>
     </MenuOrderProvider>
   );
