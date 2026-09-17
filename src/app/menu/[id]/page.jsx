@@ -2,13 +2,12 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import OfferCarousel from "./components/OfferCarousel";
-import FloatingCartBar from "./components/FloatingCartBar";
-import SearchBar from "./components/SearchBar";
-import MenuCategories from "./components/MenuCategories";
-import PopularItems from "./components/PopularItems";
 import { useMenuOrder } from "@/context/Menuordercontext";
-import RecentlyOrders from "./components/RecentlyOrders";
+import Home from "./pages/Home";
+import Menu from "./pages/Menu";
+import TableSession from "./pages/TableSession";
+import OffersRewards from "./pages/OffersRewards";
+import Rating from "./pages/Rating";
 
 function MenuPageContent() {
   const searchParams = useSearchParams();
@@ -18,26 +17,16 @@ function MenuPageContent() {
   return (
     <>
       {activeTab === "Home" ? (
-        <div className="pb-24 pt-4 px-4">
-          <SearchBar />
-          {/*  Section */}
-          <MenuCategories />
-          {/* Promo Banner */}
-          <OfferCarousel />
-          {/* Floating Cart Bar / Collapsed Cart Button */}
-          <FloatingCartBar />
-          {/* Placeholder for menu items below (to show scroll) */}
-          <PopularItems />
-          {/* Recently ordered */}
-          <RecentlyOrders />
-        </div>
+        <Home />
       ) : activeTab === "Menu" ? (
-        "menu"
+        <Menu />
       ) : activeTab === "Offers" ? (
-        "Offers"
+        <OffersRewards />
       ) : activeTab === "Table" ? (
-        "Table"
-      ) : (
+        <TableSession />
+      ) : activeTab === "Rating" ? (
+        <Rating />
+      ) :(
         "Nothing to show for this tab."
       )}
     </>
