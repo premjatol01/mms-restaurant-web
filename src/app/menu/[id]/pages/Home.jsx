@@ -5,6 +5,7 @@ import OfferCarousel from "../components/OfferCarousel";
 import FloatingCartBar from "../components/FloatingCartBar";
 import PopularItems from "../components/PopularItems";
 import RecentlyOrders from "../components/RecentlyOrders";
+import UnlockOffersModal from "../modals/UnlockOffersModal";
 
 export default function Home() {
   return (

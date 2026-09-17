@@ -16,7 +16,7 @@ const OffersRewards = () => {
         </div>
 
         {/* Login to Unlock Banner */}
-        <div className="bg-[#eef8f3] border border-emerald-100 rounded-2xl p-3 flex items-center justify-between cursor-pointer hover:bg-emerald-50 transition-colors">
+        <div onClick={() => {console.log("Login to unlock offers")}} className="bg-[#eef8f3] border border-emerald-100 rounded-2xl p-3 flex items-center justify-between cursor-pointer hover:bg-emerald-50 transition-colors">
           <div className="flex items-center">
             {/* Chat Icon Circle */}
             <div className="bg-white rounded-full p-2 mr-3 shadow-sm border border-emerald-50">

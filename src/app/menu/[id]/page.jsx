@@ -8,6 +8,10 @@ import Menu from "./pages/Menu";
 import TableSession from "./pages/TableSession";
 import OffersRewards from "./pages/OffersRewards";
 import Rating from "./pages/Rating";
+import UnlockOffersModal from "./modals/UnlockOffersModal";
+import MyFavorites from "./pages/MyFavorites";
+import Cart from "./pages/Cart";
+import OrderHistory from "./pages/OrderHistory";
 
 function MenuPageContent() {
   const searchParams = useSearchParams();
@@ -15,7 +19,7 @@ function MenuPageContent() {
   // const tableId = searchParams.get("table"); // Use this if needed
 
   return (
-    <>
+    <div>
       {activeTab === "Home" ? (
         <Home />
       ) : activeTab === "Menu" ? (
@@ -26,10 +30,16 @@ function MenuPageContent() {
         <TableSession />
       ) : activeTab === "Rating" ? (
         <Rating />
-      ) :(
+      ) : activeTab === "Favorites" ? (
+        <MyFavorites />
+      ) : activeTab === "Cart" ? (
+        <Cart />
+      ) : activeTab === "History" ? (
+        <OrderHistory />
+      ) : (
         "Nothing to show for this tab."
       )}
-    </>
+    </div>
   );
 }
 
