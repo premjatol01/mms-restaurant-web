@@ -268,3 +268,24 @@ svg {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Offer carousel (Swiper) pagination — match the brand palette instead of
+| Swiper's default black/gray bullets.
+|--------------------------------------------------------------------------
+*/
+
+.offer-pagination .swiper-pagination-bullet {
+  background: var(--color-border);
+  opacity: 1;
+  width: 6px;
+  height: 6px;
+  transition: all 0.2s ease;
+}
+
+.offer-pagination .swiper-pagination-bullet-active {
+  background: var(--color-primary);
+  width: 16px;
+  border-radius: var(--radius-full);
+}

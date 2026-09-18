@@ -2,8 +2,8 @@
 
 import React from "react";
 import { ChevronRight } from "lucide-react";
-import { categories } from "@/data/menuItems";
-import { useMenuOrder } from "@/context/Menuordercontext";
+import { categories, getItemsByCategory } from "@/data/menuItems";
+import { useMenuOrder } from "@/store/menuOrderStore";
 
 export default function MenuCategories() {
   const { selectedCategoryId, setSelectedCategoryId, setActiveTab } =
@@ -12,16 +12,16 @@ export default function MenuCategories() {
   return (
     <section className="mb-2">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="text-lg font-bold text-text-primary tracking-tight">
+          <h2 className="text-base font-bold text-text-primary tracking-tight">
             Explore Categories
           </h2>
           <p className="text-xs text-text-muted">Find your favorite meal</p>
         </div>
         <button
           onClick={() => setActiveTab("Menu")}
-          className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-dark transition-colors px-2.5 py-1.5 rounded-lg hover:bg-surface-soft"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-hover transition-colors px-2.5 py-1.5 rounded-lg hover:bg-surface-soft"
         >
           View all
           <ChevronRight className="w-4 h-4" />
@@ -29,15 +29,16 @@ export default function MenuCategories() {
       </div>
 
       {/* Horizontal Scrolling Cards */}
-      <div className="flex gap-3 -mx-3 overflow-x-auto scrollbar-none pb-2 px-4 snap-x snap-mandatory">
+      <div className="flex gap-3 -mx-4 overflow-x-auto scrollbar-none pb-2 px-4 snap-x snap-mandatory">
         {categories.map((cat) => {
           const isActive = cat.id === selectedCategoryId;
+          const itemCount = getItemsByCategory(cat.id).length;
 
           return (
             <button
               key={cat.id}
               onClick={() => setSelectedCategoryId(cat.id)}
-              className={`overflow-hidden snap-start flex-shrink-0 w-28 p-2 rounded-lg flex flex-col items-center justify-between gap-2.5 transition-all duration-200 border text-left cursor-pointer group ${
+              className={`overflow-hidden snap-start flex-shrink-0 w-28 p-2.5 rounded-xl flex flex-col items-center justify-between gap-2.5 transition-all duration-200 border text-left cursor-pointer group ${
                 isActive
                   ? "bg-primary text-white border-primary shadow-md shadow-primary/20"
                   : "bg-surface border-border-light hover:border-primary/40 hover:bg-surface-soft/60 shadow-sm"
@@ -64,7 +65,7 @@ export default function MenuCategories() {
                     isActive ? "text-white/80" : "text-text-muted"
                   }`}
                 >
-                  {cat.itemsCount}
+                  {itemCount} {itemCount === 1 ? "item" : "items"}
                 </span>
               </div>
             </button>

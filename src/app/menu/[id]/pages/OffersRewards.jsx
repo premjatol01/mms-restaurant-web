@@ -1,123 +1,136 @@
-import React, { useState } from "react";
-import { ChevronRight, Tag, CheckCircle } from "lucide-react";
-import UnlockOffersModal from "../modals/UnlockOffersModal";
+"use client";
+
+import React from "react";
+import { ChevronRight, Tag, CheckCircle, MessageSquare } from "lucide-react";
+import { useMenuOrder } from "@/store/menuOrderStore";
+import PageHeader from "@/components/menuComp/PageHeader";
+
+const WELCOME_THRESHOLD = 1000;
+const NEXT_TIER_THRESHOLD = 2000;
 
 const OffersRewards = () => {
-  const [offersModal, setOffersModal] = useState(false);
-  return (
-    <div className="min-h-screen bg-gray-50 p-6 font-sans text-gray-900 flex justify-center">
-      <div className="w-full max-w-md space-y-4">
-        {/* Header Section */}
-        <div>
-          <h1 className="text-xl font-medium text-gray-800 mb-1">
-            Offers & Rewards
-          </h1>
-          <p className="text-gray-500 text-sm">
-            Offers are checked automatically against your order.
-          </p>
-        </div>
+  const { mobile, subtotal, activeOrder, openOffersModal } = useMenuOrder();
 
-        {/* Login to Unlock Banner */}
-        <div
-          onClick={() => setOffersModal(true)}
-          className="bg-[#eef8f3] border border-emerald-100 rounded-2xl p-3 flex items-center justify-between cursor-pointer hover:bg-emerald-50 transition-colors"
+  // Table-session spend: whatever's already placed plus whatever's still
+  // sitting in the cart, since both count toward unlocking offers.
+  const tableSpend = (activeOrder?.total ?? 0) + subtotal;
+
+  const welcomeUnlocked = mobile.verified && tableSpend >= WELCOME_THRESHOLD;
+  const remainingForNextTier = Math.max(NEXT_TIER_THRESHOLD - tableSpend, 0);
+  const nextTierProgress = Math.min(
+    (tableSpend / NEXT_TIER_THRESHOLD) * 100,
+    100
+  );
+
+  return (
+    <div className="px-4 pt-4 pb-28 space-y-4">
+      <PageHeader
+        title="Offers & Rewards"
+        subtitle="Checked automatically against your order"
+        showBack={false}
+      />
+
+      {/* Login to Unlock Banner */}
+      {!mobile.verified && (
+        <button
+          type="button"
+          onClick={openOffersModal}
+          className="w-full bg-success-light border border-primary-light/30 rounded-2xl p-3 flex items-center justify-between cursor-pointer hover:bg-success-light/70 transition-colors text-left"
         >
           <div className="flex items-center">
-            {/* Chat Icon Circle */}
-            <div className="bg-white rounded-full p-2 mr-3 shadow-sm border border-emerald-50">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-emerald-800"
-              >
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-              </svg>
+            <div className="bg-surface rounded-full p-2 mr-3 shadow-sm border border-border-light">
+              <MessageSquare size={20} className="text-primary" />
             </div>
             <div>
-              <h3 className="text-emerald-900 font-semibold text-sm">
+              <h3 className="text-primary font-semibold text-sm">
                 Login to unlock offers
               </h3>
-              <p className="text-emerald-700/80 text-xs mt-0.5">
+              <p className="text-primary/80 text-xs mt-0.5">
                 Use your mobile number to apply discounts
               </p>
             </div>
           </div>
-          <ChevronRight size={20} className="text-emerald-800" />
+          <ChevronRight size={20} className="text-primary" />
+        </button>
+      )}
+
+      {/* Offer Card 1: Welcome offer */}
+      <div className="bg-surface rounded-2xl p-5 shadow-sm border border-border-light">
+        <div className="flex justify-between items-start mb-3">
+          <span className="bg-warning-light text-warning text-[10px] font-bold px-2 py-1 rounded">
+            WELCOME10
+          </span>
+          <Tag size={20} className="text-text-secondary" />
         </div>
 
-        {/* Offer Card 1: Applied */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <div className="flex justify-between items-start mb-3">
-            <span className="bg-[#fff4e5] text-[#b45309] text-[10px] font-bold px-2 py-1 rounded">
-              WELCOME10
-            </span>
-            <Tag size={20} className="text-gray-800" />
-          </div>
+        <h2 className="text-base font-bold text-text-primary mb-1">
+          10% off your first order
+        </h2>
+        <p className="text-text-muted text-xs mb-4">
+          Valid on orders above ₹{WELCOME_THRESHOLD.toLocaleString("en-IN")}.
+          Verify your mobile number to apply it at checkout.
+        </p>
 
-          <h2 className="text-lg font-medium text-gray-900 mb-1">
-            10% off your first order
-          </h2>
-          <p className="text-gray-500 text-xs mb-4">
-            Valid on orders above ₹1,000.
-          </p>
-
-          {/* Success State Box */}
-          <div className="bg-[#eef8f3] border border-emerald-100 rounded-xl p-3 flex items-center">
-            <div className="bg-emerald-800 rounded-full p-1 mr-3 flex-shrink-0">
-              <CheckCircle size={16} className="text-white" />
+        {welcomeUnlocked ? (
+          <div className="bg-success-light border border-primary-light/30 rounded-xl p-3 flex items-center">
+            <div className="bg-primary rounded-full p-1 mr-3 flex-shrink-0">
+              <CheckCircle size={16} className="text-text-on-primary" />
             </div>
             <div>
-              <h4 className="text-emerald-900 font-bold text-sm">
-                Offer applied
-              </h4>
-              <p className="text-emerald-700 text-xs mt-0.5">
-                10% discount is active
+              <h4 className="text-primary font-bold text-sm">Offer unlocked</h4>
+              <p className="text-primary/80 text-xs mt-0.5">
+                Apply WELCOME10 on the Cart tab
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Offer Card 2: Progress */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <div className="flex justify-between items-start mb-3">
-            <span className="bg-[#fff4e5] text-[#b45309] text-[10px] font-bold px-2 py-1 rounded">
-              NEXT UNLOCK
-            </span>
-            <span className="text-gray-900 font-medium text-sm">15% OFF</span>
+        ) : (
+          <div className="bg-surface-soft rounded-xl p-3 text-xs text-text-secondary">
+            {!mobile.verified
+              ? "Verify your mobile number to unlock this offer."
+              : `Add ₹${WELCOME_THRESHOLD - tableSpend} more to unlock this offer.`}
           </div>
-
-          <h2 className="text-lg font-medium text-gray-900 mb-1">
-            Add ₹540 more to unlock
-          </h2>
-          <p className="text-gray-500 text-xs mb-4">
-            Reach ₹2,000 in this table session.
-          </p>
-
-          {/* Progress Bar */}
-          <div className="w-full bg-gray-100 rounded-full h-2 mb-3">
-            <div
-              className="bg-emerald-800 h-2 rounded-full"
-              style={{ width: "73%" }} // Calculated 1460/2000
-            ></div>
-          </div>
-
-          <p className="text-sm text-gray-900">
-            <span className="font-bold">₹1,460</span>{" "}
-            <span className="text-gray-500">/ ₹2,000</span>
-          </p>
-        </div>
+        )}
       </div>
 
-      {/* modal */}
-      {offersModal && (
-        <UnlockOffersModal onClose={() => setOffersModal(false)} />
-      )}
+      {/* Offer Card 2: Progress toward next tier */}
+      <div className="bg-surface rounded-2xl p-5 shadow-sm border border-border-light">
+        <div className="flex justify-between items-start mb-3">
+          <span className="bg-warning-light text-warning text-[10px] font-bold px-2 py-1 rounded">
+            NEXT UNLOCK
+          </span>
+          <span className="text-text-primary font-medium text-sm">15% OFF</span>
+        </div>
+
+        {remainingForNextTier > 0 ? (
+          <>
+            <h2 className="text-base font-bold text-text-primary mb-1">
+              Add ₹{remainingForNextTier} more to unlock
+            </h2>
+            <p className="text-text-muted text-xs mb-4">
+              Reach ₹{NEXT_TIER_THRESHOLD.toLocaleString("en-IN")} in this table
+              session.
+            </p>
+          </>
+        ) : (
+          <h2 className="text-base font-bold text-primary mb-4">
+            15% off is unlocked for this table 🎉
+          </h2>
+        )}
+
+        <div className="w-full bg-surface-soft rounded-full h-2 mb-3">
+          <div
+            className="bg-primary h-2 rounded-full transition-all"
+            style={{ width: `${nextTierProgress}%` }}
+          />
+        </div>
+
+        <p className="text-sm text-text-primary">
+          <span className="font-bold">₹{tableSpend}</span>{" "}
+          <span className="text-text-muted">
+            / ₹{NEXT_TIER_THRESHOLD.toLocaleString("en-IN")}
+          </span>
+        </p>
+      </div>
     </div>
   );
 };

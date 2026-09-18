@@ -1,55 +1,45 @@
 "use client";
 
 import FoodCard from "@/components/menuComp/FoodCard";
-import { ArrowRight } from "lucide-react";
+import { History } from "lucide-react";
 import React, { useMemo } from "react";
-import { popularItems } from "@/data/menuItems";
-import { useMenuOrder } from "@/context/Menuordercontext";
+import { getItemById } from "@/data/menuItems";
+import { useMenuOrder } from "@/store/menuOrderStore";
 
 export default function RecentlyOrders() {
-  const { searchQuery, selectedCategoryId } = useMenuOrder();
+  const { orderHistory, activeOrder } = useMenuOrder();
 
+  // Pull the catalog item behind every past/active order line so we can
+  // reuse FoodCard (and its live cart controls) instead of a static list.
   const visible = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return popularItems.filter((item) => {
-      const matchesQuery =
-        !q ||
-        item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q);
-      // When searching, ignore the category filter.
-      const matchesCategory = q ? true : item.categoryId === selectedCategoryId;
-      return matchesQuery && matchesCategory;
+    const orders = [...(activeOrder ? [activeOrder] : []), ...orderHistory];
+    const seen = new Map();
+    orders.forEach((order) => {
+      order.items.forEach((line) => {
+        if (seen.has(line.id)) return;
+        const catalogItem = getItemById(line.id);
+        if (catalogItem) seen.set(line.id, catalogItem);
+      });
     });
-  }, [searchQuery, selectedCategoryId]);
+    return Array.from(seen.values()).slice(0, 4);
+  }, [orderHistory, activeOrder]);
+
+  if (visible.length === 0) return null;
 
   return (
-    <div>
-      <div className="flex items-center justify-between py-2">
-        <div className="flex items-center gap-2">
-          <h2 className="text-xl font-bold tracking-tight text-slate-900">
-            Recently Ordered
-          </h2>
-          <span className="flex h-2 w-2 rounded-full bg-emerald-500 mt-0.5" />
-        </div>
-        <button className="group flex items-center gap-1 text-xs font-semibold text-emerald-600 transition hover:text-emerald-700">
-          <span className="font-semibold text-xs">See all</span>
-          <span className="transition-transform group-hover:translate-x-0.5">
-            <ArrowRight className="w-4 h-4" />
-          </span>
-        </button>
+    <div className="mt-2">
+      <div className="flex items-center gap-2 py-2">
+        <h2 className="text-base font-bold tracking-tight text-text-primary">
+          Order Again
+        </h2>
+        <History size={15} className="text-text-muted" />
       </div>
 
-      {visible.length === 0 ? (
-        <p className="py-8 text-center text-sm text-text-muted">
-          Nothing matches that yet.
-        </p>
-      ) : (
-        <div className="grid grid-cols-2 gap-3">
-          {visible.map((item) => (
-            <FoodCard key={item.id} item={item} />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-2 gap-3">
+        {visible.map((item) => (
+          <FoodCard key={item.id} item={item} />
+        ))}
+      </div>
     </div>
   );
 }

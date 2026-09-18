@@ -2,7 +2,7 @@
 
 import React from "react";
 import { ChevronRight, X, ShoppingCart } from "lucide-react";
-import { useMenuOrder } from "@/context/Menuordercontext";
+import { useMenuOrder } from "@/store/menuOrderStore";
 
 export default function FloatingCartBar() {
   const {
@@ -12,6 +12,7 @@ export default function FloatingCartBar() {
     hasDiscount,
     isCartExpanded,
     setCartExpanded,
+    setActiveTab,
   } = useMenuOrder();
 
   // Nothing in the cart, nothing to float.
@@ -50,6 +51,7 @@ export default function FloatingCartBar() {
           <button
             type="button"
             aria-label="View shopping cart"
+            onClick={() => setActiveTab("Cart")}
             className="bg-primary hover:bg-primary-hover active:scale-[0.98] text-text-on-primary text-sm font-semibold py-2.5 px-4 rounded-lg flex items-center gap-1.5 transition-all shadow-sm shrink-0"
           >
             <span>View Cart</span>

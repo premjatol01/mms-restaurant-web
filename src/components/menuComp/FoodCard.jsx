@@ -1,7 +1,8 @@
 "use client";
 
-import { useMenuOrder } from "@/context/Menuordercontext";
 import React from "react";
+import { Heart, Minus, Plus } from "lucide-react";
+import { useMenuOrder } from "@/store/menuOrderStore";
 
 export default function FoodCard({ item, currency = "₹" }) {
   const { getQuantity, increment, decrement, isFavorite, toggleFavorite } =
@@ -11,85 +12,89 @@ export default function FoodCard({ item, currency = "₹" }) {
   const favorite = isFavorite(item.id);
 
   return (
-    <div className="max-w-xs rounded-lg bg-white shadow-md border border-gray-100 font-sans">
-      {/* Image Container */}
-      <div className="relative h-fit w-full overflow-hidden rounded-t-lg">
+    <div className="rounded-xl bg-surface shadow-sm border border-border-light overflow-hidden flex flex-col">
+      {/* Image */}
+      <div className="relative w-full aspect-[4/3] overflow-hidden">
         <img
           src={item.imageUrl}
           alt={item.title}
-          className="h-35 w-full object-cover"
+          className="h-full w-full object-cover"
+          loading="lazy"
         />
 
-        {/* Bestseller Badge */}
         {item.isBestseller && (
-          <span className="absolute left-3 top-3 rounded-lg bg-white px-3 py-1 text-xs font-bold text-amber-800 shadow-sm">
+          <span className="absolute left-2 top-2 rounded-md bg-surface/95 px-2 py-1 text-[10px] font-bold text-warning shadow-sm">
             Bestseller
           </span>
         )}
 
-        {/* Wishlist / Heart Button */}
         <button
+          type="button"
           onClick={() => toggleFavorite(item.id)}
-          aria-label="Add to favorites"
+          aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
           aria-pressed={favorite}
-          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-lg bg-white text-gray-700 shadow-sm transition hover:text-red-500 active:scale-95"
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-surface/95 text-text-secondary shadow-sm transition hover:text-danger active:scale-95"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
+          <Heart
+            size={16}
+            className={favorite ? "text-danger" : "text-text-secondary"}
             fill={favorite ? "currentColor" : "none"}
-            viewBox="0 0 24 24"
-            strokeWidth="2"
-            stroke="currentColor"
-            className={`h-5 w-5 ${favorite ? "text-red-500" : "text-gray-700"}`}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-            />
-          </svg>
+          />
         </button>
       </div>
 
-      {/* Content Container */}
-      <div className="p-3">
-        <h3 className="text-base font-bold text-slate-800">{item.title}</h3>
+      {/* Content */}
+      <div className="p-3 flex flex-col flex-1">
+        <h3 className="text-sm font-bold text-text-primary leading-snug line-clamp-1">
+          {item.title}
+        </h3>
 
-        <p className="mt-1 text-sm leading-snug text-slate-500">
+        <p className="mt-1 text-xs leading-snug text-text-muted line-clamp-2 flex-1">
           {item.description}
         </p>
 
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-xl font-extrabold text-slate-900">
-            {currency}
-            {item.price}
-          </span>
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <div className="flex items-baseline gap-1.5 min-w-0">
+            <span className="text-base font-extrabold text-text-primary">
+              {currency}
+              {item.price}
+            </span>
+            {item.mrp && item.mrp > item.price && (
+              <span className="text-[11px] text-text-muted line-through">
+                {currency}
+                {item.mrp}
+              </span>
+            )}
+          </div>
 
           {quantity === 0 ? (
             <button
+              type="button"
               onClick={() => increment(item)}
-              className="rounded-lg border border-emerald-200 bg-emerald-50/50 px-4 py-1.5 text-sm font-bold text-emerald-800 transition hover:bg-emerald-50 active:scale-95"
+              className="shrink-0 rounded-lg border border-primary/30 bg-success-light px-3.5 py-1.5 text-xs font-bold text-primary transition hover:bg-primary hover:text-text-on-primary active:scale-95"
             >
               Add
             </button>
           ) : (
-            <div className="flex items-center space-x-3.5 rounded-lg border border-emerald-200 bg-emerald-50/50 px-3 py-1.5 text-emerald-900">
+            <div className="shrink-0 flex items-center gap-2.5 rounded-lg border border-primary/30 bg-success-light px-2 py-1.5 text-primary">
               <button
+                type="button"
                 onClick={() => decrement(item.id)}
-                className="text-lg font-medium text-emerald-800 transition hover:scale-110 active:scale-95 select-none"
                 aria-label="Decrease quantity"
+                className="transition hover:scale-110 active:scale-95"
               >
-                &minus;
+                <Minus size={14} strokeWidth={2.5} />
               </button>
-              <span className="text-sm font-bold text-emerald-950 select-none">
+              <span className="text-xs font-bold text-text-primary select-none w-3 text-center">
                 {quantity}
               </span>
               <button
+                type="button"
                 onClick={() => increment(item)}
-                className="text-lg font-medium text-emerald-800 transition hover:scale-110 active:scale-95 select-none"
                 aria-label="Increase quantity"
+                className="transition hover:scale-110 active:scale-95"
               >
-                &#43;
+                <Plus size={14} strokeWidth={2.5} />
               </button>
             </div>
           )}

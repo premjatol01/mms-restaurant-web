@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronRight, Leaf } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
+import { useMenuOrder } from "@/store/menuOrderStore";
 
 import "swiper/css";
 import "swiper/css/pagination";
@@ -34,6 +35,7 @@ const offers = [
 
 export default function OfferCarousel() {
   const [paginationEl, setPaginationEl] = useState(null);
+  const { setActiveTab } = useMenuOrder();
 
   return (
     <section className="mb-2 h-fit">
@@ -52,7 +54,11 @@ export default function OfferCarousel() {
 
           return (
             <SwiperSlide key={offer.id}>
-              <div className="bg-success-light border border-primary-light/30 rounded-lg p-4 flex items-center gap-4 shadow-sm relative overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setActiveTab("Offers")}
+                className="w-full text-left bg-success-light border border-primary-light/30 rounded-lg p-4 flex items-center gap-4 shadow-sm relative overflow-hidden hover:bg-success-light/70 transition-colors"
+              >
                 <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-text-on-primary flex-shrink-0">
                   <Icon size={20} />
                 </div>
@@ -75,7 +81,7 @@ export default function OfferCarousel() {
                   size={20}
                   className="text-primary flex-shrink-0"
                 />
-              </div>
+              </button>
             </SwiperSlide>
           );
         })}

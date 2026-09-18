@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Heart, ShoppingCart } from "lucide-react";
-import { useMenuOrder } from "@/context/Menuordercontext";
+import { useMenuOrder } from "@/store/menuOrderStore";
 
 export default function Header() {
   const { totalItems, favorites, tableId, setActiveTab } = useMenuOrder();

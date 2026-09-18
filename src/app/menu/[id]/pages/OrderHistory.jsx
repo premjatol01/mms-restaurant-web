@@ -1,117 +1,107 @@
-import React from 'react';
-import { ChevronLeft, Receipt, Plus } from 'lucide-react';
+"use client";
 
-// Reusable Order Card Component
-const OrderCard = ({ orderNumber, date, price, items }) => {
+import React from "react";
+import { toast } from "sonner";
+import { Receipt, Plus, ClipboardList } from "lucide-react";
+import { useMenuOrder } from "@/store/menuOrderStore";
+import PageHeader from "@/components/menuComp/PageHeader";
+import EmptyState from "@/components/menuComp/EmptyState";
+
+function formatDate(iso) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function summarizeItems(items) {
+  if (items.length === 0) return "";
+  const [first, ...rest] = items;
+  const label = `${first.title}${first.quantity > 1 ? ` x${first.quantity}` : ""}`;
+  return rest.length > 0 ? `${label} + ${rest.length} more` : label;
+}
+
+function OrderCard({ order, onReorder }) {
   return (
-    <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100/80 mb-4 last:mb-0">
-      
-      {/* Header Section */}
+    <div className="bg-surface rounded-2xl p-5 shadow-sm border border-border-light mb-4 last:mb-0">
       <div className="flex justify-between items-start mb-4">
-        <div className="flex gap-4 items-center">
-          {/* Receipt Icon */}
-          <div className="bg-[#eaf5ef] p-3 rounded-2xl flex items-center justify-center">
-            <Receipt size={22} className="text-[#166534]" strokeWidth={1.5} />
+        <div className="flex gap-3 items-center min-w-0">
+          <div className="bg-success-light p-3 rounded-2xl flex items-center justify-center shrink-0">
+            <Receipt size={20} className="text-primary" strokeWidth={1.75} />
           </div>
-          
-          {/* Order Details */}
-          <div>
-            <h3 className="text-[17px] font-bold text-gray-900 mb-0.5">
-              Order #{orderNumber}
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-text-primary mb-0.5 truncate">
+              Order #{order.id.replace("ORD-", "")}
             </h3>
-            <p className="text-[13px] text-gray-500 font-medium">
-              {date}
+            <p className="text-xs text-text-muted font-medium">
+              {formatDate(order.completedAt ?? order.placedAt)}
             </p>
           </div>
         </div>
-
-        {/* Price */}
-        <div className="text-[19px] font-bold text-gray-900 mt-1">
-          ₹{price}
+        <div className="text-base font-bold text-text-primary shrink-0">
+          ₹{order.total}
         </div>
       </div>
 
-      {/* Items Summary */}
-      <div className="pb-4 border-b border-gray-100">
-        <p className="text-[14px] text-gray-500 line-clamp-1">
-          {items}
+      <div className="pb-4 border-b border-border-light">
+        <p className="text-sm text-text-muted line-clamp-1">
+          {summarizeItems(order.items)}
         </p>
       </div>
 
-      {/* Footer Section */}
       <div className="flex justify-between items-center pt-4">
-        
-        {/* Status Badge */}
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-[#166534]"></div>
-          <span className="text-[13px] font-bold text-[#166534]">
-            Completed
-          </span>
+          <div className="w-2 h-2 rounded-full bg-primary" />
+          <span className="text-xs font-bold text-primary">Completed</span>
         </div>
 
-        {/* Reorder Button */}
-        <button className="bg-[#eaf5ef] hover:bg-[#d5eadf] text-[#166534] text-[14px] font-bold py-2 px-4 rounded-[12px] flex items-center gap-1.5 transition-colors">
+        <button
+          type="button"
+          onClick={() => onReorder(order)}
+          className="bg-success-light hover:bg-success-light/70 text-primary text-sm font-bold py-2 px-4 rounded-xl flex items-center gap-1.5 transition-colors"
+        >
           Reorder
           <Plus size={16} strokeWidth={2.5} />
         </button>
       </div>
-
     </div>
   );
-};
+}
 
 const OrderHistory = () => {
-  // Mock data matching the design
-  const orders = [
-    {
-      id: '1021',
-      date: '12 Sep 2026 · 8:42 PM',
-      price: '1260',
-      items: 'Paneer Tikka, Dal Makhani + 2 more',
-    },
-    {
-      id: '1014',
-      date: '04 Sep 2026 · 7:18 PM',
-      price: '760',
-      items: 'Tandoori Paneer Pizza + 1 more',
-    },
-    {
-      id: '998',
-      date: '28 Aug 2026 · 9:05 PM',
-      price: '920',
-      items: 'Lamb Rogan Josh, Kulfi',
-    },
-  ];
+  const { orderHistory, reorder, setActiveTab } = useMenuOrder();
+
+  const handleReorder = (order) => {
+    reorder(order);
+    toast.success("Added to your cart");
+  };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] p-4 font-sans text-gray-900 flex justify-center">
-      <div className="w-full max-w-md">
-        
-        {/* Header */}
-        <div className="flex items-center py-4 mb-2">
-          <button className="p-2 bg-white rounded-full shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors mr-4">
-            <ChevronLeft size={20} className="text-gray-700" />
-          </button>
-          <div>
-            <h1 className="text-[22px] font-medium text-gray-900 leading-tight">Order History</h1>
-            <p className="text-[13px] text-gray-500 mt-0.5">Your previous Spice Garden orders</p>
-          </div>
-        </div>
+    <div className="px-4 pt-4 pb-28">
+      <PageHeader
+        title="Order History"
+        subtitle="Your previous orders at this table"
+      />
 
-        {/* Orders List */}
-        <div className="mt-4">
-          {orders.map((order) => (
-            <OrderCard 
-              key={order.id}
-              orderNumber={order.id}
-              date={order.date}
-              price={order.price}
-              items={order.items}
-            />
+      {orderHistory.length === 0 ? (
+        <EmptyState
+          icon={ClipboardList}
+          title="No orders yet"
+          description="Completed orders from this table session will show up here."
+          actionLabel="Browse menu"
+          onAction={() => setActiveTab("Menu")}
+        />
+      ) : (
+        <div>
+          {orderHistory.map((order) => (
+            <OrderCard key={order.id} order={order} onReorder={handleReorder} />
           ))}
         </div>
-
-      </div>
+      )}
     </div>
   );
 };

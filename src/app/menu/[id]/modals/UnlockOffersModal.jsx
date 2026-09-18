@@ -1,65 +1,187 @@
-import React from "react";
-import { X, ChevronRight } from "lucide-react";
+"use client";
+
+import React, { useState } from "react";
+import { toast } from "sonner";
+import { X, ChevronRight, ShieldCheck } from "lucide-react";
+import { useMenuOrder } from "@/store/menuOrderStore";
 
 const UnlockOffersModal = ({ onClose }) => {
+  const { mobile, setMobileNumber, sendOtp, verifyOtp, skipLogin } =
+    useMenuOrder();
+
+  const [step, setStep] = useState(mobile.otpSent ? "otp" : "phone");
+  const [otpValue, setOtpValue] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleContinue = () => {
+    setSubmitting(true);
+    const result = sendOtp();
+    setSubmitting(false);
+
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("OTP sent on WhatsApp");
+    setStep("otp");
+  };
+
+  const handleVerify = () => {
+    setSubmitting(true);
+    const result = verifyOtp(otpValue);
+    setSubmitting(false);
+
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("You're in! Offers unlocked for this table.");
+    // The store already closes the modal (offersModalOpen: false) on
+    // success, but call onClose too in case a caller wired it separately.
+    onClose?.();
+  };
+
+  const handleSkip = () => {
+    skipLogin();
+    onClose?.();
+  };
+
   return (
-    <div className="absolute inset-0 z-50 flex items-end justify-center bg-black/20 backdrop-blur-xs">
-      <div className="absolute bg-white w-full max-w-md rounded-t-[32px] sm:rounded-t-[32px] p-6 shadow-lg animate-in slide-in-from-bottom-8 duration-300">
-        {/* Top Drag Handle Indicator */}
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-200 rounded-full sm:hidden"></div>
+    <div className="absolute bottom-0 z-99 left-0 bg-surface w-full max-w-md rounded-t-[32px] p-6 pb-8 shadow-lg animate-in slide-in-from-bottom-8 duration-300">
+      {/* Top Drag Handle Indicator */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-border rounded-full sm:hidden" />
 
-        {/* Header Area: Icon & Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute -top-3.5 right-5 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors bg-white hover:shadow-md border"
-        >
-          <X size={20} strokeWidth={1.5} />
-        </button>
+      {/* Close Button */}
+      <button
+        onClick={handleSkip}
+        aria-label="Close"
+        className="absolute -top-3.5 right-5 p-2 text-text-muted hover:text-text-primary hover:bg-surface-soft rounded-full transition-colors bg-surface hover:shadow-md"
+      >
+        <X size={20} strokeWidth={1.5} />
+      </button>
 
-        {/* Content Section */}
-        <div className="mb-8">
-          <h3 className="text-[11px] font-bold text-[#1a5c38] uppercase tracking-widest mb-3">
-            Unlock Table Offers
-          </h3>
-          <h2 className="text-[26px] leading-tight font-medium text-gray-800 mb-4">
-            Get offers made for you
-          </h2>
-          <p className="text-gray-500 text-sm leading-relaxed">
-            Login with your mobile number to apply offers and get order updates
-            on WhatsApp.
-          </p>
-        </div>
-
-        {/* Input Field Section */}
-        <div className="mb-6">
-          <div className="flex items-center border border-[#4a9b6d] rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-[#4a9b6d] transition-all">
-            <div className="bg-white pl-4 pr-3 py-4 text-gray-700 font-medium text-sm">
-              +91
-            </div>
-            {/* Vertical Divider */}
-            <div className="w-px h-6 bg-gray-200"></div>
-            <input
-              type="tel"
-              placeholder="Enter mobile number"
-              className="flex-1 px-3 py-4 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none w-full"
-            />
+      {step === "phone" ? (
+        <>
+          {/* Content Section */}
+          <div className="mb-8">
+            <h3 className="text-[11px] font-bold text-primary uppercase tracking-widest mb-3">
+              Unlock Table Offers
+            </h3>
+            <h2 className="text-2xl leading-tight font-medium text-text-primary mb-4">
+              Get offers made for you
+            </h2>
+            <p className="text-text-muted text-sm leading-relaxed">
+              Login with your mobile number to apply offers and get order
+              updates on WhatsApp.
+            </p>
           </div>
-        </div>
 
-        {/* Actions Section */}
-        <div className="space-y-4">
-          {/* WhatsApp Button */}
-          <button className="w-full bg-[#72b28d] hover:bg-[#609b78] text-white font-bold rounded-xl py-4 px-6 flex items-center justify-center transition-colors">
-            <span className="text-[15px]">Continue with WhatsApp</span>
-            <ChevronRight size={18} className="ml-1" strokeWidth={3} />
-          </button>
+          {/* Input Field Section */}
+          <div className="mb-6">
+            <div className="flex items-center border border-primary/40 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-primary transition-all">
+              <div className="bg-surface pl-4 pr-3 py-4 text-text-secondary font-medium text-sm">
+                +91
+              </div>
+              <div className="w-px h-6 bg-border" />
+              <input
+                type="tel"
+                value={mobile.number}
+                onChange={(e) =>
+                  setMobileNumber(e.target.value.replace(/\D/g, "").slice(0, 10))
+                }
+                placeholder="Enter mobile number"
+                className="flex-1 px-3 py-4 text-sm text-text-primary placeholder:text-text-muted focus:outline-none w-full"
+              />
+            </div>
+          </div>
 
-          {/* Skip Button */}
-          <button className="w-full py-2 text-center text-sm font-semibold text-gray-500 hover:text-gray-700 transition-colors">
-            Skip for now
-          </button>
-        </div>
-      </div>
+          {/* Actions Section */}
+          <div className="space-y-4">
+            <button
+              onClick={handleContinue}
+              disabled={submitting}
+              className="w-full bg-primary hover:bg-primary-hover disabled:opacity-70 text-text-on-primary font-bold rounded-xl py-4 px-6 flex items-center justify-center transition-colors"
+            >
+              <span className="text-[15px]">Continue with WhatsApp</span>
+              <ChevronRight size={18} className="ml-1" strokeWidth={3} />
+            </button>
+
+            <button
+              onClick={handleSkip}
+              className="w-full py-2 text-center text-sm font-semibold text-text-muted hover:text-text-primary transition-colors"
+            >
+              Skip for now
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* OTP Step */}
+          <div className="mb-8">
+            <h3 className="text-[11px] font-bold text-primary uppercase tracking-widest mb-3">
+              Verify your number
+            </h3>
+            <h2 className="text-2xl leading-tight font-medium text-text-primary mb-4">
+              Enter the code we sent
+            </h2>
+            <p className="text-text-muted text-sm leading-relaxed">
+              We sent a 4-digit code on WhatsApp to{" "}
+              <span className="font-semibold text-text-primary">
+                +91 {mobile.number}
+              </span>
+              .
+            </p>
+          </div>
+
+          <div className="mb-6">
+            <div className="flex items-center border border-primary/40 rounded-xl overflow-hidden focus-within:ring-1 focus-within:ring-primary transition-all">
+              <div className="bg-surface pl-4 pr-3 py-4 text-text-secondary flex items-center">
+                <ShieldCheck size={18} />
+              </div>
+              <div className="w-px h-6 bg-border" />
+              <input
+                type="tel"
+                value={otpValue}
+                onChange={(e) =>
+                  setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 4))
+                }
+                placeholder="4-digit code"
+                autoFocus
+                className="flex-1 px-3 py-4 text-sm tracking-[0.3em] text-text-primary placeholder:tracking-normal placeholder:text-text-muted focus:outline-none w-full"
+              />
+            </div>
+            <p className="text-[11px] text-text-muted mt-2">
+              Any 4 digits work in this demo.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <button
+              onClick={handleVerify}
+              disabled={submitting}
+              className="w-full bg-primary hover:bg-primary-hover disabled:opacity-70 text-text-on-primary font-bold rounded-xl py-4 px-6 flex items-center justify-center transition-colors"
+            >
+              <span className="text-[15px]">Verify &amp; continue</span>
+              <ChevronRight size={18} className="ml-1" strokeWidth={3} />
+            </button>
+
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => setStep("phone")}
+                className="text-sm font-semibold text-text-muted hover:text-text-primary transition-colors"
+              >
+                Change number
+              </button>
+              <button
+                onClick={handleSkip}
+                className="text-sm font-semibold text-text-muted hover:text-text-primary transition-colors"
+              >
+                Skip for now
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
