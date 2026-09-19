@@ -166,7 +166,7 @@ body {
   margin: 0;
   min-height: 100vh;
 
-  background-color: var(--color-background);
+  /* background-color: var(--color-background); */
   color: var(--color-foreground);
 
   font-family:
@@ -288,4 +288,60 @@ svg {
   background: var(--color-primary);
   width: 16px;
   border-radius: var(--radius-full);
+}
+
+/* for pagination */
+
+.offer-pagination .swiper-pagination-bullet {
+  width: 6px;
+  height: 6px;
+  background: var(--color-border);
+  opacity: 1;
+  transition: all 0.3s ease;
+}
+
+.offer-pagination .swiper-pagination-bullet-active {
+  width: 20px;
+  border-radius: 3px;
+  background: var(--color-primary);
+}
+
+/* for tester */
+/* ─── Sonner toast theming ─────────────────────────────────────── */
+[data-sonner-toaster] {
+  --normal-bg: var(--color-surface);
+  --normal-text: var(--color-text-primary);
+  --normal-border: var(--color-border-light);
+  --success-bg: var(--color-success-light);
+  --success-text: var(--color-primary);
+  --success-border: color-mix(in srgb, var(--color-primary-light) 30%, transparent);
+  --error-bg: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  --error-text: var(--color-danger);
+  --error-border: color-mix(in srgb, var(--color-danger) 25%, transparent);
+  --border-radius: 16px;
+  --font-size: 13px;
+}
+
+[data-sonner-toast] {
+  font-family: inherit;
+  font-weight: 500;
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1),
+              0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+[data-sonner-toast] [data-title] {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+[data-sonner-toast] [data-description] {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+/* Align toasts with the right edge of the max-w-md portal on desktop */
+@media (min-width: 640px) {
+  [data-sonner-toaster][data-position="top-right"] {
+    right: max(16px, calc((100vw - 28rem) / 2 + 16px)) !important;
+  }
 }

@@ -22,12 +22,14 @@ export default function PopularItems() {
   if (visible.length === 0) return null;
 
   return (
-    <div className="mt-2">
-      <div className="flex items-center gap-2 py-2">
-        <h2 className="text-base font-bold tracking-tight text-text-primary">
+    <section>
+      <div className="flex items-center gap-1.5 mb-3">
+        <h2 className="text-[17px] font-bold tracking-tight text-text-primary">
           Popular Items
         </h2>
-        <Flame size={16} className="text-warning" />
+        <div className="w-5 h-5 rounded-full bg-warning/15 flex items-center justify-center">
+          <Flame size={12} className="text-warning" />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -35,6 +37,6 @@ export default function PopularItems() {
           <FoodCard key={item.id} item={item} />
         ))}
       </div>
-    </div>
+    </section>
   );
 }

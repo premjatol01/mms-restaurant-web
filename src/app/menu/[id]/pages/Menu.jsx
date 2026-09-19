@@ -6,7 +6,7 @@ import FloatingCartBar from "../components/FloatingCartBar";
 
 export default function Menu() {
   return (
-    <div className="px-4 pt-4 pb-28 space-y-5">
+    <div className="px-4 pt-4 pb-32 space-y-5">
       <SearchBar />
       <MenuCategories />
       <AllItems />

@@ -10,6 +10,7 @@ import Rating from "./pages/Rating";
 import MyFavorites from "./pages/MyFavorites";
 import Cart from "./pages/Cart";
 import OrderHistory from "./pages/OrderHistory";
+import AllCategories from "./pages/AllCategories";
 
 const TABS = {
   Home,
@@ -20,6 +21,7 @@ const TABS = {
   Favorites: MyFavorites,
   Cart,
   History: OrderHistory,
+  Categories: AllCategories,
 };
 
 function MenuPageContent() {

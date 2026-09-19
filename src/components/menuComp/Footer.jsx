@@ -3,6 +3,7 @@
 import React from "react";
 import { Home, Utensils, Tag, CreditCard } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
+import { motion } from "framer-motion";
 
 const navItems = [
   { name: "Home", icon: Home },
@@ -15,8 +16,8 @@ export default function Footer() {
   const { activeTab, setActiveTab } = useMenuOrder();
 
   return (
-    <footer className="bg-surface/90 backdrop-blur-xl border-t border-border-light pb-safe">
-      <div className="flex items-center justify-around max-w-md mx-auto px-4 h-16">
+    <footer className="bg-surface/95 backdrop-blur-xl border-t border-border-light pb-safe">
+      <div className="relative flex items-center justify-around max-w-md mx-auto px-2 h-[64px]">
         {navItems.map((item) => {
           const isActive = activeTab === item.name;
           const Icon = item.icon;
@@ -26,31 +27,30 @@ export default function Footer() {
               key={item.name}
               onClick={() => setActiveTab(item.name)}
               aria-label={item.name}
-              className="group relative flex items-center justify-center w-12 h-12 outline-none"
+              className="relative flex flex-col items-center justify-center gap-1 w-16 h-full"
             >
-              <div
-                className={`absolute inset-0 rounded-2xl transition-all duration-300 ${
-                  isActive
-                    ? "bg-success-light scale-100"
-                    : "scale-50 opacity-0 group-hover:bg-surface-soft group-hover:scale-90 group-hover:opacity-100"
+              {isActive && (
+                <motion.span
+                  layoutId="activeTabBar"
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] rounded-b-full bg-primary"
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                />
+              )}
+
+              <Icon
+                size={20}
+                strokeWidth={isActive ? 2.5 : 2}
+                className={`transition-colors duration-200 ${
+                  isActive ? "text-primary" : "text-text-muted"
                 }`}
               />
-
-              <div
-                className={`relative z-10 transition-transform duration-300 ${
-                  isActive
-                    ? "text-primary scale-110"
-                    : "text-text-muted group-hover:text-text-secondary"
+              <span
+                className={`text-[10px] font-semibold transition-colors duration-200 ${
+                  isActive ? "text-primary" : "text-text-muted"
                 }`}
               >
-                <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-              </div>
-
-              <span
-                className={`absolute bottom-1 w-1.5 h-1.5 rounded-full bg-primary transition-all duration-300 ${
-                  isActive ? "opacity-100 scale-100" : "opacity-0 scale-0"
-                }`}
-              />
+                {item.name}
+              </span>
             </button>
           );
         })}

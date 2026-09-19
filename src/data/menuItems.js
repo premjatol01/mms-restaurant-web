@@ -141,3 +141,60 @@ export const getItemsByCategory = (categoryId) =>
 export const getItemById = (id) => menuItems.find((item) => item.id === id);
 
 export const bestsellerItems = menuItems.filter((item) => item.isBestseller);
+
+export const categoryItems = [
+  {
+    id: 1,
+    name: "Starters",
+    image:
+      "https://images.unsplash.com/photo-1601050690597-df0568f70950?q=80&w=400&auto=format&fit=crop",
+  },
+  {
+    id: 2,
+    name: "Main Course",
+    image:
+      "https://images.unsplash.com/photo-1585937421612-70a008356fbe?q=80&w=400&auto=format&fit=crop",
+  },
+  {
+    id: 3,
+    name: "Pizza",
+    image:
+      "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=400&auto=format&fit=crop",
+  },
+  {
+    id: 4,
+    name: "Desserts",
+    image:
+      "https://images.unsplash.com/photo-1551024506-0bccd828d307?q=80&w=400&auto=format&fit=crop",
+  },
+  {
+    id: 5,
+    name: "Drinks",
+    image:
+      "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=400&auto=format&fit=crop",
+  },
+  {
+    id: 6,
+    name: "Breads",
+    image:
+      "https://images.unsplash.com/photo-1601050690117-9c8c2c2b1b1b?q=80&w=400&auto=format&fit=crop", // Using a generic food image placeholder
+  },
+  {
+    id: 7,
+    name: "North Indian",
+    image:
+      "https://images.unsplash.com/photo-1585937421612-70a008356fbe?q=80&w=400&auto=format&fit=crop",
+  },
+  {
+    id: 8,
+    name: "Sweets",
+    image:
+      "https://images.unsplash.com/photo-1548848221-0c2e497ed557?q=80&w=400&auto=format&fit=crop",
+  },
+  {
+    id: 9,
+    name: "Paneer",
+    image:
+      "https://images.unsplash.com/photo-1565557623262-b51c2513a641?q=80&w=400&auto=format&fit=crop",
+  },
+];

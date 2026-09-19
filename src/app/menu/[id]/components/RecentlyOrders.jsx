@@ -9,8 +9,6 @@ import { useMenuOrder } from "@/store/menuOrderStore";
 export default function RecentlyOrders() {
   const { orderHistory, activeOrder } = useMenuOrder();
 
-  // Pull the catalog item behind every past/active order line so we can
-  // reuse FoodCard (and its live cart controls) instead of a static list.
   const visible = useMemo(() => {
     const orders = [...(activeOrder ? [activeOrder] : []), ...orderHistory];
     const seen = new Map();
@@ -27,12 +25,14 @@ export default function RecentlyOrders() {
   if (visible.length === 0) return null;
 
   return (
-    <div className="mt-2">
-      <div className="flex items-center gap-2 py-2">
-        <h2 className="text-base font-bold tracking-tight text-text-primary">
+    <section>
+      <div className="flex items-center gap-1.5 mb-3">
+        <h2 className="text-[17px] font-bold tracking-tight text-text-primary">
           Order Again
         </h2>
-        <History size={15} className="text-text-muted" />
+        <div className="w-5 h-5 rounded-full bg-surface-soft flex items-center justify-center">
+          <History size={12} className="text-text-muted" />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -40,6 +40,6 @@ export default function RecentlyOrders() {
           <FoodCard key={item.id} item={item} />
         ))}
       </div>
-    </div>
+    </section>
   );
 }

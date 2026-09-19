@@ -20,7 +20,9 @@ const MyFavorites = () => {
     <div className="px-4 pt-4 pb-28">
       <PageHeader
         title="My Favorites"
-        subtitle={`${favoriteItems.length} saved`}
+        subtitle={`${favoriteItems.length} saved ${
+          favoriteItems.length === 1 ? "dish" : "dishes"
+        }`}
       />
 
       {favoriteItems.length === 0 ? (

@@ -8,13 +8,12 @@ import RecentlyOrders from "../components/RecentlyOrders";
 
 export default function Home() {
   return (
-    <div className="px-4 pt-4 pb-28 space-y-5">
+    <div className="px-4 pt-4 pb-32 space-y-6">
       <SearchBar />
       <MenuCategories />
       <OfferCarousel />
       <PopularItems />
       <RecentlyOrders />
-      {/* Floating summary bar sits above the footer, outside normal flow */}
       <FloatingCartBar />
     </div>
   );

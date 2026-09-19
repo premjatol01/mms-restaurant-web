@@ -17,22 +17,29 @@ export default function AllItems() {
         !q ||
         item.title.toLowerCase().includes(q) ||
         item.description.toLowerCase().includes(q);
-      // When searching, ignore the category filter so results aren't hidden.
       const matchesCategory = q ? true : item.categoryId === selectedCategoryId;
       return matchesQuery && matchesCategory;
     });
   }, [searchQuery, selectedCategoryId]);
 
   const categoryName =
-    categories.find((c) => c.id === selectedCategoryId)?.name ?? "this category";
+    categories.find((c) => c.id === selectedCategoryId)?.name ??
+    "this category";
 
   return (
-    <div>
-      <div className="flex items-center justify-between py-2">
-        <h2 className="text-base font-bold tracking-tight text-text-primary">
-          {searchQuery ? "Search Results" : categoryName}
-        </h2>
-        <span className="text-xs text-text-muted">
+    <section>
+      <div className="flex items-end justify-between mb-3">
+        <div>
+          <h2 className="text-[17px] font-bold tracking-tight text-text-primary">
+            {searchQuery ? "Search Results" : categoryName}
+          </h2>
+          {searchQuery && (
+            <p className="text-xs text-text-muted mt-0.5">
+              for "{searchQuery}"
+            </p>
+          )}
+        </div>
+        <span className="text-[11px] font-semibold text-text-muted bg-surface-soft px-2.5 py-1 rounded-full">
           {visible.length} {visible.length === 1 ? "item" : "items"}
         </span>
       </div>
@@ -56,6 +63,6 @@ export default function AllItems() {
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }
