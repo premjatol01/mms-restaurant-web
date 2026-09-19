@@ -345,6 +345,7 @@ const Cart = () => {
               <p className="text-[11px] text-text-muted text-center leading-relaxed">
                 Payment is collected manually by the restaurant after your order
               </p>
+              
             </div>
 
             <button
