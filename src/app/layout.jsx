@@ -21,26 +21,29 @@ export default function RootLayout({ children }) {
 
         <Toaster
           position="top-right"
-          richColors
           closeButton
           duration={2500}
-          offset={{ top: 72, right: 16 }}     // desktop / wider screens
-          mobileOffset={{ top: 68, right: 12 }} // small screens
+          offset={{ top: 72, right: 16 }}
+          mobileOffset={{ top: 68, right: 12 }}
           toastOptions={{
-            className: "!mx-0", // don't auto-center; keep right-aligned
+            className: "!mx-0",
             style: {
               borderRadius: "16px",
               fontSize: "13px",
               fontWeight: 500,
               padding: "12px 14px",
+              background: "var(--color-surface)", 
+              color: "var(--color-text-primary)",
+              border: "1px solid var(--color-border-light)",
             },
             classNames: {
-              toast: "!shadow-lg !border !border-border-light",
-              title: "!text-sm !font-semibold",
+              toast: "!bg-surface !text-text-primary !border !border-border-light !shadow-lg",
+              title: "!text-sm !font-semibold !text-text-primary",
               description: "!text-xs !text-text-muted",
               success:
                 "!bg-success-light !text-primary !border-primary-light/30",
-              error: "!bg-danger/10 !text-danger !border-danger/20",
+              error:
+                "!bg-surface !text-danger !border-danger/30",
               closeButton:
                 "!bg-surface !border-border-light !text-text-secondary",
             },
