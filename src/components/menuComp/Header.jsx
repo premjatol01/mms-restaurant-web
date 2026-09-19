@@ -28,6 +28,12 @@ export default function Header() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
+          {/* Table Badge */}
+          <div className="flex items-center gap-1 bg-success-light text-primary text-[11px] font-bold px-2.5 py-1.5 rounded-full">
+            <MapPin size={12} />
+            <span>Table {tableId ?? "05"}</span>
+          </div>
+          
           {/* Favorites */}
           <button
             onClick={() => setActiveTab("Favorites")}
@@ -48,12 +54,6 @@ export default function Header() {
               )}
             </AnimatePresence>
           </button>
-
-          {/* Table Badge */}
-          <div className="flex items-center gap-1 bg-success-light text-primary text-[11px] font-bold px-2.5 py-1.5 rounded-full">
-            <MapPin size={12} />
-            <span>Table {tableId ?? "05"}</span>
-          </div>
 
           {/* Cart */}
           <button
