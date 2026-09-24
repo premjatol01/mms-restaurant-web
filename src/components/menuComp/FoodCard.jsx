@@ -57,8 +57,8 @@ export default function FoodCard({ item, currency = "₹" }) {
           {item.description}
         </p>
 
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <div className="flex items-baseline gap-1.5 min-w-0">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-baseline gap-1.5">
             <span className="text-base font-extrabold text-text-primary">
               {currency}
               {item.price}

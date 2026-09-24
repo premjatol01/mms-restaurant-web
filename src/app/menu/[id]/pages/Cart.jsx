@@ -104,12 +104,17 @@ const Cart = () => {
     sendOtp,
     verifyOtp,
     placeOrder,
+    isOfferApplied,
+    removeOffer,
+    applyOffer,
   } = useMenuOrder();
 
   const [otpValue, setOtpValue] = useState("");
 
-  const discount = Math.round(subtotal * PROMO_RATE);
+  const discount = isOfferApplied ? Math.round(subtotal * PROMO_RATE) : 0;
   const total = Math.max(subtotal - discount, 0);
+
+  const isMobileRequired = isOfferApplied;
 
   const handleSendOtp = () => {
     const result = sendOtp();
@@ -194,25 +199,47 @@ const Cart = () => {
             </AnimatePresence>
           </div>
 
-          {/* Applied Offer */}
-          <div className="bg-surface rounded-2xl p-4 border border-border-light shadow-sm">
-            <div className="flex items-center gap-2.5 mb-2">
-              <div className="w-9 h-9 rounded-xl bg-success-light flex items-center justify-center">
-                <Tag size={15} className="text-primary" />
+          {/* Offer Section */}
+          {isOfferApplied ? (
+            <div className="bg-surface rounded-2xl p-4 border border-border-light shadow-sm">
+              <div className="flex items-center gap-2.5 mb-2">
+                <div className="w-9 h-9 rounded-xl bg-success-light flex items-center justify-center">
+                  <Tag size={15} className="text-primary" />
+                </div>
+                <div className="flex-1">
+                  <span className="text-[11px] font-bold text-primary uppercase tracking-wider">
+                    {APPLIED_PROMO} applied
+                  </span>
+                  <p className="text-[11px] text-text-muted">
+                    10% off your first order
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-primary">
+                    -₹{discount}
+                  </span>
+                  <button onClick={removeOffer} className="p-1.5 hover:bg-danger/10 text-text-muted hover:text-danger rounded-full transition-colors active:scale-95">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
-              <div className="flex-1">
-                <span className="text-[11px] font-bold text-primary uppercase tracking-wider">
-                  {APPLIED_PROMO} applied
-                </span>
-                <p className="text-[11px] text-text-muted">
-                  10% off your first order
-                </p>
-              </div>
-              <span className="text-sm font-bold text-primary">
-                -₹{discount}
-              </span>
             </div>
-          </div>
+          ) : (
+            <div className="bg-surface rounded-2xl p-4 border border-border-light shadow-sm flex justify-between items-center">
+               <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-surface-soft border border-border-light flex items-center justify-center">
+                    <Tag size={15} className="text-text-secondary" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-text-primary">Have a promo code?</h3>
+                    <p className="text-[11px] text-text-muted">Apply offers to get a discount</p>
+                  </div>
+               </div>
+               <button onClick={applyOffer} className="text-primary text-xs font-bold px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-xl transition-all active:scale-95">
+                 Apply
+               </button>
+            </div>
+          )}
 
           {/* Mobile Verification */}
           <div className="bg-surface rounded-2xl p-4 border border-border-light shadow-sm">
@@ -237,7 +264,9 @@ const Cart = () => {
                 <p className="text-[11px] text-text-muted">
                   {mobile.verified
                     ? `+91 ${mobile.number}`
-                    : "Required to place your order"}
+                    : isMobileRequired 
+                        ? "Required for offer" 
+                        : "Optional"}
                 </p>
               </div>
             </div>
@@ -351,10 +380,10 @@ const Cart = () => {
             <button
               type="button"
               onClick={handlePlaceOrder}
-              disabled={!mobile.verified}
+              disabled={isMobileRequired && !mobile.verified}
               className="w-full bg-primary hover:bg-primary-hover disabled:bg-border disabled:cursor-not-allowed disabled:text-text-muted active:scale-[0.98] text-text-on-primary font-bold rounded-xl py-4 flex items-center justify-center transition-all shadow-lg shadow-primary/20 disabled:shadow-none"
             >
-              {mobile.verified
+              {!isMobileRequired || mobile.verified
                 ? `Place order · ₹${total}`
                 : "Verify mobile to place order"}
             </button>

@@ -51,11 +51,18 @@ export const useMenuOrderStore = create(
 
       offersModalOpen: true,
       mobile: initialMobile,
+      isOfferApplied: true,
 
       activeOrder: null, // { id, items:[], total, status, placedAt }
       orderHistory: [], // completed orders, newest first
 
       reviews: seedReviews,
+
+      // ---------------------------------------------------------------
+      // Offer actions
+      // ---------------------------------------------------------------
+      removeOffer: () => set({ isOfferApplied: false }),
+      applyOffer: () => set({ isOfferApplied: true }),
 
       // ---------------------------------------------------------------
       // Cart actions
@@ -276,6 +283,7 @@ export const useMenuOrderStore = create(
         activeOrder: state.activeOrder,
         orderHistory: state.orderHistory,
         reviews: state.reviews,
+        isOfferApplied: state.isOfferApplied,
       }),
     }
   )
