@@ -9,6 +9,7 @@ import {
   ChefHat,
   Bell,
   CircleDot,
+  CreditCard,
 } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
 import PageHeader from "@/components/menuComp/PageHeader";
@@ -43,12 +44,15 @@ const statusLabel = {
 };
 
 export default function TableSession() {
-  const { tableId, activeOrder, setActiveTab, completeActiveOrder } =
+  const { tableId, activeOrder, orderHistory, setActiveTab, completeActiveOrder } =
     useMenuOrder();
 
   const currentIndex = activeOrder
     ? STEPS.findIndex((s) => s.key === activeOrder.status)
     : -1;
+
+  const previousTotal = orderHistory.reduce((sum, order) => sum + order.total, 0);
+  const grandTotal = (activeOrder ? activeOrder.total : 0) + previousTotal;
 
   return (
     <div className="px-4 pt-4 pb-28 space-y-4">
@@ -70,7 +74,7 @@ export default function TableSession() {
         }
       />
 
-      {!activeOrder ? (
+      {!activeOrder && orderHistory.length === 0 ? (
         <EmptyState
           icon={UtensilsCrossed}
           title="No active order"
@@ -92,94 +96,139 @@ export default function TableSession() {
           </div>
 
           {/* Order Card */}
-          <div className="bg-surface rounded-2xl p-5 border border-border-light shadow-sm">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h2 className="text-base font-bold text-text-primary mb-0.5">
-                  Current order
-                </h2>
-                <p className="text-[11px] text-text-muted">
-                  {activeOrder.items.length}{" "}
-                  {activeOrder.items.length === 1 ? "item" : "items"}
-                </p>
+          {activeOrder && (
+            <div className="bg-surface rounded-2xl p-5 border border-border-light shadow-sm">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-base font-bold text-text-primary mb-0.5">
+                    Current order
+                  </h2>
+                  <p className="text-[11px] text-text-muted">
+                    {activeOrder.items.length}{" "}
+                    {activeOrder.items.length === 1 ? "item" : "items"}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <span className="bg-success-light text-primary text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    {statusLabel[activeOrder.status]}
+                  </span>
+                  <span className="text-xl font-extrabold text-text-primary">
+                    ₹{activeOrder.total}
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className="bg-success-light text-primary text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                  {statusLabel[activeOrder.status]}
-                </span>
-                <span className="text-xl font-extrabold text-text-primary">
-                  ₹{activeOrder.total}
-                </span>
-              </div>
-            </div>
 
-            {/* Timeline */}
-            <div className="relative">
-              {STEPS.map((step, index) => {
-                const isDone = index <= currentIndex;
-                const isActive = index === currentIndex;
-                const Icon = step.icon;
+              {/* Timeline */}
+              <div className="relative">
+                {STEPS.map((step, index) => {
+                  const isDone = index <= currentIndex;
+                  const isActive = index === currentIndex;
+                  const Icon = step.icon;
 
-                return (
-                  <div key={step.key} className="flex items-start gap-4 relative">
-                    {/* Connector line */}
-                    {index < STEPS.length - 1 && (
+                  return (
+                    <div key={step.key} className="flex items-start gap-4 relative">
+                      {/* Connector line */}
+                      {index < STEPS.length - 1 && (
+                        <div
+                          className={`absolute left-[19px] top-10 bottom-0 w-0.5 ${
+                            index < currentIndex ? "bg-primary" : "bg-border"
+                          }`}
+                          style={{ height: "calc(100% - 8px)" }}
+                        />
+                      )}
+
+                      {/* Icon */}
                       <div
-                        className={`absolute left-[19px] top-10 bottom-0 w-0.5 ${
-                          index < currentIndex ? "bg-primary" : "bg-border"
-                        }`}
-                        style={{ height: "calc(100% - 8px)" }}
-                      />
-                    )}
-
-                    {/* Icon */}
-                    <div
-                      className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                        isDone
-                          ? "bg-primary text-text-on-primary"
-                          : "bg-surface-soft text-text-muted"
-                      }`}
-                    >
-                      {isDone && !isActive ? (
-                        <CheckCircle2 size={18} />
-                      ) : (
-                        <Icon size={17} />
-                      )}
-                      {isActive && (
-                        <span className="absolute inset-0 rounded-full bg-primary/30 animate-ping" />
-                      )}
-                    </div>
-
-                    {/* Text */}
-                    <div className="flex-1 flex justify-between items-start pt-1.5 pb-6">
-                      <span
-                        className={`text-sm font-semibold ${
-                          isDone ? "text-text-primary" : "text-text-muted"
+                        className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                          isDone
+                            ? "bg-primary text-text-on-primary"
+                            : "bg-surface-soft text-text-muted"
                         }`}
                       >
-                        {step.label}
-                      </span>
-                      <span className="text-[11px] text-text-muted text-right max-w-[45%]">
-                        {step.note}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                        {isDone && !isActive ? (
+                          <CheckCircle2 size={18} />
+                        ) : (
+                          <Icon size={17} />
+                        )}
+                        {isActive && (
+                          <span className="absolute inset-0 rounded-full bg-primary/30 animate-ping" />
+                        )}
+                      </div>
 
-            {activeOrder.status === "ready" && (
-              <motion.button
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                type="button"
-                onClick={completeActiveOrder}
-                className="mt-2 w-full bg-primary hover:bg-primary-hover active:scale-[0.98] text-text-on-primary font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20"
-              >
-                <CheckCircle2 size={18} />
-                I've received my order
-              </motion.button>
-            )}
+                      {/* Text */}
+                      <div className="flex-1 flex justify-between items-start pt-1.5 pb-6">
+                        <span
+                          className={`text-sm font-semibold ${
+                            isDone ? "text-text-primary" : "text-text-muted"
+                          }`}
+                        >
+                          {step.label}
+                        </span>
+                        <span className="text-[11px] text-text-muted text-right max-w-[45%]">
+                          {step.note}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {activeOrder.status === "ready" && (
+                <motion.button
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  type="button"
+                  onClick={completeActiveOrder}
+                  className="mt-2 w-full bg-primary hover:bg-primary-hover active:scale-[0.98] text-text-on-primary font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20"
+                >
+                  <CheckCircle2 size={18} />
+                  I&apos;ve received my order
+                </motion.button>
+              )}
+            </div>
+          )}
+
+          {/* Previous Records */}
+          {orderHistory.length > 0 && (
+            <div className="bg-surface rounded-2xl p-5 border border-border-light shadow-sm">
+              <h2 className="text-base font-bold text-text-primary mb-4">
+                Previous records
+              </h2>
+              <div className="space-y-4">
+                {orderHistory.map((order) => (
+                  <div key={order.id} className="flex justify-between items-start border-b border-border-light pb-3 last:border-0 last:pb-0">
+                    <div>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-sm font-semibold text-text-primary">Order #{order.id.slice(-4)}</p>
+                        <span className="text-[10px] text-text-muted bg-surface-soft px-1.5 py-0.5 rounded">
+                          {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-text-muted leading-relaxed line-clamp-2 pr-4">
+                        {order.items.map((item) => `${item.quantity}x ${item.title}`).join(', ')}
+                      </p>
+                    </div>
+                    <span className="text-sm font-bold text-text-primary shrink-0 mt-0.5">₹{order.total}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Bill Summary and Online Payment */}
+          <div className="bg-surface rounded-2xl p-5 border border-border-light shadow-sm">
+            <div className="flex justify-between items-center mb-6">
+              <span className="text-base font-bold text-text-primary">Total Bill</span>
+              <span className="text-xl font-extrabold text-primary">₹{grandTotal}</span>
+            </div>
+            
+            <button
+              type="button"
+              className="w-full bg-primary hover:bg-primary-hover active:scale-[0.98] text-text-on-primary font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20"
+            >
+              <CreditCard size={18} />
+              Pay Online
+            </button>
           </div>
         </>
       )}
