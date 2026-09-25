@@ -3,6 +3,7 @@
 import React from "react";
 import { Home, Utensils, Tag, CreditCard } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 
 const navItems = [
@@ -14,6 +15,18 @@ const navItems = [
 
 export default function Footer() {
   const { activeTab, setActiveTab } = useMenuOrder();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const handleTabClick = (name) => {
+    // Update store immediately for instant UI response
+    setActiveTab(name);
+    // Push the new URL so refresh / back-button works
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set("tab", name.toLowerCase());
+    router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+  };
 
   return (
     <footer className="bg-surface/95 backdrop-blur-xl border-t border-border-light pb-safe">
@@ -25,7 +38,7 @@ export default function Footer() {
           return (
             <button
               key={item.name}
-              onClick={() => setActiveTab(item.name)}
+              onClick={() => handleTabClick(item.name)}
               aria-label={item.name}
               className="relative flex flex-col items-center justify-center gap-1 w-16 h-full"
             >
@@ -57,4 +70,4 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
+}
