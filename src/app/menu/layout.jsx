@@ -20,21 +20,15 @@ export default function MenuLayout({ children }) {
   }, [params?.id, setTableId]);
 
   return (
-    <div className="max-w-md mx-auto bg-background h-[100dvh] flex flex-col overflow-hidden">
-      {/* Fixed Header */}
-      <div className="shrink-0">
-        <Header />
-      </div>
+    <div className="max-w-md mx-auto bg-background min-h-screen">
+      <Header />
 
-      {/* Scrollable Content */}
-      <main className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      {/* pt-[60px] clears fixed header, pb-[80px] clears fixed footer */}
+      <main className="pt-[60px] pb-[80px]">
         {children}
       </main>
 
-      {/* Fixed Footer */}
-      <div className="shrink-0">
-        <Footer />
-      </div>
+      <Footer />
 
       {offersModalOpen && <UnlockOffersModal onClose={closeOffersModal} />}
     </div>

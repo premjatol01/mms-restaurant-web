@@ -29,7 +29,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-surface/95 backdrop-blur-xl border-t border-border-light pb-safe">
+    <footer className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto bg-surface/95 backdrop-blur-xl border-t border-border-light pb-safe">
       <div className="relative flex items-center justify-around max-w-md mx-auto px-2 h-[64px]">
         {navItems.map((item) => {
           const isActive = activeTab === item.name;

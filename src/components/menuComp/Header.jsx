@@ -9,7 +9,7 @@ export default function Header() {
   const { totalItems, favorites, tableId, setActiveTab } = useMenuOrder();
 
   return (
-    <header className="bg-surface/95 backdrop-blur-xl border-b border-border-light">
+    <header className="fixed top-0 left-0 right-0 z-50 max-w-md mx-auto bg-surface/95 backdrop-blur-xl border-b border-border-light">
       <div className="flex items-center justify-between px-4 py-3">
         {/* Brand */}
         <div className="flex items-center gap-3">
