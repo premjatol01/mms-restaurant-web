@@ -5,6 +5,7 @@ import OfferCarousel from "../components/OfferCarousel";
 import FloatingCartBar from "../components/FloatingCartBar";
 import PopularItems from "../components/PopularItems";
 import RecentlyOrders from "../components/RecentlyOrders";
+import ComboSection from "../components/ComboSection";
 
 export default function Home() {
   return (
@@ -12,6 +13,7 @@ export default function Home() {
       <SearchBar />
       <MenuCategories />
       <OfferCarousel />
+      <ComboSection />
       <PopularItems />
       <RecentlyOrders />
       <FloatingCartBar />

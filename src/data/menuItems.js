@@ -198,3 +198,48 @@ export const categoryItems = [
       "https://images.unsplash.com/photo-1565557623262-b51c2513a641?q=80&w=400&auto=format&fit=crop",
   },
 ];
+
+// ─── Combo Orders ──────────────────────────────────────────────────────────
+// Each combo references itemIds from menuItems so the cart can resolve names.
+export const comboOrders = [
+  {
+    id: "combo-family-feast",
+    title: "Family Feast",
+    badge: "🔥 Best Value",
+    itemIds: ["butter-chicken", "dal-makhani", "veg-biryani", "masala-chaas"],
+    price: 999,
+    mrp: 1320,
+    imageUrl:
+      "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?q=80&w=800&auto=format&fit=crop",
+  },
+  {
+    id: "combo-starter-platter",
+    title: "Starter Platter",
+    badge: "⚡ Quick Bite",
+    itemIds: ["smoked-paneer-tikka", "crispy-corn-chaat", "chilli-mushroom", "watermelon-mint-cooler"],
+    price: 799,
+    mrp: 1050,
+    imageUrl:
+      "https://images.unsplash.com/photo-1601050690597-df0568f70950?q=80&w=800&auto=format&fit=crop",
+  },
+  {
+    id: "combo-pizza-party",
+    title: "Pizza Party",
+    badge: "🍕 Fan Favourite",
+    itemIds: ["margherita-pizza", "tandoori-paneer-pizza", "watermelon-mint-cooler", "chocolate-lava-cake"],
+    price: 899,
+    mrp: 1120,
+    imageUrl:
+      "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=800&auto=format&fit=crop",
+  },
+  {
+    id: "combo-sweet-ending",
+    title: "Sweet Ending",
+    badge: "🍰 Dessert Special",
+    itemIds: ["gulab-jamun", "chocolate-lava-cake", "masala-chaas"],
+    price: 449,
+    mrp: 530,
+    imageUrl:
+      "https://images.unsplash.com/photo-1551024506-0bccd828d307?q=80&w=800&auto=format&fit=crop",
+  },
+];
