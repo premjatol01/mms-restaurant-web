@@ -5,11 +5,21 @@ export function middleware(req) {
   
   // Get hostname (e.g., 'urbancafe.localhost:3000' or 'localhost:3000')
   const hostname = req.headers.get('host') || '';
-
-  // Remove port for the check
   const currentHost = hostname.split(':')[0];
 
-  // If we are on the main domain
+  // If it's a fallback URL like /restaurant/6abb.../menu/TBL-4
+  if (url.pathname.startsWith('/restaurant/')) {
+    // Extract the restaurant ID and the rest of the path
+    const parts = url.pathname.split('/');
+    // parts = ['', 'restaurant', '6abb...', 'menu', 'TBL-4']
+    if (parts.length >= 3) {
+      const restId = parts[2];
+      const restOfPath = parts.slice(3).join('/');
+      return NextResponse.rewrite(new URL(`/${restId}/${restOfPath}`, req.url));
+    }
+  }
+
+  // If we are on the main domain and not a /restaurant/ path
   if (currentHost === 'localhost' || currentHost === 'ourdomain.com') {
     return NextResponse.next();
   }
@@ -24,13 +34,6 @@ export function middleware(req) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
