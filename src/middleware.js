@@ -2,16 +2,14 @@ import { NextResponse } from 'next/server';
 
 export function middleware(req) {
   const url = req.nextUrl;
-  
-  // Get hostname (e.g., 'urbancafe.localhost:3000' or 'localhost:3000')
+
+  // Get hostname without port (e.g., 'urbancafe.localhost' or 'localhost')
   const hostname = req.headers.get('host') || '';
-  const currentHost = hostname.split(':')[0];
+  const currentHost = hostname.split(':')[0].toLowerCase();
 
   // If it's a fallback URL like /restaurant/6abb.../menu/TBL-4
   if (url.pathname.startsWith('/restaurant/')) {
-    // Extract the restaurant ID and the rest of the path
     const parts = url.pathname.split('/');
-    // parts = ['', 'restaurant', '6abb...', 'menu', 'TBL-4']
     if (parts.length >= 3) {
       const restId = parts[2];
       const restOfPath = parts.slice(3).join('/');
@@ -19,16 +17,41 @@ export function middleware(req) {
     }
   }
 
-  // If we are on the main domain and not a /restaurant/ path
-  if (currentHost === 'localhost' || currentHost === 'ourdomain.com') {
+  // Determine root domain from environment with sensible default
+  const envRootDomain = (
+    process.env.NEXT_PUBLIC_ROOT_DOMAIN ||
+    process.env.ROOT_DOMAIN ||
+    'localhost'
+  ).toLowerCase();
+
+  // Root domains that serve the main marketing website
+  const isRootDomain =
+    currentHost === envRootDomain ||
+    currentHost === `www.${envRootDomain}` ||
+    currentHost === 'localhost' ||
+    currentHost === '127.0.0.1';
+
+  if (isRootDomain) {
     return NextResponse.next();
   }
 
-  // If it's a subdomain (e.g. urbancafe.localhost)
-  const subdomain = currentHost.split('.')[0]; 
+  // Extract subdomain dynamically based on configured root domain or localhost
+  let subdomain = '';
+  if (currentHost.endsWith(`.${envRootDomain}`)) {
+    subdomain = currentHost.slice(0, -(envRootDomain.length + 1));
+  } else if (currentHost.endsWith('.localhost')) {
+    subdomain = currentHost.slice(0, -'.localhost'.length);
+  } else {
+    subdomain = currentHost.split('.')[0];
+  }
+
+  // If subdomain is empty or www, treat as root domain
+  if (!subdomain || subdomain === 'www') {
+    return NextResponse.next();
+  }
 
   // Rewrite the URL to point to our dynamic [subdomain] folder
-  // So /menu becomes /[subdomain]/menu
+  // So / becomes /[subdomain] and /menu becomes /[subdomain]/menu
   return NextResponse.rewrite(new URL(`/${subdomain}${url.pathname}`, req.url));
 }
 
