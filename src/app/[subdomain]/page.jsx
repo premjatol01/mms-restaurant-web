@@ -25,6 +25,10 @@ async function getRestaurantData(subdomain) {
     });
 
     if (!res.ok) {
+      const errJson = await res.json().catch(() => null);
+      if (errJson?.isUnpublished) {
+        return { isUnpublished: true };
+      }
       return null;
     }
 
@@ -40,8 +44,9 @@ export default async function RestaurantPortfolioPage({ params }) {
   const { subdomain } = await params;
   const restaurant = await getRestaurantData(subdomain);
 
-  // If no restaurant data is returned by the API, show the 404 page
-  if (!restaurant) {
+  // If no restaurant data is returned by the API or website is unpublished, show the not-found/unavailable page
+  if (!restaurant || restaurant.isUnpublished) {
+    const isUnpublished = restaurant?.isUnpublished;
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-6">
         <header className="max-w-6xl mx-auto w-full py-4 flex items-center justify-between">
@@ -60,17 +65,15 @@ export default async function RestaurantPortfolioPage({ params }) {
 
           <div className="space-y-2">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-              404 • Not Found
+              {isUnpublished ? "Unpublished • Not Available" : "404 • Not Found"}
             </span>
             <h1 className="text-3xl font-extrabold text-white mt-3">
-              Restaurant Not Found
+              {isUnpublished ? "Website Currently Unavailable" : "Restaurant Not Found"}
             </h1>
             <p className="text-sm text-slate-400 leading-relaxed">
-              We couldn&apos;t find an active restaurant portfolio for{" "}
-              <span className="text-white font-mono bg-slate-800 px-2 py-0.5 rounded text-xs">
-                {subdomain}
-              </span>
-              . The restaurant may not exist or its subdomain may have changed.
+              {isUnpublished
+                ? `The website for ${subdomain} is currently unpublished or undergoing maintenance by the restaurant owner.`
+                : `We couldn't find an active restaurant portfolio for ${subdomain}. The restaurant may not exist or its subdomain may have changed.`}
             </p>
           </div>
 
