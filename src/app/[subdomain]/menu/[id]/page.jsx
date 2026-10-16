@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useParams } from "next/navigation";
 import { useMenuOrder, useMenuOrderStore } from "@/store/menuOrderStore";
 import Home from "./pages/Home";
 import Menu from "./pages/Menu";
@@ -26,8 +26,15 @@ const TABS = {
 };
 
 function MenuPageContent() {
+  const params = useParams();
   const searchParams = useSearchParams();
-  const { activeTab, setActiveTab } = useMenuOrder();
+  const { activeTab, setActiveTab, setTableId } = useMenuOrder();
+
+  useEffect(() => {
+    if (params?.id) {
+      setTableId(params.id);
+    }
+  }, [params?.id, setTableId]);
 
   // URL → Store only. Runs on mount and when the browser URL changes
   // (e.g. user hits Back/Forward, or the Footer pushes a new URL).

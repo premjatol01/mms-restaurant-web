@@ -64,6 +64,7 @@ export default function TableSession() {
     sendOtp,
     verifyOtp,
     isOfferApplied,
+    appliedOffer,
     removeOffer,
     applyOffer,
   } = useMenuOrder();
@@ -74,13 +75,24 @@ export default function TableSession() {
     ? STEPS.findIndex((s) => s.key === activeOrder.status)
     : -1;
 
-  const previousTotal = orderHistory.reduce((sum, order) => sum + order.total, 0);
-  const currentTotal = activeOrder ? activeOrder.total : 0;
+  const previousTotal = orderHistory.reduce((sum, order) => sum + (order.total || 0), 0);
+  const currentTotal = activeOrder ? (activeOrder.total || 0) : 0;
   const itemTotal = currentTotal + previousTotal;
   
   const gstAmount = Math.round(itemTotal * 0.05); // 5% GST
   
-  const discount = isOfferApplied ? Math.round(itemTotal * PROMO_RATE) : 0;
+  const offerToUse = activeOrder?.appliedOffer || appliedOffer;
+  const promoName = offerToUse ? offerToUse.name : "Special Offer";
+  const promoDescription = offerToUse?.benefit?.type === "flat"
+    ? `Flat ₹${offerToUse.benefit.value} off on your order`
+    : `${offerToUse?.benefit?.value || 10}% off your order`;
+
+  const discount = isOfferApplied && offerToUse
+    ? (offerToUse.benefit?.type === "flat"
+        ? Math.min(Number(offerToUse.benefit.value) || 0, itemTotal)
+        : Math.round((itemTotal * (Number(offerToUse.benefit?.value) || 0)) / 100))
+    : (activeOrder?.discount || 0);
+
   const grandTotal = Math.max(itemTotal + gstAmount - discount, 0);
   const isMobileRequired = isOfferApplied;
 
@@ -283,10 +295,10 @@ export default function TableSession() {
                 </div>
                 <div className="flex-1">
                   <span className="text-[11px] font-bold text-primary uppercase tracking-wider">
-                    {APPLIED_PROMO} applied
+                    {promoName} applied
                   </span>
                   <p className="text-[11px] text-text-muted">
-                    10% off your first order
+                    {promoDescription}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">

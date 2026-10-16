@@ -1,20 +1,19 @@
 import React from "react";
 import Link from "next/link";
+import PublicMapView from "./components/PublicMapView";
+import InquiryForm from "./components/InquiryForm";
 import {
   Utensils,
   MapPin,
-  Phone,
-  Mail,
   Clock,
   Sparkles,
   ArrowRight,
-  ExternalLink,
   MessageCircle,
-  Globe,
-  Share2,
   Search,
   Home,
-  CheckCircle2,
+  UtensilsCrossed,
+  Tag,
+  Percent,
 } from "lucide-react";
 
 async function getRestaurantData(subdomain) {
@@ -120,7 +119,7 @@ export default async function RestaurantPortfolioPage({ params }) {
 
   // Restaurant details from database
   const {
-    name,
+    name = "Restaurant",
     tagline,
     shortDescription,
     fullDescription,
@@ -137,6 +136,8 @@ export default async function RestaurantPortfolioPage({ params }) {
     googleReviewLink,
     websiteColors = {},
     sections = [],
+    popularItems = [],
+    activeOffers = [],
   } = restaurant;
 
   // Derive theme colors (defaults match blush & mint or backend default)
@@ -170,10 +171,19 @@ export default async function RestaurantPortfolioPage({ params }) {
     "--theme-secondary-soft": `color-mix(in srgb, ${secondary} 25%, transparent)`,
   };
 
-  // Section overrides from website builder if configured
+  // Section finders: check if section is present and enabled from restaurant-admin
+  const isSectionEnabled = (id) => {
+    const sec = sections?.find((s) => s.sectionId === id || s.type === id || s.id === id);
+    return Boolean(sec && sec.enabled !== false);
+  };
+
   const heroSection = sections?.find((s) => s.sectionId === "hero" || s.type === "hero");
   const aboutSection = sections?.find((s) => s.sectionId === "about" || s.type === "about");
+  const menuSection = sections?.find((s) => s.sectionId === "menu" || s.type === "menu");
+  const offersSection = sections?.find((s) => s.sectionId === "offers" || s.type === "offers");
   const gallerySection = sections?.find((s) => s.sectionId === "gallery" || s.type === "gallery");
+  const mapSection = sections?.find((s) => s.sectionId === "map" || s.type === "map");
+  const inquirySection = sections?.find((s) => s.sectionId === "inquiry" || s.type === "inquiry");
 
   const heroHeading = heroSection?.content?.heading || name;
   const heroDescription =
@@ -184,12 +194,13 @@ export default async function RestaurantPortfolioPage({ params }) {
   const heroButtonText = heroSection?.content?.buttonText || "Browse Digital Menu";
   const heroCover = heroSection?.content?.imageUrl || coverImage;
 
-  const aboutTitle = aboutSection?.content?.title || "About Our Kitchen";
+  const aboutTitle = aboutSection?.content?.title || "About Us";
   const aboutDescription =
     aboutSection?.content?.description ||
     fullDescription ||
     shortDescription ||
-    "We take pride in serving high-quality meals crafted with love and fresh ingredients. Point your phone camera at any table QR stand to browse photos, customize spices, and place orders directly to our chefs.";
+    "";
+  const aboutImage = aboutSection?.content?.imageUrl || aboutSection?.content?.image;
 
   const displayCity = detailedAddress?.city || address?.city || "Local City";
   const displayAddress =
@@ -255,398 +266,537 @@ export default async function RestaurantPortfolioPage({ params }) {
             </div>
           </div>
 
+          {/* Quick Header Navigation for enabled sections */}
+          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold" style={{ color: "var(--theme-text-muted)" }}>
+            {isSectionEnabled("menu") && (
+              <a href="#menu" className="hover:opacity-80 transition-opacity">Menu</a>
+            )}
+            {isSectionEnabled("offers") && (
+              <a href="#offers" className="hover:opacity-80 transition-opacity">Offers</a>
+            )}
+            {isSectionEnabled("about") && (
+              <a href="#about" className="hover:opacity-80 transition-opacity">About</a>
+            )}
+            {isSectionEnabled("gallery") && (
+              <a href="#gallery" className="hover:opacity-80 transition-opacity">Gallery</a>
+            )}
+            {isSectionEnabled("map") && (
+              <a href="#map" className="hover:opacity-80 transition-opacity">Location</a>
+            )}
+            {isSectionEnabled("inquiry") && (
+              <a href="#inquiry" className="hover:opacity-80 transition-opacity">Contact</a>
+            )}
+          </nav>
+
           <div className="flex items-center gap-3">
-            <Link
-              href="/menu/1"
-              style={{
-                backgroundColor: "var(--theme-primary)",
-                color: "var(--theme-primary-text)",
-                boxShadow: "0 4px 14px 0 color-mix(in srgb, var(--theme-primary) 30%, transparent)",
-              }}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-bold text-xs sm:text-sm transition-all hover:opacity-90 hover:scale-105"
-            >
-              <span>View Menu & Order</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            {contact?.whatsapp && (
+              <a
+                href={`https://wa.me/${contact.whatsapp.replace(/[^0-9]/g, "")}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  backgroundColor: "var(--theme-primary-soft)",
+                  color: "var(--theme-primary)",
+                  borderColor: "color-mix(in srgb, var(--theme-primary) 30%, transparent)",
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border font-semibold text-xs transition-all hover:opacity-90"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>WhatsApp</span>
+              </a>
+            )}
           </div>
         </div>
       </header>
 
-      {/* ───────────────── HERO BANNER ───────────────── */}
-      <section className="relative overflow-hidden pt-8 pb-16">
-        {heroCover && (
-          <div className="absolute inset-0 z-0 opacity-20">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={heroCover.startsWith("http") ? heroCover : `http://localhost:5000${heroCover}`}
-              alt={name}
-              className="w-full h-full object-cover blur-sm"
-            />
-          </div>
-        )}
-        <div
-          style={{
-            background: `linear-gradient(to bottom, transparent, var(--theme-background))`,
-          }}
-          className="absolute inset-0 z-0"
-        />
+      {/* ───────────────── 1. HERO SECTION (Only if enabled) ───────────────── */}
+      {isSectionEnabled("hero") && (
+        <section className="relative overflow-hidden pt-8 pb-16">
+          {heroCover && (
+            <div className="absolute inset-0 z-0 opacity-20">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={heroCover.startsWith("http") ? heroCover : `http://localhost:5000${heroCover}`}
+                alt={name}
+                className="w-full h-full object-cover blur-sm"
+              />
+            </div>
+          )}
+          <div
+            style={{
+              background: `linear-gradient(to bottom, transparent, var(--theme-background))`,
+            }}
+            className="absolute inset-0 z-0"
+          />
 
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
-          <div className="max-w-3xl space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              {restaurantType && (
-                <span
-                  style={{
-                    backgroundColor: "var(--theme-primary-soft)",
-                    color: "var(--theme-primary)",
-                    borderColor: "color-mix(in srgb, var(--theme-primary) 30%, transparent)",
-                  }}
-                  className="text-xs font-semibold px-2.5 py-1 rounded-full border"
-                >
-                  {restaurantType}
-                </span>
-              )}
-              {establishmentYear && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
+            <div className="max-w-3xl space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                {restaurantType && (
+                  <span
+                    style={{
+                      backgroundColor: "var(--theme-primary-soft)",
+                      color: "var(--theme-primary)",
+                      borderColor: "color-mix(in srgb, var(--theme-primary) 30%, transparent)",
+                    }}
+                    className="text-xs font-semibold px-2.5 py-1 rounded-full border"
+                  >
+                    {restaurantType}
+                  </span>
+                )}
+                {establishmentYear && (
+                  <span
+                    style={{
+                      backgroundColor: "var(--theme-surface)",
+                      color: "var(--theme-text-muted)",
+                      borderColor: "var(--theme-border)",
+                    }}
+                    className="text-xs px-2.5 py-1 rounded-full border"
+                  >
+                    Est. {establishmentYear}
+                  </span>
+                )}
                 <span
                   style={{
                     backgroundColor: "var(--theme-surface)",
                     color: "var(--theme-text-muted)",
                     borderColor: "var(--theme-border)",
                   }}
-                  className="text-xs px-2.5 py-1 rounded-full border"
+                  className="text-xs px-2.5 py-1 rounded-full border flex items-center gap-1"
                 >
-                  Est. {establishmentYear}
+                  <MapPin className="w-3 h-3" />
+                  <span>{displayCity}</span>
                 </span>
-              )}
-              <span
-                style={{
-                  backgroundColor: "var(--theme-surface)",
-                  color: "var(--theme-text-muted)",
-                  borderColor: "var(--theme-border)",
-                }}
-                className="text-xs px-2.5 py-1 rounded-full border flex items-center gap-1"
+              </div>
+
+              <h2
+                style={{ color: "var(--theme-text)" }}
+                className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight"
               >
-                <MapPin className="w-3 h-3" style={{ color: "var(--theme-primary)" }} />
-                {displayCity}
-              </span>
-            </div>
+                {heroHeading}
+              </h2>
 
-            <h2
-              style={{ color: "var(--theme-text)" }}
-              className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight"
-            >
-              {heroHeading}
-            </h2>
-
-            {tagline && (
               <p
-                style={{ color: "var(--theme-primary)" }}
-                className="text-base sm:text-xl font-medium"
+                style={{ color: "var(--theme-text-muted)" }}
+                className="text-sm sm:text-base leading-relaxed max-w-2xl"
               >
-                {tagline}
+                {heroDescription}
               </p>
-            )}
 
-            <p
-              style={{ color: "var(--theme-text-muted)" }}
-              className="text-sm sm:text-base leading-relaxed max-w-2xl"
-            >
-              {heroDescription}
-            </p>
+              {cuisineTypes && cuisineTypes.length > 0 && (
+                <div className="pt-2 flex flex-wrap gap-2">
+                  {cuisineTypes.map((cuisine, idx) => (
+                    <span
+                      key={idx}
+                      style={{
+                        backgroundColor: "var(--theme-surface)",
+                        borderColor: "var(--theme-border)",
+                        color: "var(--theme-text)",
+                      }}
+                      className="text-xs px-2.5 py-1 rounded-lg border font-medium"
+                    >
+                      • {cuisine}
+                    </span>
+                  ))}
+                </div>
+              )}
 
-            {cuisineTypes.length > 0 && (
-              <div className="pt-2 flex flex-wrap gap-2">
-                {cuisineTypes.map((cuisine, idx) => (
-                  <span
-                    key={idx}
+              <div className="pt-4 flex flex-wrap gap-3">
+                {isSectionEnabled("menu") && (
+                  <a
+                    href="#menu"
+                    style={{
+                      backgroundColor: "var(--theme-primary)",
+                      color: "var(--theme-primary-text)",
+                      boxShadow: "0 10px 25px -5px color-mix(in srgb, var(--theme-primary) 35%, transparent)",
+                    }}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all hover:opacity-90 hover:scale-105"
+                  >
+                    <span>{heroButtonText || "Explore Menu"}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                )}
+                {contact?.whatsapp && (
+                  <a
+                    href={`https://wa.me/${contact.whatsapp.replace(/[^0-9]/g, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
                     style={{
                       backgroundColor: "var(--theme-surface)",
-                      color: "var(--theme-text)",
                       borderColor: "var(--theme-border)",
+                      color: "var(--theme-text)",
                     }}
-                    className="text-xs px-2.5 py-1 rounded-lg border font-medium"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border text-sm font-semibold transition-colors hover:opacity-90"
                   >
-                    • {cuisine}
-                  </span>
-                ))}
+                    <MessageCircle className="w-4 h-4" style={{ color: "var(--theme-primary)" }} />
+                    <span>WhatsApp Us</span>
+                  </a>
+                )}
               </div>
-            )}
+            </div>
+          </div>
+        </section>
+      )}
 
-            <div className="pt-4 flex flex-wrap gap-3">
-              <Link
-                href="/menu/1"
-                style={{
-                  backgroundColor: "var(--theme-primary)",
-                  color: "var(--theme-primary-text)",
-                  boxShadow: "0 10px 25px -5px color-mix(in srgb, var(--theme-primary) 35%, transparent)",
-                }}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all hover:opacity-90 hover:scale-105"
-              >
-                <span>{heroButtonText}</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              {contact?.whatsapp && (
-                <a
-                  href={`https://wa.me/${contact.whatsapp.replace(/[^0-9]/g, "")}`}
-                  target="_blank"
-                  rel="noreferrer"
+      {/* ───────────────── 2. ABOUT SECTION (Only if enabled) ───────────────── */}
+      {isSectionEnabled("about") && (
+        <section
+          id="about"
+          style={{
+            backgroundColor: "var(--theme-surface-soft)",
+            borderColor: "var(--theme-border)",
+          }}
+          className="py-16 sm:py-20 border-t"
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div
+              className={`grid grid-cols-1 ${
+                aboutImage ? "lg:grid-cols-2" : "max-w-3xl"
+              } gap-10 lg:gap-14 items-center`}
+            >
+              <div className="space-y-4">
+                <span
                   style={{
-                    backgroundColor: "var(--theme-surface)",
-                    borderColor: "var(--theme-border)",
-                    color: "var(--theme-text)",
+                    backgroundColor: "var(--theme-primary-soft)",
+                    color: "var(--theme-primary)",
                   }}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border text-sm font-semibold transition-colors hover:opacity-90"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
                 >
-                  <MessageCircle className="w-4 h-4" style={{ color: "var(--theme-primary)" }} />
-                  <span>WhatsApp Us</span>
-                </a>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>About Us</span>
+                </span>
+                <h3
+                  style={{ color: "var(--theme-text)" }}
+                  className="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight"
+                >
+                  {aboutTitle}
+                </h3>
+                {aboutDescription && (
+                  <p
+                    style={{ color: "var(--theme-text-muted)" }}
+                    className="text-sm sm:text-base leading-relaxed whitespace-pre-line"
+                  >
+                    {aboutDescription}
+                  </p>
+                )}
+              </div>
+
+              {aboutImage && (
+                <div className="relative">
+                  <div
+                    style={{
+                      borderColor: "var(--theme-border)",
+                      backgroundColor: "var(--theme-surface)",
+                    }}
+                    className="relative aspect-[4/3] rounded-3xl overflow-hidden border shadow-lg"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={
+                        aboutImage.startsWith("http")
+                          ? aboutImage
+                          : `http://localhost:5000${aboutImage}`
+                      }
+                      alt={aboutTitle}
+                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                    />
+                  </div>
+                </div>
               )}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* ───────────────── ABOUT & HIGHLIGHTS ───────────────── */}
-      <section
-        style={{
-          backgroundColor: "var(--theme-surface-soft)",
-          borderColor: "var(--theme-border)",
-        }}
-        className="py-12 border-t"
-      >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Col 1: About */}
-            <div className="md:col-span-2 space-y-4">
+      {/* ───────────────── 3. POPULAR MENU SECTION (Only if enabled) ───────────────── */}
+      {isSectionEnabled("menu") && (
+        <section
+          id="menu"
+          style={{ borderColor: "var(--theme-border)" }}
+          className="py-16 border-t"
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+              <div>
+                <span
+                  style={{
+                    backgroundColor: "var(--theme-primary-soft)",
+                    color: "var(--theme-primary)",
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-2"
+                >
+                  <UtensilsCrossed className="w-3.5 h-3.5" />
+                  <span>Chef's Recommendations</span>
+                </span>
+                <h3
+                  style={{ color: "var(--theme-text)" }}
+                  className="text-2xl font-bold"
+                >
+                  {menuSection?.content?.title || "Popular Dishes"}
+                </h3>
+                <p
+                  style={{ color: "var(--theme-text-muted)" }}
+                  className="text-xs sm:text-sm mt-1"
+                >
+                  {menuSection?.content?.description || "Our most loved dishes, picked by our guests"}
+                </p>
+              </div>
+
+              <div
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium border shrink-0"
+                style={{
+                  backgroundColor: "var(--theme-surface)",
+                  borderColor: "var(--theme-border)",
+                  color: "var(--theme-text-muted)",
+                }}
+              >
+                <span>Scan table QR to order</span>
+              </div>
+            </div>
+
+            {popularItems && popularItems.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {popularItems.map((item) => (
+                  <div
+                    key={item._id}
+                    style={{
+                      backgroundColor: "var(--theme-surface)",
+                      borderColor: "var(--theme-border)",
+                    }}
+                    className="rounded-2xl border overflow-hidden shadow-sm flex flex-col justify-between transition-all hover:shadow-md hover:-translate-y-1 duration-200"
+                  >
+                    <div>
+                      <div className="relative aspect-[4/3] w-full bg-black/5 overflow-hidden">
+                        {item.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={item.image.startsWith("http") ? item.image : `http://localhost:5000${item.image}`}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-300">
+                            <Utensils className="w-10 h-10 opacity-30" />
+                          </div>
+                        )}
+                        {item.foodType && (
+                          <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm p-1 rounded-md shadow-sm">
+                            <div
+                              className={`w-3 h-3 rounded-full ${
+                                item.foodType === "veg"
+                                  ? "bg-green-600"
+                                  : item.foodType === "egg"
+                                  ? "bg-amber-500"
+                                  : "bg-red-600"
+                              }`}
+                            />
+                          </div>
+                        )}
+                        {(item.isBestseller || item.isPopular) && (
+                          <span
+                            style={{
+                              backgroundColor: "var(--theme-primary)",
+                              color: "var(--theme-primary-text)",
+                            }}
+                            className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm"
+                          >
+                            Popular
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="p-4">
+                        <h4
+                          style={{ color: "var(--theme-text)" }}
+                          className="font-bold text-sm sm:text-base line-clamp-1"
+                        >
+                          {item.name}
+                        </h4>
+                        {item.description && (
+                          <p
+                            style={{ color: "var(--theme-text-muted)" }}
+                            className="text-xs mt-1 line-clamp-2 leading-relaxed"
+                          >
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-4 pt-0">
+                      <div
+                        className="pt-3 border-t flex items-center justify-between"
+                        style={{ borderColor: "var(--theme-border-subtle)" }}
+                      >
+                        <div className="flex items-baseline gap-1.5">
+                          <span
+                            style={{ color: "var(--theme-primary)" }}
+                            className="text-base sm:text-lg font-bold"
+                          >
+                            ₹{item.price}
+                          </span>
+                          {item.mrp && item.mrp > item.price && (
+                            <span className="text-xs line-through" style={{ color: "var(--theme-text-faint)" }}>
+                              ₹{item.mrp}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div
+                style={{
+                  backgroundColor: "var(--theme-surface)",
+                  borderColor: "var(--theme-border)",
+                }}
+                className="p-8 rounded-2xl border text-center space-y-3"
+              >
+                <p style={{ color: "var(--theme-text-muted)" }} className="text-sm">
+                  Explore our dishes and drinks by scanning the QR code at your table.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ───────────────── 4. SPECIAL OFFERS SECTION (Only if enabled) ───────────────── */}
+      {isSectionEnabled("offers") && (
+        <section
+          id="offers"
+          style={{
+            backgroundColor: "var(--theme-surface-soft)",
+            borderColor: "var(--theme-border)",
+          }}
+          className="py-16 border-t"
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="mb-8">
+              <span
+                style={{
+                  backgroundColor: "var(--theme-primary-soft)",
+                  color: "var(--theme-primary)",
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-2"
+              >
+                <Tag className="w-3.5 h-3.5" />
+                <span>Exclusive Deals</span>
+              </span>
               <h3
                 style={{ color: "var(--theme-text)" }}
-                className="text-xl font-bold flex items-center gap-2"
+                className="text-2xl font-bold"
               >
-                <Sparkles className="w-5 h-5" style={{ color: "var(--theme-primary)" }} />
-                {aboutTitle}
+                {offersSection?.content?.title || "Special Offers & Deals"}
               </h3>
               <p
                 style={{ color: "var(--theme-text-muted)" }}
-                className="text-sm leading-relaxed whitespace-pre-line"
+                className="text-xs sm:text-sm mt-1"
               >
-                {aboutDescription}
+                {offersSection?.content?.description || "Check out our latest deals and promotions"}
               </p>
-
-              <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div
-                  style={{
-                    backgroundColor: "var(--theme-surface)",
-                    borderColor: "var(--theme-border)",
-                  }}
-                  className="p-4 rounded-xl border flex items-start gap-3 shadow-sm"
-                >
-                  <CheckCircle2
-                    className="w-5 h-5 shrink-0 mt-0.5"
-                    style={{ color: "var(--theme-primary)" }}
-                  />
-                  <div>
-                    <h4
-                      style={{ color: "var(--theme-text)" }}
-                      className="text-sm font-semibold"
-                    >
-                      Instant QR Ordering
-                    </h4>
-                    <p
-                      style={{ color: "var(--theme-text-muted)" }}
-                      className="text-xs mt-0.5"
-                    >
-                      Order straight from your phone at your table.
-                    </p>
-                  </div>
-                </div>
-                <div
-                  style={{
-                    backgroundColor: "var(--theme-surface)",
-                    borderColor: "var(--theme-border)",
-                  }}
-                  className="p-4 rounded-xl border flex items-start gap-3 shadow-sm"
-                >
-                  <CheckCircle2
-                    className="w-5 h-5 shrink-0 mt-0.5"
-                    style={{ color: "var(--theme-primary)" }}
-                  />
-                  <div>
-                    <h4
-                      style={{ color: "var(--theme-text)" }}
-                      className="text-sm font-semibold"
-                    >
-                      Fresh Daily Ingredients
-                    </h4>
-                    <p
-                      style={{ color: "var(--theme-text-muted)" }}
-                      className="text-xs mt-0.5"
-                    >
-                      Cooked hot and fresh on demand.
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
 
-            {/* Col 2: Quick Information Card */}
-            <div
-              style={{
-                backgroundColor: "var(--theme-surface)",
-                borderColor: "var(--theme-border)",
-              }}
-              className="p-6 rounded-2xl border space-y-5 shadow-sm"
-            >
-              <h4
+            {activeOffers && activeOffers.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {activeOffers.map((offer) => (
+                  <div
+                    key={offer._id}
+                    style={{
+                      backgroundColor: "var(--theme-surface)",
+                      borderColor: "var(--theme-border)",
+                    }}
+                    className="p-6 rounded-2xl border shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-primary transition-colors"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span
+                          style={{
+                            backgroundColor: "var(--theme-primary)",
+                            color: "var(--theme-primary-text)",
+                          }}
+                          className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg"
+                        >
+                          <Percent className="w-3 h-3" />
+                          <span>
+                            {offer.benefit?.type === "percentage"
+                              ? `${offer.benefit.value}% OFF`
+                              : `₹${offer.benefit?.value || 0} FLAT OFF`}
+                          </span>
+                        </span>
+
+                        <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-black/5 dark:bg-white/10" style={{ color: "var(--theme-text-muted)" }}>
+                          {offer.type?.replace("_", " ")}
+                        </span>
+                      </div>
+
+                      <h4
+                        style={{ color: "var(--theme-text)" }}
+                        className="font-bold text-base sm:text-lg"
+                      >
+                        {offer.name}
+                      </h4>
+
+                      {offer.terms && (
+                        <p
+                          style={{ color: "var(--theme-text-muted)" }}
+                          className="text-xs leading-relaxed line-clamp-2"
+                        >
+                          {offer.terms}
+                        </p>
+                      )}
+
+                      {offer.minimumOrderAmount > 0 && (
+                        <p className="text-[11px]" style={{ color: "var(--theme-text-faint)" }}>
+                          Min Order Amount: ₹{offer.minimumOrderAmount}
+                        </p>
+                      )}
+                    </div>
+
+                    <div
+                      className="pt-4 mt-4 border-t flex items-center justify-between"
+                      style={{ borderColor: "var(--theme-border-subtle)" }}
+                    >
+                      <span className="text-xs font-semibold" style={{ color: "var(--theme-primary)" }}>
+                        Dine-in Offer
+                      </span>
+                      <span className="text-[11px]" style={{ color: "var(--theme-text-muted)" }}>
+                        Applied on Table QR
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div
                 style={{
-                  color: "var(--theme-text)",
+                  backgroundColor: "var(--theme-surface)",
                   borderColor: "var(--theme-border)",
                 }}
-                className="font-bold text-base border-b pb-3"
+                className="p-8 rounded-2xl border text-center space-y-3"
               >
-                Contact & Location
-              </h4>
-
-              <div className="space-y-3 text-xs sm:text-sm">
-                <div className="flex items-start gap-3" style={{ color: "var(--theme-text)" }}>
-                  <MapPin className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "var(--theme-primary)" }} />
-                  <span>{displayAddress}</span>
-                </div>
-
-                {contact?.primaryPhone && (
-                  <div className="flex items-center gap-3" style={{ color: "var(--theme-text)" }}>
-                    <Phone className="w-4 h-4 shrink-0" style={{ color: "var(--theme-primary)" }} />
-                    <a
-                      href={`tel:${contact.primaryPhone}`}
-                      className="underline-offset-2 hover:underline"
-                    >
-                      {contact.primaryPhone}
-                    </a>
-                  </div>
-                )}
-
-                {contact?.email && (
-                  <div className="flex items-center gap-3" style={{ color: "var(--theme-text)" }}>
-                    <Mail className="w-4 h-4 shrink-0" style={{ color: "var(--theme-primary)" }} />
-                    <a
-                      href={`mailto:${contact.email}`}
-                      className="underline-offset-2 hover:underline"
-                    >
-                      {contact.email}
-                    </a>
-                  </div>
-                )}
-
-                {googleReviewLink && (
-                  <div className="pt-2">
-                    <a
-                      href={googleReviewLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ color: "var(--theme-primary)" }}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"
-                    >
-                      <span>Leave a Google Review</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                )}
+                <p style={{ color: "var(--theme-text-muted)" }} className="text-sm">
+                  Special offers and discounts will appear here. Dine in and scan your table QR code to unlock exclusive promotions!
+                </p>
               </div>
-
-              {/* Social Icons */}
-              {(socialLinks?.instagram || socialLinks?.facebook || socialLinks?.twitter || socialLinks?.other) && (
-                <div
-                  style={{ borderColor: "var(--theme-border)" }}
-                  className="pt-3 border-t flex items-center gap-3"
-                >
-                  {socialLinks.instagram && (
-                    <a
-                      href={socialLinks.instagram}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        backgroundColor: "var(--theme-surface-soft)",
-                        borderColor: "var(--theme-border)",
-                        color: "var(--theme-text-muted)",
-                      }}
-                      className="p-2 rounded-lg border transition-colors hover:opacity-80"
-                      aria-label="Instagram"
-                    >
-                      <svg className="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
-                        <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                        <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-                      </svg>
-                    </a>
-                  )}
-                  {socialLinks.facebook && (
-                    <a
-                      href={socialLinks.facebook}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        backgroundColor: "var(--theme-surface-soft)",
-                        borderColor: "var(--theme-border)",
-                        color: "var(--theme-text-muted)",
-                      }}
-                      className="p-2 rounded-lg border transition-colors hover:opacity-80"
-                      aria-label="Facebook"
-                    >
-                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                      </svg>
-                    </a>
-                  )}
-                  {socialLinks.twitter && (
-                    <a
-                      href={socialLinks.twitter}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        backgroundColor: "var(--theme-surface-soft)",
-                        borderColor: "var(--theme-border)",
-                        color: "var(--theme-text-muted)",
-                      }}
-                      className="p-2 rounded-lg border transition-colors hover:opacity-80"
-                      aria-label="Twitter / X"
-                    >
-                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                      </svg>
-                    </a>
-                  )}
-                  {socialLinks.other && (
-                    <a
-                      href={socialLinks.other}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        backgroundColor: "var(--theme-surface-soft)",
-                        borderColor: "var(--theme-border)",
-                        color: "var(--theme-text-muted)",
-                      }}
-                      className="p-2 rounded-lg border transition-colors hover:opacity-80"
-                      aria-label="Website"
-                    >
-                      <Globe className="w-4 h-4" />
-                    </a>
-                  )}
-                </div>
-              )}
-            </div>
+            )}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* ───────────────── GALLERY SECTION (If configured) ───────────────── */}
-      {gallerySection?.enabled && gallerySection?.content?.images?.length > 0 && (
+      {/* ───────────────── 5. GALLERY SECTION (Only if enabled) ───────────────── */}
+      {isSectionEnabled("gallery") && gallerySection?.content?.images?.length > 0 && (
         <section
+          id="gallery"
           style={{ borderColor: "var(--theme-border)" }}
-          className="py-12 border-t"
+          className="py-16 border-t"
         >
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <h3
               style={{ color: "var(--theme-text)" }}
-              className="text-xl font-bold mb-6"
+              className="text-2xl font-bold mb-6"
             >
               {gallerySection.content.title || "Photo Gallery"}
             </h3>
@@ -655,7 +805,7 @@ export default async function RestaurantPortfolioPage({ params }) {
                 <div
                   key={idx}
                   style={{ borderColor: "var(--theme-border)" }}
-                  className="rounded-xl overflow-hidden border aspect-square"
+                  className="rounded-xl overflow-hidden border aspect-square bg-black/5"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -670,10 +820,80 @@ export default async function RestaurantPortfolioPage({ params }) {
         </section>
       )}
 
-      {/* ───────────────── BUSINESS HOURS ───────────────── */}
+      {/* ───────────────── 6. MAP & LOCATION SECTION (Only if enabled) ───────────────── */}
+      {isSectionEnabled("map") && (
+        <section
+          id="map"
+          style={{
+            backgroundColor: "var(--theme-surface-soft)",
+            borderColor: "var(--theme-border)",
+          }}
+          className="py-16 border-t"
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="mb-6">
+              <h3
+                style={{ color: "var(--theme-text)" }}
+                className="text-2xl font-bold"
+              >
+                {mapSection?.content?.title || "Find Us"}
+              </h3>
+              {mapSection?.content?.description && (
+                <p
+                  style={{ color: "var(--theme-text-muted)" }}
+                  className="text-xs sm:text-sm mt-1"
+                >
+                  {mapSection.content.description}
+                </p>
+              )}
+            </div>
+
+            <PublicMapView
+              latitude={mapSection?.content?.location?.latitude}
+              longitude={mapSection?.content?.location?.longitude}
+              address={[
+                mapSection?.content?.location?.addressLine,
+                mapSection?.content?.location?.city,
+                mapSection?.content?.location?.state,
+                mapSection?.content?.location?.pincode,
+              ].filter(Boolean).join(", ") || displayAddress}
+              restaurantName={name}
+              showDirections={mapSection?.content?.showDirections !== false}
+            />
+          </div>
+        </section>
+      )}
+
+      {/* ───────────────── 7. CONTACT / INQUIRY FORM SECTION (Only if enabled) ───────────────── */}
+      {isSectionEnabled("inquiry") && (
+        <section
+          id="inquiry"
+          style={{ borderColor: "var(--theme-border)" }}
+          className="py-16 border-t"
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <InquiryForm
+              subdomain={subdomain}
+              content={inquirySection?.content}
+              restaurantName={name}
+              contactInfo={{
+                phone: contact?.primaryPhone,
+                email: contact?.email,
+                address: displayAddress,
+              }}
+            />
+          </div>
+        </section>
+      )}
+
+      {/* ───────────────── 8. BUSINESS HOURS (If configured) ───────────────── */}
       {businessHours && businessHours.length > 0 && (
         <section
-          style={{ borderColor: "var(--theme-border)" }}
+          id="hours"
+          style={{
+            backgroundColor: "var(--theme-surface-soft)",
+            borderColor: "var(--theme-border)",
+          }}
           className="py-12 border-t"
         >
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -727,7 +947,7 @@ export default async function RestaurantPortfolioPage({ params }) {
         </section>
       )}
 
-      {/* ───────────────── FOOTER ───────────────── */}
+      {/* ───────────────── 9. FOOTER ───────────────── */}
       <footer
         style={{
           backgroundColor: "var(--theme-background)",

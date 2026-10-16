@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { ChevronRight, Sparkles } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay } from "swiper/modules";
@@ -9,30 +10,68 @@ import { useMenuOrder } from "@/store/menuOrderStore";
 import "swiper/css";
 import "swiper/css/pagination";
 
-const offers = [
+const defaultOffers = [
   {
     id: 1,
-    label: "Dessert Bonus",
-    title: "Free kulfi with your meal",
-    description: "Add any main course to unlock",
+    label: "Repeat Special",
+    title: "10% off on your return visit",
+    description: "Re-order within 7 days to unlock",
   },
   {
     id: 2,
-    label: "Special Offer",
+    label: "Order Bonus",
     title: "Get 15% off your order",
-    description: "Order above ₹1,000 to unlock",
+    description: "Order above ₹1,500 to unlock",
   },
   {
     id: 3,
-    label: "Weekend Special",
-    title: "Free drink with your meal",
-    description: "Available on orders above ₹799",
+    label: "Weekday Treat",
+    title: "20% off Tuesday Special",
+    description: "Available on orders above ₹1,000",
   },
 ];
 
 export default function OfferCarousel() {
+  const params = useParams();
+  const subdomain = params?.subdomain;
   const [paginationEl, setPaginationEl] = useState(null);
+  const [carouselOffers, setCarouselOffers] = useState(defaultOffers);
   const { setActiveTab } = useMenuOrder();
+
+  useEffect(() => {
+    if (!subdomain) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+    fetch(`${apiUrl}/public/offers/${subdomain}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json?.success && Array.isArray(json.data) && json.data.length > 0) {
+          const mapped = json.data.map((offer, idx) => {
+            const discount =
+              offer.benefit?.type === "flat"
+                ? `₹${offer.benefit.value} OFF`
+                : `${offer.benefit?.value || 0}% OFF`;
+            const label =
+              offer.type === "repeat_order"
+                ? "Repeat Special"
+                : offer.type === "order_value"
+                ? "Order Bonus"
+                : "Limited Offer";
+
+            return {
+              id: offer.id || offer._id || idx,
+              label,
+              title: `${offer.name} · ${discount}`,
+              description: offer.terms || "Tap to check eligibility and save on your order",
+            };
+          });
+          setCarouselOffers(mapped);
+        }
+      })
+      .catch(() => {
+        // Keep fallback
+      });
+  }, [subdomain]);
 
   return (
     <section className="h-fit">
@@ -47,7 +86,7 @@ export default function OfferCarousel() {
         }}
         className="offer-swiper"
       >
-        {offers.map((offer) => (
+        {carouselOffers.map((offer) => (
           <SwiperSlide key={offer.id}>
             <button
               type="button"
@@ -69,7 +108,7 @@ export default function OfferCarousel() {
                 <h3 className="text-[15px] font-bold text-white leading-tight mb-0.5">
                   {offer.title}
                 </h3>
-                <p className="text-[11px] text-white/70">
+                <p className="text-[11px] text-white/70 line-clamp-1">
                   {offer.description}
                 </p>
               </div>

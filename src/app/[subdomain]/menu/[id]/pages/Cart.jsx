@@ -1,13 +1,24 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useParams } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronRight, History, Plus, Minus, Trash2, ShoppingBag, BadgePercent } from "lucide-react";
+import {
+  ChevronRight,
+  History,
+  Plus,
+  Minus,
+  Trash2,
+  ShoppingBag,
+  BadgePercent,
+  Tag,
+  Sparkles,
+  CheckCircle2,
+} from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
 import PageHeader from "@/components/menuComp/PageHeader";
 import EmptyState from "@/components/menuComp/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
-
 
 function OrderItem({ item, onIncrement, onDecrement, onRemove }) {
   return (
@@ -77,16 +88,59 @@ function OrderItem({ item, onIncrement, onDecrement, onRemove }) {
 }
 
 const Cart = () => {
+  const params = useParams();
+  const subdomain = params?.subdomain;
+
   const {
     tableId,
     cartItems,
     subtotal,
+    offerDiscount,
+    finalTotal,
+    appliedOffer,
+    isOfferApplied,
+    applyOffer,
+    removeOffer,
+    setAppliedOffer,
     setActiveTab,
     increment,
     decrement,
     removeItem,
     placeOrder,
+    mobile,
+    activeOrder
   } = useMenuOrder();
+
+  // If no offer is selected, check eligibility and auto-suggest the best qualified offer
+  useEffect(() => {
+    if (!subdomain || cartItems.length === 0 || appliedOffer) return;
+
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const tableSpend = (activeOrder?.total ?? 0) + subtotal;
+
+    fetch(`${apiUrl}/public/offers/check-eligibility`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        restaurantId: subdomain,
+        mobile: mobile?.verified ? mobile.number : null,
+        currentOrderTotal: tableSpend,
+        items: cartItems
+      })
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (json?.success && Array.isArray(json.data)) {
+          const eligibleOffers = json.data.filter((o) => o.isEligible);
+          if (eligibleOffers.length > 0) {
+            // Sort by highest potential discount
+            eligibleOffers.sort((a, b) => (b.potentialDiscount || 0) - (a.potentialDiscount || 0));
+            setAppliedOffer(eligibleOffers[0]);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [subdomain, cartItems.length, appliedOffer, subtotal, activeOrder?.total, mobile?.verified, mobile?.number, setAppliedOffer]);
 
   const handlePlaceOrder = () => {
     const result = placeOrder();
@@ -96,6 +150,14 @@ const Cart = () => {
     }
     toast.success("Order placed! Track it on the Table tab.");
     setActiveTab("Table");
+  };
+
+  const getDiscountBadgeText = () => {
+    if (!appliedOffer) return "";
+    if (appliedOffer.benefit?.type === "flat") {
+      return `₹${appliedOffer.benefit.value} OFF`;
+    }
+    return `${appliedOffer.benefit?.value || 0}% OFF`;
   };
 
   return (
@@ -159,6 +221,90 @@ const Cart = () => {
             </AnimatePresence>
           </div>
 
+          {/* Offers & Promos Card */}
+          <div className="bg-surface rounded-2xl p-4 border border-border-light shadow-sm">
+            {appliedOffer && isOfferApplied ? (
+              <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl p-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shrink-0">
+                    <Tag size={15} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-primary truncate">
+                      {appliedOffer.name} ({getDiscountBadgeText()})
+                    </p>
+                    <p className="text-[11px] text-primary/80 font-medium">
+                      Saving ₹{offerDiscount} on this bill
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={removeOffer}
+                    className="text-xs font-bold text-danger hover:underline px-2 py-1"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : appliedOffer && !isOfferApplied ? (
+              <div className="flex items-center justify-between bg-surface-soft border border-border rounded-xl p-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Tag size={16} className="text-text-muted shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-text-primary truncate">
+                      {appliedOffer.name} ({getDiscountBadgeText()})
+                    </p>
+                    <p className="text-[11px] text-text-muted">
+                      Offer available for your order
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={applyOffer}
+                  className="text-xs font-bold text-primary hover:underline px-2 py-1"
+                >
+                  Apply
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setActiveTab("Offers")}
+                className="w-full flex items-center justify-between text-left group"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <Sparkles size={16} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-text-primary group-hover:text-primary transition-colors">
+                      Offers & Promotions
+                    </p>
+                    <p className="text-[11px] text-text-muted">
+                      View discounts applicable to your meal
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight size={16} className="text-text-muted group-hover:text-primary transition-colors" />
+              </button>
+            )}
+
+            {appliedOffer && (
+              <div className="mt-2 text-right">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("Offers")}
+                  className="text-[11px] text-primary font-medium hover:underline inline-flex items-center gap-1"
+                >
+                  View other offers <ChevronRight size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Bill Summary */}
           <div className="bg-surface rounded-2xl p-5 border border-border-light shadow-sm">
             <div className="flex items-center gap-2 mb-4">
@@ -175,25 +321,53 @@ const Cart = () => {
                   ₹{subtotal}
                 </span>
               </div>
+
+              {offerDiscount > 0 && isOfferApplied && (
+                <div className="flex justify-between text-sm text-primary font-medium">
+                  <span className="flex items-center gap-1.5">
+                    <Tag size={13} />
+                    Offer Discount ({getDiscountBadgeText()})
+                  </span>
+                  <span className="font-bold">
+                    -₹{offerDiscount}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="border-t border-dashed border-border-light pt-4 mb-5">
               <div className="flex justify-between items-center">
-                <span className="text-base font-bold text-text-primary">
-                  Total
-                </span>
-                <span className="text-xl font-extrabold text-text-primary">
-                  ₹{subtotal}
-                </span>
+                <div>
+                  <span className="text-base font-bold text-text-primary block">
+                    Total
+                  </span>
+                  {offerDiscount > 0 && isOfferApplied && (
+                    <span className="text-[11px] text-primary font-medium flex items-center gap-1">
+                      <CheckCircle2 size={12} />
+                      You save ₹{offerDiscount} on this order
+                    </span>
+                  )}
+                </div>
+                <div className="text-right">
+                  {offerDiscount > 0 && isOfferApplied && (
+                    <span className="text-xs text-text-muted line-through mr-2">
+                      ₹{subtotal}
+                    </span>
+                  )}
+                  <span className="text-xl font-extrabold text-text-primary">
+                    ₹{finalTotal}
+                  </span>
+                </div>
               </div>
             </div>
 
             <button
               type="button"
               onClick={handlePlaceOrder}
-              className="w-full bg-primary hover:bg-primary-hover active:scale-[0.98] text-text-on-primary font-bold rounded-xl py-4 flex items-center justify-center transition-all shadow-lg shadow-primary/20"
+              className="w-full bg-primary hover:bg-primary-hover active:scale-[0.98] text-text-on-primary font-bold rounded-xl py-4 flex items-center justify-between px-6 transition-all shadow-lg shadow-primary/20"
             >
-              Place order · ₹{subtotal}
+              <span>Place order</span>
+              <span className="font-extrabold">₹{finalTotal}</span>
             </button>
           </div>
         </>

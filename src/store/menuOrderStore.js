@@ -48,9 +48,14 @@ export const useMenuOrderStore = create(
       searchQuery: "",
       isCartExpanded: true,
       tableId: null,
+      verifiedRestaurant: null,
+      verifiedTable: null,
+      verificationStatus: "idle", // 'idle' | 'loading' | 'success' | 'error'
+      verificationError: null,
 
       offersModalOpen: true,
       mobile: initialMobile,
+      appliedOffer: null,
       isOfferApplied: true,
 
       activeOrder: null, // { id, items:[], total, status, placedAt }
@@ -61,6 +66,7 @@ export const useMenuOrderStore = create(
       // ---------------------------------------------------------------
       // Offer actions
       // ---------------------------------------------------------------
+      setAppliedOffer: (offer) => set({ appliedOffer: offer, isOfferApplied: true }),
       removeOffer: () => set({ isOfferApplied: false }),
       applyOffer: () => set({ isOfferApplied: true }),
 
@@ -122,6 +128,24 @@ export const useMenuOrderStore = create(
       setSearchQuery: (query) => set({ searchQuery: query }),
       setCartExpanded: (value) => set({ isCartExpanded: value }),
       setTableId: (id) => set({ tableId: id }),
+      setVerifiedSession: ({ restaurant, table }) =>
+        set({
+          verifiedRestaurant: restaurant,
+          verifiedTable: table,
+          tableId: table?.tableId || null,
+          verificationStatus: "success",
+          verificationError: null,
+        }),
+      setVerificationError: (err) =>
+        set({
+          verificationStatus: "error",
+          verificationError: err,
+        }),
+      setVerificationLoading: () =>
+        set({
+          verificationStatus: "loading",
+          verificationError: null,
+        }),
 
       // ---------------------------------------------------------------
       // Offers modal / mobile OTP login (shared by the modal, Cart and
@@ -163,7 +187,7 @@ export const useMenuOrderStore = create(
       // this table shares one session" copy used across the app.
       // ---------------------------------------------------------------
       placeOrder: () => {
-        const { items } = get();
+        const { items, appliedOffer, isOfferApplied } = get();
         const cartItems = Object.values(items);
         if (cartItems.length === 0) return { ok: false, error: "Your cart is empty" };
 
@@ -174,6 +198,18 @@ export const useMenuOrderStore = create(
           quantity,
           imageUrl,
         }));
+
+        const newSubtotal = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+        let discount = 0;
+        if (isOfferApplied && appliedOffer) {
+          if (appliedOffer.benefit?.type === "flat") {
+            discount = Math.min(Number(appliedOffer.benefit.value) || 0, newSubtotal);
+          } else {
+            const pct = Number(appliedOffer.benefit?.value) || 0;
+            discount = Math.round(((newSubtotal * pct) / 100) * 100) / 100;
+          }
+        }
+        const newTotal = Math.max(0, newSubtotal - discount);
 
         set((state) => {
           if (state.activeOrder) {
@@ -190,13 +226,19 @@ export const useMenuOrderStore = create(
               );
             });
             const mergedItems = Array.from(merged.values());
+            const mergedSubtotal = mergedItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+            const mergedTotal = Math.max(0, mergedSubtotal - discount);
+
             return {
               items: {},
               isCartExpanded: true,
               activeOrder: {
                 ...state.activeOrder,
                 items: mergedItems,
-                total: mergedItems.reduce((sum, i) => sum + i.price * i.quantity, 0),
+                subtotal: mergedSubtotal,
+                discount,
+                total: mergedTotal,
+                appliedOffer: isOfferApplied ? appliedOffer : null,
                 status: "received",
               },
             };
@@ -208,7 +250,10 @@ export const useMenuOrderStore = create(
             activeOrder: {
               id: `ORD-${Date.now().toString().slice(-6)}`,
               items: orderItems,
-              total: orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0),
+              subtotal: newSubtotal,
+              discount,
+              total: newTotal,
+              appliedOffer: isOfferApplied ? appliedOffer : null,
               status: "received",
               placedAt: new Date().toISOString(),
             },
@@ -284,6 +329,7 @@ export const useMenuOrderStore = create(
         orderHistory: state.orderHistory,
         reviews: state.reviews,
         isOfferApplied: state.isOfferApplied,
+        appliedOffer: state.appliedOffer,
       }),
     }
   )
@@ -307,13 +353,28 @@ export function useMenuOrder() {
     0
   );
 
+  let offerDiscount = 0;
+  if (state.isOfferApplied && state.appliedOffer && subtotal > 0) {
+    const benefit = state.appliedOffer.benefit;
+    if (benefit?.type === "flat") {
+      offerDiscount = Math.min(Number(benefit.value) || 0, subtotal);
+    } else {
+      const pct = Number(benefit?.value) || 0;
+      offerDiscount = Math.round(((subtotal * pct) / 100) * 100) / 100;
+    }
+  }
+
+  const finalTotal = Math.max(0, subtotal - offerDiscount);
+
   return {
     ...state,
     cartItems,
     totalItems,
     subtotal,
     mrpTotal,
-    hasDiscount: mrpTotal > subtotal,
+    offerDiscount,
+    finalTotal,
+    hasDiscount: mrpTotal > subtotal || offerDiscount > 0,
     getQuantity: (id) => state.items[id]?.quantity ?? 0,
     isFavorite: (id) => state.favorites.includes(id),
   };
