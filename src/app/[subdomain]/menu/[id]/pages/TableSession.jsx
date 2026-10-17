@@ -21,9 +21,11 @@ import { useMenuOrder } from "@/store/menuOrderStore";
 import PageHeader from "@/components/menuComp/PageHeader";
 import EmptyState from "@/components/menuComp/EmptyState";
 import { motion } from "framer-motion";
+import { formatTableName } from "@/utils/formatTableName";
 
 const APPLIED_PROMO = "WELCOME10";
 const PROMO_RATE = 0.1;
+
 
 const STEPS = [
   {
@@ -40,8 +42,8 @@ const STEPS = [
   },
   {
     key: "ready",
-    label: "Ready",
-    note: "We&apos;ll let you know",
+    label: "Ready & Served",
+    note: "Delivered to table",
     icon: Bell,
   },
 ];
@@ -50,34 +52,41 @@ const statusLabel = {
   received: "Received",
   preparing: "Preparing",
   ready: "Ready",
+  delivered: "Delivered",
+  served: "Delivered",
+  pending: "Received",
+  processing: "Preparing",
 };
 
 export default function TableSession() {
   const { 
     tableId, 
+    tableName,
+    verifiedTable,
     activeOrder, 
-    orderHistory, 
+    sessionOrders,
+    currentSession,
     setActiveTab, 
     completeActiveOrder,
     mobile,
-    setMobileNumber,
-    sendOtp,
-    verifyOtp,
     isOfferApplied,
     appliedOffer,
     removeOffer,
     applyOffer,
+    openOffersModal,
   } = useMenuOrder();
 
-  const [otpValue, setOtpValue] = useState("");
+  const rawTable = verifiedTable?.tableName || verifiedTable?.tableNo || verifiedTable?.name || (tableName && tableName.length !== 24 ? tableName : null);
+  const displayTableName = formatTableName(rawTable, "Table");
 
   const currentIndex = activeOrder
-    ? STEPS.findIndex((s) => s.key === activeOrder.status)
+    ? activeOrder.status === "delivered"
+      ? 2
+      : STEPS.findIndex((s) => s.key === activeOrder.status)
     : -1;
 
-  const previousTotal = orderHistory.reduce((sum, order) => sum + (order.total || 0), 0);
-  const currentTotal = activeOrder ? (activeOrder.total || 0) : 0;
-  const itemTotal = currentTotal + previousTotal;
+  // Real consolidated items total for this active table session
+  const itemTotal = currentSession?.subtotal ?? activeOrder?.subtotal ?? activeOrder?.total ?? 0;
   
   const gstAmount = Math.round(itemTotal * 0.05); // 5% GST
   
@@ -91,27 +100,29 @@ export default function TableSession() {
     ? (offerToUse.benefit?.type === "flat"
         ? Math.min(Number(offerToUse.benefit.value) || 0, itemTotal)
         : Math.round((itemTotal * (Number(offerToUse.benefit?.value) || 0)) / 100))
-    : (activeOrder?.discount || 0);
+    : (activeOrder?.discount || currentSession?.discount || 0);
 
   const grandTotal = Math.max(itemTotal + gstAmount - discount, 0);
   const isMobileRequired = isOfferApplied;
 
-  const handleSendOtp = () => {
-    const result = sendOtp();
-    if (!result.ok) toast.error(result.error);
-    else toast.success("OTP sent on WhatsApp");
+  const handleApplyPromo = () => {
+    if (!mobile.verified) {
+      toast.info("Please verify your mobile number to avail offers.");
+      openOffersModal();
+      return;
+    }
+    applyOffer();
   };
 
-  const handleVerifyOtp = () => {
-    const result = verifyOtp(otpValue);
-    if (!result.ok) toast.error(result.error);
-    else toast.success("Mobile number verified");
+  const handleReceiveOrder = () => {
+    completeActiveOrder();
+    toast.success("Order acknowledged! Enjoy your meal 🍽️");
   };
 
   return (
     <div className="px-4 pt-4 pb-28 space-y-4">
       <PageHeader
-        title={`Table ${tableId ?? "05"}`}
+        title={displayTableName}
         subtitle={
           activeOrder
             ? "Everyone at this table shares one bill"
@@ -128,7 +139,7 @@ export default function TableSession() {
         }
       />
 
-      {!activeOrder && orderHistory.length === 0 ? (
+      {!activeOrder && (!sessionOrders || sessionOrders.length === 0) ? (
         <EmptyState
           icon={UtensilsCrossed}
           title="No active order"
@@ -159,12 +170,13 @@ export default function TableSession() {
                   </h2>
                   <p className="text-[11px] text-text-muted">
                     {activeOrder.items.length}{" "}
-                    {activeOrder.items.length === 1 ? "item" : "items"}
+                    {activeOrder.items.length === 1 ? "dish" : "dishes"}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <span className="bg-success-light text-primary text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                    {statusLabel[activeOrder.status]}
+                  <span className="bg-success-light text-primary text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                    {activeOrder.status === "delivered" && <CheckCircle2 size={12} />}
+                    {statusLabel[activeOrder.status] || "Active"}
                   </span>
                   <span className="text-xl font-extrabold text-text-primary">
                     ₹{activeOrder.total}
@@ -176,7 +188,7 @@ export default function TableSession() {
               <div className="relative">
                 {STEPS.map((step, index) => {
                   const isDone = index <= currentIndex;
-                  const isActive = index === currentIndex;
+                  const isActive = index === currentIndex && activeOrder.status !== "delivered";
                   const Icon = step.icon;
 
                   return (
@@ -227,57 +239,120 @@ export default function TableSession() {
                 })}
               </div>
 
+              {/* Itemized List of Dishes */}
+              <div className="mt-2 pt-4 border-t border-border-light space-y-2">
+                <p className="text-xs font-bold text-text-primary mb-2">Dishes in this order</p>
+                <div className="space-y-1.5 bg-surface-soft/40 rounded-xl p-3 border border-border-light/50">
+                  {activeOrder.items.map((item) => (
+                    <div key={item.id} className="flex justify-between items-center text-xs py-0.5">
+                      <span className="text-text-secondary flex items-center gap-2 flex-1 pr-3">
+                        <span className="font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded text-[11px]">
+                          {item.quantity}x
+                        </span>
+                        <span className="leading-snug font-medium text-text-primary">
+                          {item.title || item.name}
+                        </span>
+                      </span>
+                      <span className="text-text-primary font-semibold shrink-0">
+                        ₹{(item.price || 0) * (item.quantity || 1)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Order Status Action */}
               {activeOrder.status === "ready" && (
                 <motion.button
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   type="button"
-                  onClick={completeActiveOrder}
-                  className="mt-2 w-full bg-primary hover:bg-primary-hover active:scale-[0.98] text-text-on-primary font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20"
+                  onClick={handleReceiveOrder}
+                  className="mt-4 w-full bg-primary hover:bg-primary-hover active:scale-[0.98] text-text-on-primary font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20"
                 >
                   <CheckCircle2 size={18} />
                   I&apos;ve received my order
                 </motion.button>
               )}
+
+              {activeOrder.status === "delivered" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 p-4 rounded-xl bg-success-light border border-primary/20 text-center space-y-2.5"
+                >
+                  <div className="flex items-center justify-center gap-2 text-primary font-bold text-sm">
+                    <CheckCircle2 size={18} />
+                    <span>Order Served &amp; Received</span>
+                  </div>
+                  <p className="text-xs text-text-secondary leading-relaxed">
+                    All dishes have been delivered to your table. Enjoy your meal!
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("Menu")}
+                    className="w-full bg-primary hover:bg-primary-hover active:scale-[0.98] text-text-on-primary font-bold text-xs rounded-xl py-3 flex items-center justify-center gap-2 transition-all shadow-md shadow-primary/20"
+                  >
+                    <UtensilsCrossed size={15} />
+                    Order More Dishes
+                  </button>
+                </motion.div>
+              )}
             </div>
           )}
 
-          {/* Previous Records */}
-          {orderHistory.length > 0 && (
+          {/* Multiple Order Rounds at this Table */}
+          {sessionOrders && sessionOrders.length > 1 && (
             <div className="bg-surface rounded-2xl p-5 border border-border-light shadow-sm">
-              <h2 className="text-base font-bold text-text-primary mb-4">
-                Previous records
-              </h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-base font-bold text-text-primary">
+                  Order Rounds
+                </h2>
+                <span className="text-xs text-text-muted font-medium bg-surface-soft border border-border-light px-2.5 py-0.5 rounded-full">
+                  {sessionOrders.length} rounds placed
+                </span>
+              </div>
               <div className="space-y-4">
-                {orderHistory.map((order) => {
-                  const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0);
-                  
+                {sessionOrders.map((order, idx) => {
+                  const orderNum = order.orderNumber || idx + 1;
+                  const isOrderServed = (order.items || []).every(
+                    (i) => i.status === "served" || i.status === "cancelled"
+                  );
+                  const isOrderPending = (order.items || []).some((i) => i.status === "pending");
+
                   return (
-                    <div key={order.id} className="border-b border-border-light pb-4 last:border-0 last:pb-0">
-                      {/* Order Header */}
-                      <div className="flex justify-between items-start mb-3">
+                    <div key={order._id || idx} className="border-b border-border-light pb-4 last:border-0 last:pb-0">
+                      <div className="flex justify-between items-start mb-2.5">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-bold text-text-primary">Order #{order.id.slice(-4)}</p>
-                          <span className="text-[10px] font-medium text-text-muted bg-surface-soft border border-border-light px-1.5 py-0.5 rounded">
-                            {totalItems} {totalItems === 1 ? 'item' : 'items'}
+                          <p className="text-sm font-bold text-text-primary">Round #{idx + 1} (Order #{orderNum})</p>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                            isOrderServed
+                              ? "bg-success-light text-primary"
+                              : isOrderPending
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-primary/10 text-primary"
+                          }`}>
+                            {isOrderServed ? "Served" : isOrderPending ? "Received" : "Preparing"}
                           </span>
                         </div>
                         <span className="text-sm font-bold text-text-primary">₹{order.total}</span>
                       </div>
-
-                      {/* Itemized List */}
-                      <div className="space-y-2 bg-surface-soft/40 rounded-xl p-3 border border-border-light/50">
-                        {order.items.map((item) => (
-                          <div key={item.id} className="flex justify-between items-start text-xs">
-                            <span className="text-text-secondary flex gap-2 flex-1 pr-3">
-                              <span className="font-semibold text-primary">{item.quantity}x</span>
-                              <span className="leading-snug">{item.title}</span>
-                            </span>
-                            <span className="text-text-primary font-medium shrink-0">
-                              ₹{item.price * item.quantity}
-                            </span>
-                          </div>
-                        ))}
+                      <div className="space-y-1.5 bg-surface-soft/40 rounded-xl p-3 border border-border-light/50">
+                        {(order.items || []).map((item, itemIdx) => {
+                          const liveQty = Math.max(0, (item.quantity || 0) - (item.cancelledQty || 0));
+                          if (liveQty <= 0) return null;
+                          return (
+                            <div key={item._id || itemIdx} className="flex justify-between items-start text-xs">
+                              <span className="text-text-secondary flex gap-2 flex-1 pr-3">
+                                <span className="font-semibold text-primary">{liveQty}x</span>
+                                <span className="leading-snug">{item.name || item.title}</span>
+                              </span>
+                              <span className="text-text-primary font-medium shrink-0">
+                                ₹{item.price * liveQty}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
@@ -322,100 +397,60 @@ export default function TableSession() {
                     <p className="text-[11px] text-text-muted">Apply offers to get a discount</p>
                   </div>
                </div>
-               <button onClick={applyOffer} className="text-primary text-xs font-bold px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-xl transition-all active:scale-95">
-                 Apply
-               </button>
+                <button onClick={handleApplyPromo} className="text-primary text-xs font-bold px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-xl transition-all active:scale-95">
+                  Apply
+                </button>
             </div>
           )}
 
-          {/* Mobile Verification */}
+          {/* Mobile Verification to Avail Offers */}
           <div className="bg-surface rounded-2xl p-4 border border-border-light shadow-sm">
-            <div className="flex items-center gap-2.5 mb-3">
-              <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                  mobile.verified ? "bg-success-light" : "bg-warning/10"
-                }`}
-              >
-                {mobile.verified ? (
-                  <ShieldCheck size={16} className="text-primary" />
-                ) : (
-                  <MessageCircle size={16} className="text-warning" />
-                )}
-              </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-bold text-text-primary">
-                  {mobile.verified
-                    ? "Mobile verified"
-                    : "Verify your mobile"}
-                </h3>
-                <p className="text-[11px] text-text-muted">
-                  {mobile.verified
-                    ? `+91 ${mobile.number}`
-                    : isMobileRequired 
-                        ? "Required for offer" 
-                        : "Optional"}
-                </p>
-              </div>
-            </div>
-
-            {mobile.verified ? (
-              <p className="text-[11px] text-text-muted bg-success-light/50 rounded-xl p-2.5 text-center">
-                Order updates will be sent on WhatsApp
-              </p>
-            ) : !mobile.otpSent ? (
-              <>
-                <div className="flex gap-2">
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    value={mobile.number}
-                    onChange={(e) =>
-                      setMobileNumber(
-                        e.target.value.replace(/\D/g, "").slice(0, 10)
-                      )
-                    }
-                    placeholder="10-digit number"
-                    className="flex-1 min-w-0 bg-surface-soft border border-transparent rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:bg-surface focus:border-primary/30 focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-text-muted"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSendOtp}
-                    className="bg-primary hover:bg-primary-hover text-text-on-primary text-xs font-bold px-4 py-2.5 rounded-xl active:scale-95 transition-all shrink-0"
-                  >
-                    Send OTP
-                  </button>
+            {!mobile.verified ? (
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Sparkles size={16} className="text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-bold text-text-primary">
+                      Avail Offers &amp; Updates
+                    </h3>
+                    <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
+                      To apply discount offers and receive live order updates on WhatsApp, please add your mobile number.
+                    </p>
+                  </div>
                 </div>
-                <p className="text-[10px] text-text-muted mt-2">
-                  We&apos;ll send a one-time code on WhatsApp.
-                </p>
-              </>
+                <button
+                  type="button"
+                  onClick={openOffersModal}
+                  className="w-full bg-primary hover:bg-primary-hover active:scale-[0.98] text-text-on-primary font-bold text-xs rounded-xl py-3 flex items-center justify-center gap-2 transition-all shadow-md shadow-primary/20"
+                >
+                  <MessageCircle size={15} />
+                  Add Mobile to Avail Offers
+                </button>
+              </div>
             ) : (
-              <>
-                <div className="flex gap-2">
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    value={otpValue}
-                    onChange={(e) =>
-                      setOtpValue(
-                        e.target.value.replace(/\D/g, "").slice(0, 4)
-                      )
-                    }
-                    placeholder="4-digit code"
-                    className="flex-1 min-w-0 bg-surface-soft border border-transparent rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:bg-surface focus:border-primary/30 focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-text-muted"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleVerifyOtp}
-                    className="bg-primary hover:bg-primary-hover text-text-on-primary text-xs font-bold px-4 py-2.5 rounded-xl active:scale-95 transition-all shrink-0"
-                  >
-                    Verify
-                  </button>
+              <div>
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="w-9 h-9 rounded-xl bg-success-light flex items-center justify-center">
+                    <ShieldCheck size={16} className="text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-bold text-text-primary">
+                      Mobile Verified
+                    </h3>
+                    <p className="text-xs font-semibold text-primary">
+                      +91 {mobile.number}
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold text-primary bg-success-light px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    Linked
+                  </span>
                 </div>
-                <p className="text-[10px] text-text-muted mt-2">
-                  Sent to +91 {mobile.number} · Any 4 digits work in this demo
+                <p className="text-[11px] text-text-muted bg-success-light/50 rounded-xl p-2.5 text-center mt-2">
+                  Order updates &amp; table offers are active on WhatsApp
                 </p>
-              </>
+              </div>
             )}
           </div>
 
@@ -429,20 +464,7 @@ export default function TableSession() {
             </div>
 
             <div className="space-y-3 mb-5">
-              {currentTotal > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Current Order</span>
-                  <span className="font-medium text-text-primary">₹{currentTotal}</span>
-                </div>
-              )}
-              {previousTotal > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Previous Orders</span>
-                  <span className="font-medium text-text-primary">₹{previousTotal}</span>
-                </div>
-              )}
-              
-              <div className="flex justify-between text-sm pt-2 border-t border-border-light/50">
+              <div className="flex justify-between text-sm">
                 <span className="text-text-secondary font-medium">Items Total</span>
                 <span className="font-semibold text-text-primary">₹{itemTotal}</span>
               </div>
@@ -452,7 +474,7 @@ export default function TableSession() {
                 <span className="font-medium text-text-primary">₹{gstAmount}</span>
               </div>
 
-              {isOfferApplied && (
+              {isOfferApplied && discount > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-text-secondary flex items-center gap-1.5">
                     Offer discount
@@ -472,6 +494,9 @@ export default function TableSession() {
                   ₹{grandTotal}
                 </span>
               </div>
+              <p className="text-[11px] text-text-muted text-center pt-3 border-t border-dashed border-border-light/60 mt-3">
+                Please pay at counter when you finish dining. Restaurant staff will close the session.
+              </p>
             </div>
           </div>
         </>

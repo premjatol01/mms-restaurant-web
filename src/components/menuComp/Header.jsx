@@ -4,9 +4,10 @@ import React from "react";
 import { Heart, ShoppingBag, MapPin } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatTableName } from "@/utils/formatTableName";
 
 export default function Header() {
-  const { totalItems, favorites, tableId, setActiveTab, verifiedRestaurant, verifiedTable } = useMenuOrder();
+  const { totalItems, favorites, tableId, tableName, setActiveTab, verifiedRestaurant, verifiedTable } = useMenuOrder();
 
   const restaurantName = verifiedRestaurant?.name || "Restaurant";
   const initials = restaurantName
@@ -17,7 +18,8 @@ export default function Header() {
     .slice(0, 2)
     .toUpperCase() || "TB";
 
-  const displayTable = verifiedTable?.tableNo || verifiedTable?.tableId || tableId;
+  const rawTable = verifiedTable?.tableName || verifiedTable?.tableNo || verifiedTable?.name || (tableName && tableName.length !== 24 ? tableName : null);
+  const displayTable = formatTableName(rawTable, "");
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 max-w-md mx-auto bg-surface/95 backdrop-blur-xl border-b border-border-light">
@@ -52,7 +54,7 @@ export default function Header() {
           {displayTable && (
             <div className="flex items-center gap-1 bg-success-light text-primary text-[11px] font-bold px-2.5 py-1.5 rounded-full border border-primary/20">
               <MapPin size={12} />
-              <span>Table {displayTable}</span>
+              <span>{displayTable}</span>
             </div>
           )}
 

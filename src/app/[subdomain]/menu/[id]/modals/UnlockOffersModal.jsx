@@ -9,7 +9,9 @@ const UnlockOffersModal = ({ onClose }) => {
   const { mobile, setMobileNumber, sendOtp, verifyOtp, skipLogin } =
     useMenuOrder();
 
-  const [step, setStep] = useState(mobile.otpSent ? "otp" : "phone");
+  const [step, setStep] = useState(
+    mobile.otpSent && mobile.number ? "otp" : "phone"
+  );
   const [otpValue, setOtpValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -26,17 +28,27 @@ const UnlockOffersModal = ({ onClose }) => {
     setStep("otp");
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     setSubmitting(true);
-    const result = verifyOtp(otpValue);
-    setSubmitting(false);
+    try {
+      const result = await verifyOtp(otpValue);
+      setSubmitting(false);
 
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
+      if (!result.ok) {
+        toast.error(result.error || "Verification failed");
+        return;
+      }
+      const isRepeat = result.data?.customer?.isRepeatCustomer || (result.data?.customer?.totalVisits > 1);
+      if (isRepeat) {
+        toast.success(`Welcome back! You've visited ${result.data?.customer?.totalVisits} times. Offers unlocked!`);
+      } else {
+        toast.success("Welcome! Your table session is linked & offers unlocked.");
+      }
+      onClose?.();
+    } catch {
+      setSubmitting(false);
+      toast.error("Something went wrong during verification.");
     }
-    toast.success("You're in! Offers unlocked for this table.");
-    onClose?.();
   };
 
   const handleSkip = () => {
@@ -172,7 +184,10 @@ const UnlockOffersModal = ({ onClose }) => {
 
               <div className="flex items-center justify-between">
                 <button
-                  onClick={() => setStep("phone")}
+                  onClick={() => {
+                    setMobileNumber("");
+                    setStep("phone");
+                  }}
                   className="text-sm font-semibold text-text-muted hover:text-text-primary transition-colors"
                 >
                   Change number

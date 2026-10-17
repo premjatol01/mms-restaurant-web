@@ -2,18 +2,17 @@
 
 import React, { useMemo } from "react";
 import { Heart } from "lucide-react";
-import { menuItems } from "@/data/menuItems";
 import { useMenuOrder } from "@/store/menuOrderStore";
 import FoodCard from "@/components/menuComp/FoodCard";
 import PageHeader from "@/components/menuComp/PageHeader";
 import EmptyState from "@/components/menuComp/EmptyState";
 
 const MyFavorites = () => {
-  const { favorites, setActiveTab } = useMenuOrder();
+  const { favorites, setActiveTab, menuItems } = useMenuOrder();
 
   const favoriteItems = useMemo(
-    () => menuItems.filter((item) => favorites.includes(item.id)),
-    [favorites]
+    () => (menuItems || []).filter((item) => favorites.includes(item.id)),
+    [favorites, menuItems]
   );
 
   return (

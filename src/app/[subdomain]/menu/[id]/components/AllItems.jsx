@@ -4,27 +4,60 @@ import FoodCard from "@/components/menuComp/FoodCard";
 import EmptyState from "@/components/menuComp/EmptyState";
 import { SearchX } from "lucide-react";
 import React, { useMemo } from "react";
-import { menuItems, categories } from "@/data/menuItems";
 import { useMenuOrder } from "@/store/menuOrderStore";
 
 export default function AllItems() {
-  const { searchQuery, selectedCategoryId, setSearchQuery } = useMenuOrder();
+  const {
+    searchQuery,
+    selectedCategoryId,
+    setSearchQuery,
+    menuItems,
+    categories,
+    menuLoading,
+  } = useMenuOrder();
 
   const visible = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return menuItems.filter((item) => {
-      const matchesQuery =
-        !q ||
-        item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q);
-      const matchesCategory = q ? true : item.categoryId === selectedCategoryId;
+    return (menuItems || []).filter((item) => {
+      const title = (item.title || item.name || "").toLowerCase();
+      const desc = (item.description || "").toLowerCase();
+      const matchesQuery = !q || title.includes(q) || desc.includes(q);
+      const matchesCategory =
+        q || !selectedCategoryId
+          ? true
+          : String(item.categoryId) === String(selectedCategoryId);
       return matchesQuery && matchesCategory;
     });
-  }, [searchQuery, selectedCategoryId]);
+  }, [searchQuery, selectedCategoryId, menuItems]);
 
   const categoryName =
-    categories.find((c) => c.id === selectedCategoryId)?.name ??
-    "this category";
+    (categories || []).find(
+      (c) => String(c.id) === String(selectedCategoryId)
+    )?.name ?? "Menu";
+
+  if (menuLoading && (!menuItems || menuItems.length === 0)) {
+    return (
+      <section>
+        <div className="flex items-end justify-between mb-3">
+          <div className="h-5 w-28 bg-surface-soft rounded-lg animate-pulse" />
+          <div className="h-5 w-14 bg-surface-soft rounded-full animate-pulse" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map((n) => (
+            <div
+              key={n}
+              className="bg-surface rounded-2xl p-3 border border-border-light space-y-2.5 animate-pulse"
+            >
+              <div className="w-full aspect-[4/3] bg-surface-soft rounded-xl" />
+              <div className="h-4 bg-surface-soft rounded w-3/4" />
+              <div className="h-3 bg-surface-soft rounded w-1/2" />
+              <div className="h-8 bg-surface-soft rounded-xl w-full mt-2" />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section>

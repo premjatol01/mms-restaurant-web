@@ -30,11 +30,7 @@ function MenuPageContent() {
   const searchParams = useSearchParams();
   const { activeTab, setActiveTab, setTableId } = useMenuOrder();
 
-  useEffect(() => {
-    if (params?.id) {
-      setTableId(params.id);
-    }
-  }, [params?.id, setTableId]);
+
 
   // URL → Store only. Runs on mount and when the browser URL changes
   // (e.g. user hits Back/Forward, or the Footer pushes a new URL).

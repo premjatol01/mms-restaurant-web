@@ -3,21 +3,21 @@
 import FoodCard from "@/components/menuComp/FoodCard";
 import { Flame } from "lucide-react";
 import React, { useMemo } from "react";
-import { bestsellerItems } from "@/data/menuItems";
 import { useMenuOrder } from "@/store/menuOrderStore";
 
 export default function PopularItems() {
-  const { searchQuery } = useMenuOrder();
+  const { searchQuery, bestsellerItems } = useMenuOrder();
 
   const visible = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return bestsellerItems;
-    return bestsellerItems.filter(
-      (item) =>
-        item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q)
-    );
-  }, [searchQuery]);
+    const items = bestsellerItems || [];
+    if (!q) return items;
+    return items.filter((item) => {
+      const title = (item.title || item.name || "").toLowerCase();
+      const desc = (item.description || "").toLowerCase();
+      return title.includes(q) || desc.includes(q);
+    });
+  }, [searchQuery, bestsellerItems]);
 
   if (visible.length === 0) return null;
 

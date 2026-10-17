@@ -3,7 +3,6 @@
 import React from "react";
 import { Plus, Minus, ShoppingBag } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
-import { getItemById } from "@/data/menuItems";
 import { motion, AnimatePresence } from "framer-motion";
 
 /**
@@ -11,10 +10,26 @@ import { motion, AnimatePresence } from "framer-motion";
  * combo = { id, title, badge, itemIds, price, mrp, imageUrl }
  */
 export default function ComboCard({ combo, currency = "₹" }) {
-  const { getQuantity, addItem, decrement } = useMenuOrder();
+  const { getQuantity, addItem, decrement, getItemById } = useMenuOrder();
 
-  // Resolve item objects once
-  const items = combo.itemIds.map((id) => getItemById(id)).filter(Boolean);
+  // Resolve item objects (handling either populated objects or ID references)
+  const rawItems = Array.isArray(combo.itemIds) ? combo.itemIds : [];
+  const items = rawItems
+    .map((itemOrId) => {
+      if (typeof itemOrId === "object" && itemOrId !== null) {
+        return {
+          id: itemOrId._id || itemOrId.id,
+          title: itemOrId.name || itemOrId.title,
+        };
+      }
+      return getItemById ? getItemById(itemOrId) : null;
+    })
+    .filter(Boolean);
+
+  const comboDescription =
+    items.length > 0
+      ? items.map((i) => i.title).join(", ")
+      : combo.description || "";
 
   // Treat the combo as a single cart "item" keyed by combo.id
   const comboCartItem = {
@@ -23,8 +38,7 @@ export default function ComboCard({ combo, currency = "₹" }) {
     price: combo.price,
     mrp: combo.mrp,
     imageUrl: combo.imageUrl,
-    // description for order history / table session
-    description: items.map((i) => i.title).join(", "),
+    description: comboDescription,
   };
 
   const quantity = getQuantity(combo.id);
@@ -63,22 +77,30 @@ export default function ComboCard({ combo, currency = "₹" }) {
           )}
         </div>
 
-        {/* Includes label */}
-        <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wide">
-          Includes:
-        </p>
+        {/* Includes label / chips */}
+        {items.length > 0 && (
+          <>
+            <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wide">
+              Includes:
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {items.map((item, idx) => (
+                <span
+                  key={item.id || idx}
+                  className="text-[10px] text-text-secondary bg-surface-soft border border-border-light px-1.5 py-0.5 rounded-md leading-tight"
+                >
+                  {item.title}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
 
-        {/* Item chips */}
-        <div className="flex flex-wrap gap-1">
-          {items.map((item) => (
-            <span
-              key={item.id}
-              className="text-[10px] text-text-secondary bg-surface-soft border border-border-light px-1.5 py-0.5 rounded-md leading-tight"
-            >
-              {item.title}
-            </span>
-          ))}
-        </div>
+        {items.length === 0 && combo.description && (
+          <p className="text-[11px] text-text-muted line-clamp-2">
+            {combo.description}
+          </p>
+        )}
 
         {/* Price row + Add button */}
         <div className="flex items-center justify-between mt-auto pt-1 gap-2">

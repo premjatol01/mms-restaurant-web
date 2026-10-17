@@ -14,8 +14,17 @@ export default function PageHeader({
   subtitle,
   showBack = true,
   trailing,
+  onBack,
 }) {
   const { setActiveTab } = useMenuOrder();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      setActiveTab("Home");
+    }
+  };
 
   return (
     <div className="flex items-center justify-between gap-3 mb-5">
@@ -23,8 +32,8 @@ export default function PageHeader({
         {showBack && (
           <button
             type="button"
-            onClick={() => setActiveTab("Home")}
-            aria-label="Back to home"
+            onClick={handleBack}
+            aria-label="Back"
             className="shrink-0 w-10 h-10 rounded-2xl bg-surface border border-border-light shadow-sm flex items-center justify-center text-text-secondary active:scale-90 hover:bg-surface-soft transition-all"
           >
             <ChevronLeft size={18} strokeWidth={2.5} />

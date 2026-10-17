@@ -19,6 +19,7 @@ import { useMenuOrder } from "@/store/menuOrderStore";
 import PageHeader from "@/components/menuComp/PageHeader";
 import EmptyState from "@/components/menuComp/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatTableName } from "@/utils/formatTableName";
 
 function OrderItem({ item, onIncrement, onDecrement, onRemove }) {
   return (
@@ -93,6 +94,8 @@ const Cart = () => {
 
   const {
     tableId,
+    tableName,
+    verifiedTable,
     cartItems,
     subtotal,
     offerDiscount,
@@ -108,8 +111,12 @@ const Cart = () => {
     removeItem,
     placeOrder,
     mobile,
-    activeOrder
+    activeOrder,
+    isSubmittingOrder,
   } = useMenuOrder();
+
+  const rawTable = verifiedTable?.tableName || verifiedTable?.tableNo || verifiedTable?.name || (tableName && tableName.length !== 24 ? tableName : null);
+  const displayTableName = formatTableName(rawTable, "Table");
 
   // If no offer is selected, check eligibility and auto-suggest the best qualified offer
   useEffect(() => {
@@ -142,8 +149,12 @@ const Cart = () => {
       .catch(() => {});
   }, [subdomain, cartItems.length, appliedOffer, subtotal, activeOrder?.total, mobile?.verified, mobile?.number, setAppliedOffer]);
 
-  const handlePlaceOrder = () => {
-    const result = placeOrder();
+  const handlePlaceOrder = async () => {
+    const result = await placeOrder({
+      subdomain,
+      tableId: params?.id || tableId,
+      mobile: mobile?.verified ? mobile.number : (mobile?.number || null),
+    });
     if (!result.ok) {
       toast.error(result.error ?? "Couldn't place the order");
       return;
@@ -171,7 +182,7 @@ const Cart = () => {
         }
         trailing={
           <div className="flex items-center gap-1 bg-success-light text-primary text-[11px] font-bold px-2.5 py-1.5 rounded-full">
-            <span>Table {tableId ?? "05"}</span>
+            <span>{displayTableName}</span>
           </div>
         }
       />
@@ -364,9 +375,10 @@ const Cart = () => {
             <button
               type="button"
               onClick={handlePlaceOrder}
-              className="w-full bg-primary hover:bg-primary-hover active:scale-[0.98] text-text-on-primary font-bold rounded-xl py-4 flex items-center justify-between px-6 transition-all shadow-lg shadow-primary/20"
+              disabled={isSubmittingOrder}
+              className="w-full bg-primary hover:bg-primary-hover active:scale-[0.98] disabled:opacity-75 disabled:cursor-not-allowed text-text-on-primary font-bold rounded-xl py-4 flex items-center justify-between px-6 transition-all shadow-lg shadow-primary/20"
             >
-              <span>Place order</span>
+              <span>{isSubmittingOrder ? "Placing order..." : "Place order"}</span>
               <span className="font-extrabold">₹{finalTotal}</span>
             </button>
           </div>

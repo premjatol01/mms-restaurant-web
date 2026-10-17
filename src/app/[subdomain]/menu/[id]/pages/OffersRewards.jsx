@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   Tag,
   CheckCircle,
@@ -80,7 +80,10 @@ const getFallbackOffers = (mobile, tableSpend, isTuesday, hasQualifyingPastOrder
 
 const OffersRewards = () => {
   const params = useParams();
-  const subdomain = params?.subdomain;
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const {
     mobile,
     subtotal,
@@ -91,77 +94,168 @@ const OffersRewards = () => {
     appliedOffer,
     isOfferApplied,
     setAppliedOffer,
-    setActiveTab
+    setActiveTab,
+    verifiedRestaurant,
   } = useMenuOrder();
+
+  const subdomain = params?.subdomain || verifiedRestaurant?.subdomain;
 
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const tableSpend = (activeOrder?.total ?? 0) + subtotal;
-  const hasQualifyingPastOrder = orderHistory.length > 0 && orderHistory.some((o) => (o.total ?? 0) >= 1000);
+  const hasQualifyingPastOrder =
+    (orderHistory || []).length > 0 &&
+    orderHistory.some((o) => (o?.total ?? 0) >= 1000);
   const isTuesday = new Date().getDay() === 2;
 
-  const fetchAndCheckOffers = useCallback(async () => {
-    setLoading(true);
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  // Build a stable fingerprint of cart items by ID, quantity, and price
+  const cartFingerprint = useMemo(() => {
+    return (cartItems || [])
+      .map((i) => `${i.id || i._id}:${i.quantity}:${i.price}`)
+      .sort()
+      .join("|");
+  }, [cartItems]);
 
-    try {
-      // Call public check-eligibility endpoint
-      const res = await fetch(`${apiUrl}/public/offers/check-eligibility`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          restaurantId: subdomain,
-          mobile: mobile?.verified ? mobile.number : null,
-          currentOrderTotal: tableSpend,
-          items: cartItems || []
-        })
-      });
+  // Composite key representing the exact state of order, cart, session, and customer verification
+  const orderKey = useMemo(() => {
+    const orderId = activeOrder?.id || activeOrder?.sessionId || "no-order";
+    const orderStatus = activeOrder?.status || "none";
+    const mobileKey = mobile?.verified ? (mobile.number || "verified") : "unverified";
+    return `${subdomain}_${mobileKey}_${tableSpend}_${orderId}_${orderStatus}_${cartFingerprint}`;
+  }, [
+    subdomain,
+    mobile?.verified,
+    mobile?.number,
+    tableSpend,
+    activeOrder?.id,
+    activeOrder?.sessionId,
+    activeOrder?.status,
+    cartFingerprint,
+  ]);
 
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-          setOffers(
-            json.data.map((offer) => ({
-              ...offer,
-              discountText: getDiscountText(offer)
-            }))
-          );
-          setLoading(false);
-          return;
-        }
+  const isFetchingRef = useRef(false);
+  const lastCheckedKeyRef = useRef("");
+
+  const fetchAndCheckOffers = useCallback(
+    async (isManualRefresh = false) => {
+      if (!subdomain) return;
+      // Skip if this exact order state has already been evaluated, unless user clicked manual refresh
+      if (!isManualRefresh && lastCheckedKeyRef.current === orderKey) {
+        return;
       }
+      if (isFetchingRef.current) return;
 
-      // Fallback: If no server offers found or API returned empty list, try GET /public/offers/:id
-      const publicRes = await fetch(`${apiUrl}/public/offers/${subdomain}`);
-      if (publicRes.ok) {
-        const pubJson = await publicRes.json();
-        if (pubJson.success && Array.isArray(pubJson.data) && pubJson.data.length > 0) {
-          setOffers(
-            pubJson.data.map((offer) => ({
-              ...offer,
-              discountText: getDiscountText(offer),
-              isEligible: false,
-              eligibilityText: offer.terms || "Check order conditions to unlock."
-            }))
-          );
-          setLoading(false);
-          return;
+      isFetchingRef.current = true;
+      lastCheckedKeyRef.current = orderKey;
+      setLoading(true);
+
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+      try {
+        // Call public check-eligibility endpoint
+        const res = await fetch(`${apiUrl}/public/offers/check-eligibility`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            restaurantId: subdomain,
+            mobile: mobile?.verified ? mobile.number : null,
+            currentOrderTotal: tableSpend,
+            items: (cartItems || []).map((i) => ({
+              id: i.id || i._id,
+              name: i.name || i.title,
+              price: i.price,
+              quantity: i.quantity,
+            })),
+          }),
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            setOffers(
+              json.data.map((offer) => ({
+                ...offer,
+                discountText: getDiscountText(offer),
+              }))
+            );
+            setLoading(false);
+            return;
+          }
         }
+
+        // Fallback: If no server offers found, try GET /public/offers/:id
+        const publicRes = await fetch(
+          `${apiUrl}/public/offers/${encodeURIComponent(subdomain)}`
+        );
+        if (publicRes.ok) {
+          const pubJson = await publicRes.json();
+          if (
+            pubJson.success &&
+            Array.isArray(pubJson.data) &&
+            pubJson.data.length > 0
+          ) {
+            setOffers(
+              pubJson.data.map((offer) => ({
+                ...offer,
+                discountText: getDiscountText(offer),
+                isEligible: false,
+                eligibilityText:
+                  offer.terms || "Check order conditions to unlock.",
+              }))
+            );
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Final fallback to mock offers
+        setOffers(
+          getFallbackOffers(
+            mobile,
+            tableSpend,
+            isTuesday,
+            hasQualifyingPastOrder
+          )
+        );
+      } catch (err) {
+        console.warn("Failed checking offer eligibility:", err);
+        setOffers(
+          getFallbackOffers(
+            mobile,
+            tableSpend,
+            isTuesday,
+            hasQualifyingPastOrder
+          )
+        );
+      } finally {
+        setLoading(false);
+        isFetchingRef.current = false;
       }
+    },
+    [
+      subdomain,
+      orderKey,
+      mobile,
+      tableSpend,
+      cartItems,
+      isTuesday,
+      hasQualifyingPastOrder,
+    ]
+  );
 
-      // Final fallback to mock offers
-      setOffers(getFallbackOffers(mobile, tableSpend, isTuesday, hasQualifyingPastOrder));
-    } catch {
-      setOffers(getFallbackOffers(mobile, tableSpend, isTuesday, hasQualifyingPastOrder));
-    } finally {
-      setLoading(false);
-    }
-  }, [subdomain, mobile?.verified, mobile?.number, tableSpend, cartItems, isTuesday, hasQualifyingPastOrder]);
-
+  // Trigger evaluation only on mount or when order state updates
   useEffect(() => {
-    fetchAndCheckOffers();
+    fetchAndCheckOffers(false);
   }, [fetchAndCheckOffers]);
+
+  const handleBack = () => {
+    setActiveTab("Home");
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set("tab", "home");
+    router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+  };
 
   return (
     <div className="px-4 pt-4 pb-28 space-y-4">
@@ -169,11 +263,12 @@ const OffersRewards = () => {
         <PageHeader
           title="Offers & Rewards"
           subtitle="Automatically calculated for your order"
-          showBack={false}
+          showBack={true}
+          onBack={handleBack}
         />
         <button
           type="button"
-          onClick={fetchAndCheckOffers}
+          onClick={() => fetchAndCheckOffers(true)}
           disabled={loading}
           className="p-2 text-text-muted hover:text-primary transition-colors active:scale-95 rounded-full hover:bg-surface-soft"
           title="Refresh offers"

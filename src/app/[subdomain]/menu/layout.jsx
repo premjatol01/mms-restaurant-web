@@ -8,6 +8,8 @@ import Header from "@/components/menuComp/Header";
 import TableSessionError from "@/components/menuComp/TableSessionError";
 import { useMenuOrder, useMenuOrderStore } from "@/store/menuOrderStore";
 import UnlockOffersModal from "./[id]/modals/UnlockOffersModal";
+import { connectTableSocket, disconnectTableSocket } from "@/services/socket";
+import { toast } from "sonner";
 
 export default function MenuLayout({ children }) {
   const params = useParams();
@@ -68,6 +70,7 @@ export default function MenuLayout({ children }) {
       } else {
         setError(null);
         setVerifiedSession(json.data);
+        useMenuOrderStore.getState().fetchMenuData(subdomain);
       }
     } catch (err) {
       console.error("Verification network error:", err);
@@ -92,6 +95,50 @@ export default function MenuLayout({ children }) {
   useEffect(() => {
     verifyTable();
   }, [verifyTable]);
+
+  // Real-time WebSocket connection to the table room
+  useEffect(() => {
+    const tableId = params?.id;
+    if (!tableId || error) return;
+
+    const resolvedTableId =
+      useMenuOrderStore.getState().verifiedTable?.tableId ||
+      useMenuOrderStore.getState().verifiedTable?.id ||
+      useMenuOrderStore.getState().verifiedTable?._id ||
+      tableId;
+
+    connectTableSocket(resolvedTableId, {
+      onSessionUpdated: (data) => {
+        if (data?.session && data?.orders) {
+          useMenuOrderStore
+            .getState()
+            .updateLiveSession(data.session, data.orders);
+        }
+      },
+      onCustomerSynced: (data) => {
+        if (data?.customerMobile) {
+          useMenuOrderStore.getState().handleCustomerSynced(data);
+          toast.success("Mobile number verified & linked to this table!");
+        }
+      },
+      onSessionCompleted: () => {
+        toast.info(
+          "Your table session has been settled at the counter. Thank you for dining with us!"
+        );
+        useMenuOrderStore.getState().endLiveSession();
+      },
+    });
+
+    // Fallback sync every 25 seconds for reconnect resilience
+    const fallbackInterval = setInterval(() => {
+      useMenuOrderStore.getState().pollTableSession(params?.subdomain, tableId);
+    }, 25000);
+
+    return () => {
+      clearInterval(fallbackInterval);
+      disconnectTableSocket(resolvedTableId);
+    };
+  }, [params?.subdomain, params?.id, error]);
 
   if (loading) {
     return (

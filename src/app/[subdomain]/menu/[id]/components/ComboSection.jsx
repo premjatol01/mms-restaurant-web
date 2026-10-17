@@ -2,11 +2,13 @@
 
 import React from "react";
 import { Layers2 } from "lucide-react";
-import { comboOrders } from "@/data/menuItems";
+import { useMenuOrder } from "@/store/menuOrderStore";
 import ComboCard from "./ComboCard";
 
 export default function ComboSection() {
-  if (!comboOrders || comboOrders.length === 0) return null;
+  const { combos } = useMenuOrder();
+
+  if (!combos || combos.length === 0) return null;
 
   return (
     <section className="space-y-3">
@@ -27,7 +29,7 @@ export default function ComboSection() {
 
       {/* Cards — each is full width */}
       <div className="space-y-3">
-        {comboOrders.map((combo) => (
+        {combos.map((combo) => (
           <ComboCard key={combo.id} combo={combo} />
         ))}
       </div>
