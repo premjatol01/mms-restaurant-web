@@ -5,9 +5,22 @@ import { Heart, ShoppingBag, MapPin } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatTableName } from "@/utils/formatTableName";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 export default function Header() {
   const { totalItems, favorites, tableId, tableName, setActiveTab, verifiedRestaurant, verifiedTable } = useMenuOrder();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const handleNav = (tab) => {
+    setActiveTab(tab);
+    if (pathname) {
+      const newParams = new URLSearchParams(searchParams?.toString() || "");
+      newParams.set("tab", tab.toLowerCase());
+      router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+    }
+  };
 
   const restaurantName = verifiedRestaurant?.name || "Restaurant";
   const initials = restaurantName
@@ -60,7 +73,7 @@ export default function Header() {
 
           {/* Favorites */}
           <button
-            onClick={() => setActiveTab("Favorites")}
+            onClick={() => handleNav("Favorites")}
             className="relative w-10 h-10 rounded-full bg-surface-soft flex items-center justify-center text-text-secondary active:scale-95 transition-transform"
             aria-label="Favorites"
           >
@@ -81,7 +94,7 @@ export default function Header() {
 
           {/* Cart */}
           <button
-            onClick={() => setActiveTab("Cart")}
+            onClick={() => handleNav("Cart")}
             className="relative w-10 h-10 rounded-full bg-surface-soft flex items-center justify-center text-text-secondary active:scale-95 transition-transform"
             aria-label="Cart"
           >

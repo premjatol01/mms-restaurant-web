@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   ChevronRight,
@@ -90,6 +90,9 @@ function OrderItem({ item, onIncrement, onDecrement, onRemove }) {
 
 const Cart = () => {
   const params = useParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const subdomain = params?.subdomain;
 
   const {
@@ -171,6 +174,15 @@ const Cart = () => {
     return `${appliedOffer.benefit?.value || 0}% OFF`;
   };
 
+  const handleBack = () => {
+    setActiveTab("Home");
+    if (pathname) {
+      const newParams = new URLSearchParams(searchParams?.toString() || "");
+      newParams.set("tab", "home");
+      router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+    }
+  };
+
   return (
     <div className="px-4 pt-4 pb-28 space-y-4">
       <PageHeader
@@ -180,6 +192,7 @@ const Cart = () => {
             ? `${cartItems.length} item${cartItems.length > 1 ? "s" : ""} in cart`
             : "Cart is empty"
         }
+        onBack={handleBack}
         trailing={
           <div className="flex items-center gap-1 bg-success-light text-primary text-[11px] font-bold px-2.5 py-1.5 rounded-full">
             <span>{displayTableName}</span>
@@ -190,7 +203,14 @@ const Cart = () => {
       {/* History Banner */}
       <button
         type="button"
-        onClick={() => setActiveTab("History")}
+        onClick={() => {
+          setActiveTab("History");
+          if (pathname) {
+            const newParams = new URLSearchParams(searchParams?.toString() || "");
+            newParams.set("tab", "history");
+            router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+          }
+        }}
         className="w-full bg-gradient-to-br from-primary to-primary-hover rounded-2xl p-3.5 flex items-center justify-between active:scale-[0.98] transition-transform shadow-lg shadow-primary/20"
       >
         <div className="flex items-center gap-3">

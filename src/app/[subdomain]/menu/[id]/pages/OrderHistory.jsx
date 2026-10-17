@@ -6,6 +6,7 @@ import { Receipt, Plus, ClipboardList, Clock } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
 import PageHeader from "@/components/menuComp/PageHeader";
 import EmptyState from "@/components/menuComp/EmptyState";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 function formatDate(iso) {
   if (!iso) return "";
@@ -79,10 +80,22 @@ function OrderCard({ order, onReorder }) {
 
 const OrderHistory = () => {
   const { orderHistory, reorder, setActiveTab } = useMenuOrder();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const handleReorder = (order) => {
     reorder(order);
     toast.success("Added to your cart");
+  };
+
+  const handleBack = () => {
+    setActiveTab("Cart");
+    if (pathname) {
+      const newParams = new URLSearchParams(searchParams?.toString() || "");
+      newParams.set("tab", "cart");
+      router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+    }
   };
 
   return (
@@ -92,6 +105,7 @@ const OrderHistory = () => {
         subtitle={`${orderHistory.length} previous order${
           orderHistory.length === 1 ? "" : "s"
         }`}
+        onBack={handleBack}
       />
 
       {orderHistory.length === 0 ? (

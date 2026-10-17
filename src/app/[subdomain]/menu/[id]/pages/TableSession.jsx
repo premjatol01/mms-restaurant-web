@@ -22,6 +22,7 @@ import PageHeader from "@/components/menuComp/PageHeader";
 import EmptyState from "@/components/menuComp/EmptyState";
 import { motion } from "framer-motion";
 import { formatTableName } from "@/utils/formatTableName";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 const APPLIED_PROMO = "WELCOME10";
 const PROMO_RATE = 0.1;
@@ -76,6 +77,10 @@ export default function TableSession() {
     openOffersModal,
   } = useMenuOrder();
 
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const rawTable = verifiedTable?.tableName || verifiedTable?.tableNo || verifiedTable?.name || (tableName && tableName.length !== 24 ? tableName : null);
   const displayTableName = formatTableName(rawTable, "Table");
 
@@ -88,7 +93,7 @@ export default function TableSession() {
   // Real consolidated items total for this active table session
   const itemTotal = currentSession?.subtotal ?? activeOrder?.subtotal ?? activeOrder?.total ?? 0;
   
-  const gstAmount = Math.round(itemTotal * 0.05); // 5% GST
+  const gstAmount = currentSession?.gst ?? Math.round(itemTotal * 0.05); // 5% GST
   
   const offerToUse = activeOrder?.appliedOffer || appliedOffer;
   const promoName = offerToUse ? offerToUse.name : "Special Offer";
@@ -102,7 +107,9 @@ export default function TableSession() {
         : Math.round((itemTotal * (Number(offerToUse.benefit?.value) || 0)) / 100))
     : (activeOrder?.discount || currentSession?.discount || 0);
 
-  const grandTotal = Math.max(itemTotal + gstAmount - discount, 0);
+  const grandTotal = (currentSession?.total !== undefined && currentSession?.total !== null && !isOfferApplied)
+    ? currentSession.total
+    : Math.max(itemTotal + gstAmount - discount, 0);
   const isMobileRequired = isOfferApplied;
 
   const handleApplyPromo = () => {
@@ -504,7 +511,15 @@ export default function TableSession() {
 
       {/* Rate Experience */}
       <button
-        onClick={() => setActiveTab("Rating")}
+        type="button"
+        onClick={() => {
+          setActiveTab("Rating");
+          if (pathname) {
+            const newParams = new URLSearchParams(searchParams?.toString() || "");
+            newParams.set("tab", "rating");
+            router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+          }
+        }}
         className="w-full bg-surface rounded-2xl p-4 border border-border-light shadow-sm flex items-center gap-3 active:scale-[0.98] transition-transform"
       >
         <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">

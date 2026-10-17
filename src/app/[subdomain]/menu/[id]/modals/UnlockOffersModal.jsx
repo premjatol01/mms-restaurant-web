@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { X, ChevronRight, ShieldCheck } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
 
 const UnlockOffersModal = ({ onClose }) => {
-  const { mobile, setMobileNumber, sendOtp, verifyOtp, skipLogin } =
+  const { mobile, setMobileNumber, sendOtp, verifyOtp, skipLogin, offersModalContext } =
     useMenuOrder();
 
   const [step, setStep] = useState(
@@ -14,6 +14,15 @@ const UnlockOffersModal = ({ onClose }) => {
   );
   const [otpValue, setOtpValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Prevent background page scrolling while modal is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
 
   const handleContinue = () => {
     setSubmitting(true);
@@ -42,7 +51,7 @@ const UnlockOffersModal = ({ onClose }) => {
       if (isRepeat) {
         toast.success(`Welcome back! You've visited ${result.data?.customer?.totalVisits} times. Offers unlocked!`);
       } else {
-        toast.success("Welcome! Your table session is linked & offers unlocked.");
+        toast.success("Welcome! Your mobile number is verified.");
       }
       onClose?.();
     } catch {
@@ -56,21 +65,26 @@ const UnlockOffersModal = ({ onClose }) => {
     onClose?.();
   };
 
+  const isReviewContext = offersModalContext === "review";
+
   return (
-    // 1. OVERLAY WRAPPER: Covers the full screen, adds dark 20% bg and blur
-    <div className="absolute inset-0 z-50 flex items-end justify-center bg-black/20 backdrop-blur-sm">
-      
-      {/* 2. YOUR ORIGINAL MODAL CONTENT: (Changed absolute to relative so it sits inside the flex wrapper) */}
-      <div className="relative bottom-0 z-99 w-full max-w-md rounded-t-[32px] bg-surface p-6 pb-8 shadow-lg animate-in slide-in-from-bottom-8 duration-300">
-        
+    // Fixed viewport overlay: pins bottom sheet to screen bottom on mobile and prevents scrolling upside
+    <div
+      className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 backdrop-blur-sm"
+      onClick={handleSkip}
+    >
+      <div
+        className="relative w-full max-w-md rounded-t-[32px] bg-surface p-6 pb-8 shadow-2xl animate-in slide-in-from-bottom-8 duration-300 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Top Drag Handle Indicator */}
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-border rounded-full sm:hidden" />
+        <div className="w-12 h-1.5 bg-border rounded-full mx-auto mb-3 sm:hidden" />
 
         {/* Close Button */}
         <button
           onClick={handleSkip}
           aria-label="Close"
-          className="absolute -top-3.5 right-5 p-2 text-text-muted hover:text-text-primary hover:bg-surface-soft rounded-full transition-colors bg-surface hover:shadow-md"
+          className="absolute top-4 right-4 p-2 text-text-muted hover:text-text-primary hover:bg-surface-soft rounded-full transition-colors"
         >
           <X size={20} strokeWidth={1.5} />
         </button>
@@ -78,16 +92,17 @@ const UnlockOffersModal = ({ onClose }) => {
         {step === "phone" ? (
           <>
             {/* Content Section */}
-            <div className="mb-8">
+            <div className="mb-8 pr-8">
               <h3 className="text-[11px] font-bold text-primary uppercase tracking-widest mb-3">
-                Unlock Table Offers
+                {isReviewContext ? "Verify Your Number" : "Unlock Table Offers"}
               </h3>
               <h2 className="text-2xl leading-tight font-medium text-text-primary mb-4">
-                Get offers made for you
+                {isReviewContext ? "Verify to submit review" : "Get offers made for you"}
               </h2>
               <p className="text-text-muted text-sm leading-relaxed">
-                Login with your mobile number to apply offers and get order
-                updates on WhatsApp.
+                {isReviewContext
+                  ? "Please verify your mobile number on WhatsApp to submit your table review."
+                  : "Login with your mobile number to apply offers and get order updates on WhatsApp."}
               </p>
             </div>
 
@@ -119,7 +134,7 @@ const UnlockOffersModal = ({ onClose }) => {
                 disabled={submitting}
                 className="w-full bg-primary hover:bg-primary-hover disabled:opacity-70 text-text-on-primary font-bold rounded-xl py-4 px-6 flex items-center justify-center transition-colors"
               >
-                <span className="text-[15px]">Continue with WhatsApp</span>
+                <span className="text-[15px]">{isReviewContext ? "Verify with WhatsApp" : "Continue with WhatsApp"}</span>
                 <ChevronRight size={18} className="ml-1" strokeWidth={3} />
               </button>
 
@@ -134,7 +149,7 @@ const UnlockOffersModal = ({ onClose }) => {
         ) : (
           <>
             {/* OTP Step */}
-            <div className="mb-8">
+            <div className="mb-8 pr-8">
               <h3 className="text-[11px] font-bold text-primary uppercase tracking-widest mb-3">
                 Verify your number
               </h3>

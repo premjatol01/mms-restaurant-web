@@ -12,23 +12,6 @@ const initialMobile = {
   verified: false,
 };
 
-const seedReviews = [
-  {
-    id: "r-seed-1",
-    name: "Aarav Mehta",
-    rating: 5,
-    comment: "Beautiful flavours and the paneer tikka was outstanding.",
-    createdAt: "2026-09-16T10:00:00.000Z",
-  },
-  {
-    id: "r-seed-2",
-    name: "Priya S.",
-    rating: 4,
-    comment: "Lovely table service, generous portions and a warm atmosphere.",
-    createdAt: "2026-09-11T10:00:00.000Z",
-  },
-];
-
 function sanitizeOrderHistory(history) {
   if (!Array.isArray(history)) return [];
   const seen = new Set();
@@ -148,6 +131,7 @@ function deriveActiveOrder(session, orders, acknowledgedOrderIds = []) {
     items: liveItems,
     subtotal: session.subtotal || session.total,
     discount: session.discount || 0,
+    gst: session.gst ?? Math.round((session.subtotal || 0) * 0.05),
     total: session.total,
     appliedOffer: orders[0]?.appliedOffer || null,
     status: overallStatus,
@@ -190,11 +174,13 @@ export const useMenuOrderStore = create(
       menuLoading: false,
 
       offersModalOpen: false,
+      offersModalContext: "offers",
       mobile: initialMobile,
       appliedOffer: null,
       isOfferApplied: false,
 
-      reviews: seedReviews,
+      reviews: [],
+      reviewsLoading: false,
 
       // ---------------------------------------------------------------
       // Offer actions
@@ -563,8 +549,11 @@ export const useMenuOrderStore = create(
       // ---------------------------------------------------------------
       // Offers modal / mobile OTP login
       // ---------------------------------------------------------------
-      openOffersModal: () => set({ offersModalOpen: true }),
-      closeOffersModal: () => set({ offersModalOpen: false }),
+      openOffersModal: (context = "offers") =>
+        set({ offersModalOpen: true, offersModalContext: context }),
+      closeOffersModal: () =>
+        set({ offersModalOpen: false, offersModalContext: "offers" }),
+      setOffersModalContext: (context) => set({ offersModalContext: context }),
 
       setMobileNumber: (number) =>
         set((state) => ({ mobile: { ...state.mobile, number } })),
@@ -801,19 +790,74 @@ export const useMenuOrderStore = create(
       // ---------------------------------------------------------------
       // Reviews
       // ---------------------------------------------------------------
-      submitReview: ({ name, rating, comment }) =>
-        set((state) => ({
-          reviews: [
-            {
-              id: `r-${Date.now()}`,
-              name: name?.trim() || "Guest",
-              rating,
-              comment: comment?.trim() || "",
-              createdAt: new Date().toISOString(),
-            },
-            ...state.reviews,
-          ],
-        })),
+      fetchPublicReviews: async (subdomain) => {
+        if (!subdomain) return;
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        try {
+          const res = await fetch(`${apiUrl}/reviews/public/${subdomain}`);
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            set({ reviews: json.data });
+          }
+        } catch (err) {
+          console.warn("Could not fetch public reviews:", err);
+        }
+      },
+
+      submitReview: async ({ name, rating, comment, mobileNumber, subdomain }) => {
+        const state = get();
+        const resolvedSubdomain = subdomain || state.verifiedRestaurant?.subdomain || (typeof window !== "undefined" ? window.location.pathname.split("/")[1] : "");
+        const resolvedMobile = mobileNumber || (state.mobile?.verified ? state.mobile.number : "");
+
+        if (!resolvedMobile) {
+          return { ok: false, error: "Mobile number is required to submit a review." };
+        }
+
+        const rawTable = state.verifiedTable?.tableName || state.verifiedTable?.tableNo || state.verifiedTable?.name || state.tableName || "";
+
+        const payload = {
+          subdomain: resolvedSubdomain,
+          restaurantId: state.verifiedRestaurant?._id || state.verifiedRestaurant?.id,
+          tableId: state.tableId || state.verifiedTable?._id || state.verifiedTable?.id,
+          tableName: rawTable,
+          sessionId: state.currentSession?._id,
+          customerName: name ? name.trim() : (state.mobile?.name || ""),
+          customerMobile: resolvedMobile,
+          rating: Number(rating),
+          comment: comment ? comment.trim() : ""
+        };
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        try {
+          const res = await fetch(`${apiUrl}/reviews/public`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const json = await res.json();
+          if (!json.success) {
+            return { ok: false, error: json.message || "Failed to submit review" };
+          }
+
+          // Prepend to local reviews for instant visual gratification
+          const newReview = {
+            id: json.data?.id || `r-${Date.now()}`,
+            name: name?.trim() || `User ${resolvedMobile.slice(-4)}`,
+            rating: Number(rating),
+            comment: comment?.trim() || "",
+            createdAt: new Date().toISOString()
+          };
+
+          set((s) => ({
+            reviews: [newReview, ...s.reviews]
+          }));
+
+          return { ok: true, data: json.data };
+        } catch (err) {
+          console.error("Error submitting review:", err);
+          return { ok: false, error: "Network error while submitting review." };
+        }
+      },
     }),
     {
       name: STORAGE_KEY,
@@ -822,17 +866,18 @@ export const useMenuOrderStore = create(
       partialize: (state) => ({
         items: state.items,
         favorites: state.favorites,
-        // mobile & orderHistory are strictly scoped to the active table session, NEVER persisted across sessions
-        reviews: state.reviews,
+        // mobile & orderHistory & reviews are strictly scoped and fetched live, NEVER persisted across sessions
         isOfferApplied: state.isOfferApplied,
         appliedOffer: state.appliedOffer,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          // Guarantee clean initial state on startup/refresh: no stale mobile or previous orders
+          // Guarantee clean initial state on startup/refresh: no stale mobile, reviews, or previous orders
           state.mobile = initialMobile;
           state.orderHistory = [];
           state.acknowledgedOrderIds = [];
+          state.reviews = [];
+          state.reviewsLoading = false;
         }
       },
     }

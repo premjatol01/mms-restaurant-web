@@ -40,9 +40,13 @@ function MenuPageContent() {
   useEffect(() => {
     const tabParam = searchParams.get("tab");
     if (!tabParam) return;
-    const matchedTab = Object.keys(TABS).find(
-      (t) => t.toLowerCase() === tabParam.toLowerCase()
-    );
+    const lower = tabParam.toLowerCase();
+    const matchedTab =
+      lower === "order"
+        ? "Cart"
+        : lower === "reviews"
+        ? "Rating"
+        : Object.keys(TABS).find((t) => t.toLowerCase() === lower);
     // Read directly from store to avoid reactivity loop
     const currentTab = useMenuOrderStore.getState().activeTab;
     if (matchedTab && matchedTab !== currentTab) {

@@ -396,6 +396,11 @@ const OffersRewards = () => {
                             setAppliedOffer(offer);
                             toast.success(`"${offer.name}" applied to your order!`);
                             setActiveTab("Cart");
+                            if (pathname) {
+                              const newParams = new URLSearchParams(searchParams?.toString() || "");
+                              newParams.set("tab", "cart");
+                              router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+                            }
                           }}
                           className="text-xs font-bold text-white bg-primary hover:bg-primary-hover px-4 py-1.5 rounded-lg active:scale-95 transition-all shadow-sm"
                         >

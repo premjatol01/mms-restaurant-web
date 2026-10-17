@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Send, ExternalLink, Star, MessageSquareQuote } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
 import PageHeader from "@/components/menuComp/PageHeader";
+import EmptyState from "@/components/menuComp/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 
 function StarPicker({ value, onChange, size = 32 }) {
@@ -64,11 +66,102 @@ function timeAgo(iso) {
 }
 
 const Rating = () => {
-  const { reviews, submitReview } = useMenuOrder();
+  const params = useParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const subdomain = params?.subdomain;
+
+  const {
+    reviews,
+    reviewsLoading,
+    submitReview,
+    fetchPublicReviews,
+    mobile,
+    openOffersModal,
+    setActiveTab,
+    verifiedRestaurant,
+  } = useMenuOrder();
 
   const [rating, setRating] = useState(0);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(mobile?.name || "");
   const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [pendingReviewSubmit, setPendingReviewSubmit] = useState(false);
+
+  // Fetch approved public reviews for this restaurant
+  useEffect(() => {
+    if (subdomain && fetchPublicReviews) {
+      fetchPublicReviews(subdomain);
+    }
+  }, [subdomain, fetchPublicReviews]);
+
+  // Keep name synced if mobile profile name is known
+  useEffect(() => {
+    if (!name && mobile?.name) {
+      setName(mobile.name);
+    }
+  }, [mobile?.name]);
+
+  const executeSubmit = async (verifiedMobileNumber) => {
+    setSubmitting(true);
+    try {
+      const res = await submitReview({
+        name,
+        rating,
+        comment,
+        mobileNumber: verifiedMobileNumber,
+        subdomain,
+      });
+
+      if (res?.ok) {
+        toast.success("Thanks for your review! It has been submitted.");
+        setRating(0);
+        setName("");
+        setComment("");
+      } else {
+        toast.error(res?.error || "Failed to submit review");
+      }
+    } catch {
+      toast.error("Failed to submit review. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // If user completed mobile verification popup after clicking submit, auto-submit!
+  useEffect(() => {
+    if (pendingReviewSubmit && mobile?.verified && mobile?.number && rating > 0 && !submitting) {
+      setPendingReviewSubmit(false);
+      executeSubmit(mobile.number);
+    }
+  }, [pendingReviewSubmit, mobile?.verified, mobile?.number, rating, submitting]);
+
+  const handleSubmit = async () => {
+    if (rating === 0) {
+      toast.error("Pick a star rating first");
+      return;
+    }
+
+    // Validate mobile number: if not verified yet, prompt via popup
+    if (!mobile?.verified || !mobile?.number) {
+      toast.info("Please verify your mobile number to submit review");
+      setPendingReviewSubmit(true);
+      openOffersModal("review");
+      return;
+    }
+
+    await executeSubmit(mobile.number);
+  };
+
+  const handleBack = () => {
+    setActiveTab("Table");
+    if (pathname) {
+      const newParams = new URLSearchParams(searchParams?.toString() || "");
+      newParams.set("tab", "table");
+      router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+    }
+  };
 
   const { average, total, distribution } = useMemo(() => {
     const total = reviews.length;
@@ -84,21 +177,13 @@ const Rating = () => {
     };
   }, [reviews]);
 
-  const handleSubmit = () => {
-    if (rating === 0) {
-      toast.error("Pick a star rating first");
-      return;
-    }
-    submitReview({ name, rating, comment });
-    toast.success("Thanks for the feedback!");
-    setRating(0);
-    setName("");
-    setComment("");
-  };
-
   return (
     <div className="px-4 pt-4 pb-28 space-y-5">
-      <PageHeader title="Reviews" subtitle="Rate your table experience" />
+      <PageHeader
+        title="Reviews"
+        subtitle="Rate your table experience"
+        onBack={handleBack}
+      />
 
       {/* Overall Rating Card */}
       <div className="bg-surface rounded-2xl p-5 border border-border-light shadow-sm">
@@ -206,16 +291,28 @@ const Rating = () => {
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={rating === 0}
+          disabled={rating === 0 || submitting}
           className="w-full mt-4 bg-primary hover:bg-primary-hover disabled:bg-border disabled:cursor-not-allowed disabled:text-text-muted active:scale-[0.98] text-text-on-primary font-bold rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/20 disabled:shadow-none"
         >
-          <Send size={16} />
-          Submit review
+          {submitting ? (
+            <span className="text-sm font-semibold">Submitting review...</span>
+          ) : (
+            <>
+              <Send size={16} />
+              Submit review
+            </>
+          )}
         </button>
       </div>
 
       {/* Reviews List */}
-      {reviews.length > 0 && (
+      {reviewsLoading ? (
+        <div className="space-y-3">
+          <div className="h-5 w-36 bg-surface-soft rounded-lg animate-pulse" />
+          <div className="h-24 bg-surface rounded-2xl border border-border-light p-4 animate-pulse" />
+          <div className="h-24 bg-surface rounded-2xl border border-border-light p-4 animate-pulse" />
+        </div>
+      ) : reviews.length > 0 ? (
         <div>
           <div className="flex items-end justify-between mb-3">
             <h2 className="text-[17px] font-bold text-text-primary tracking-tight">
@@ -230,7 +327,7 @@ const Rating = () => {
             <AnimatePresence mode="popLayout">
               {reviews.map((review, index) => (
                 <motion.div
-                  key={review.id}
+                  key={review.id || review._id || index}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.04 }}
@@ -239,17 +336,24 @@ const Rating = () => {
                   <div className="flex justify-between items-start mb-2.5">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-hover text-text-on-primary flex items-center justify-center font-bold text-sm shrink-0 shadow-sm shadow-primary/20">
-                        {review.name.charAt(0).toUpperCase()}
+                        {(review.name || "G").charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <span className="block font-bold text-sm text-text-primary truncate">
-                          {review.name}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="block font-bold text-sm text-text-primary truncate">
+                            {review.name || "Guest"}
+                          </span>
+                          {review.tableName && (
+                            <span className="text-[10px] text-text-muted font-medium bg-surface-soft px-1.5 py-0.5 rounded">
+                              {review.tableName}
+                            </span>
+                          )}
+                        </div>
                         <StaticStars rating={review.rating} size={11} />
                       </div>
                     </div>
                     <span className="text-[10px] text-text-muted shrink-0 mt-0.5">
-                      {timeAgo(review.createdAt)}
+                      {timeAgo(review.createdAt || review.submittedAt)}
                     </span>
                   </div>
 
@@ -263,11 +367,26 @@ const Rating = () => {
             </AnimatePresence>
           </div>
         </div>
+      ) : (
+        <div className="bg-surface rounded-2xl p-6 border border-border-light text-center shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-surface-soft mx-auto flex items-center justify-center mb-3">
+            <MessageSquareQuote size={22} className="text-text-muted" />
+          </div>
+          <h3 className="text-sm font-bold text-text-primary mb-1">No reviews yet</h3>
+          <p className="text-xs text-text-muted">
+            Be the first guest to share your dining experience at {verifiedRestaurant?.name || "our restaurant"}!
+          </p>
+        </div>
       )}
 
       {/* Google Review Banner */}
       <a
-        href="https://www.google.com/search?q=write+a+google+review"
+        href={
+          verifiedRestaurant?.googleReviewUrl ||
+          `https://www.google.com/search?q=${encodeURIComponent(
+            (verifiedRestaurant?.name || "restaurant") + " reviews"
+          )}`
+        }
         target="_blank"
         rel="noopener noreferrer"
         className="w-full bg-surface rounded-2xl p-4 border border-border-light shadow-sm flex items-center justify-between active:scale-[0.98] hover:bg-surface-soft/60 transition-all"
@@ -303,7 +422,7 @@ const Rating = () => {
               Review us on Google
             </h4>
             <p className="text-[11px] text-text-muted mt-0.5">
-              Help others discover Spice Garden
+              Help others discover {verifiedRestaurant?.name || "our restaurant"}
             </p>
           </div>
         </div>

@@ -4,6 +4,7 @@ import React from "react";
 import { ChevronRight, X, ShoppingBag } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 export default function FloatingCartBar() {
   const {
@@ -15,6 +16,19 @@ export default function FloatingCartBar() {
     setCartExpanded,
     setActiveTab,
   } = useMenuOrder();
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const handleViewCart = () => {
+    setActiveTab("Cart");
+    if (pathname) {
+      const newParams = new URLSearchParams(searchParams?.toString() || "");
+      newParams.set("tab", "cart");
+      router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+    }
+  };
 
   if (totalItems === 0) return null;
 
@@ -64,7 +78,7 @@ export default function FloatingCartBar() {
             <button
               type="button"
               aria-label="View cart"
-              onClick={() => setActiveTab("Cart")}
+              onClick={handleViewCart}
               className="bg-primary hover:bg-primary-hover active:scale-[0.97] text-text-on-primary text-sm font-bold py-2.5 px-4 rounded-xl flex items-center gap-1 transition-all shrink-0"
             >
               View Cart
