@@ -66,6 +66,8 @@ export default function TableSession() {
     verifiedTable,
     activeOrder, 
     sessionOrders,
+    selectedOrderId,
+    selectActiveOrder,
     currentSession,
     setActiveTab, 
     completeActiveOrder,
@@ -90,12 +92,16 @@ export default function TableSession() {
       : STEPS.findIndex((s) => s.key === activeOrder.status)
     : -1;
 
-  // Real consolidated items total for this active table session
-  const itemTotal = currentSession?.subtotal ?? activeOrder?.subtotal ?? activeOrder?.total ?? 0;
+  // Real consolidated items total for this active table session (combines all rounds)
+  const sessionItemsTotal = (sessionOrders || []).reduce(
+    (sum, o) => sum + (Number(o.subtotal) || Number(o.total) || 0),
+    0
+  );
+  const itemTotal = currentSession?.subtotal || sessionItemsTotal || activeOrder?.subtotal || activeOrder?.total || 0;
   
   const gstAmount = currentSession?.gst ?? Math.round(itemTotal * 0.05); // 5% GST
   
-  const offerToUse = activeOrder?.appliedOffer || appliedOffer;
+  const offerToUse = currentSession?.appliedOffer || appliedOffer || activeOrder?.appliedOffer;
   const promoName = offerToUse ? offerToUse.name : "Special Offer";
   const promoDescription = offerToUse?.benefit?.type === "flat"
     ? `Flat ₹${offerToUse.benefit.value} off on your order`
@@ -105,7 +111,7 @@ export default function TableSession() {
     ? (offerToUse.benefit?.type === "flat"
         ? Math.min(Number(offerToUse.benefit.value) || 0, itemTotal)
         : Math.round((itemTotal * (Number(offerToUse.benefit?.value) || 0)) / 100))
-    : (activeOrder?.discount || currentSession?.discount || 0);
+    : (currentSession?.discount || activeOrder?.discount || 0);
 
   const grandTotal = (currentSession?.total !== undefined && currentSession?.total !== null && !isOfferApplied)
     ? currentSession.total
@@ -122,7 +128,7 @@ export default function TableSession() {
   };
 
   const handleReceiveOrder = () => {
-    completeActiveOrder();
+    completeActiveOrder(activeOrder?.orderId);
     toast.success("Order acknowledged! Enjoy your meal 🍽️");
   };
 
@@ -167,14 +173,64 @@ export default function TableSession() {
             </p>
           </div>
 
+          {/* Order Round Tabs / Selector if multiple orders placed */}
+          {sessionOrders && sessionOrders.length > 1 && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+              <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider shrink-0 mr-0.5">
+                Rounds:
+              </span>
+              {sessionOrders.map((order, idx) => {
+                const isSelected = String(order._id || order.id) === String(activeOrder?.orderId);
+                const orderNum = order.orderNumber || `#${idx + 1}`;
+                const isOrderServed = (order.items || []).every(
+                  (i) => i.status === "served" || i.status === "cancelled"
+                );
+                return (
+                  <button
+                    key={order._id || idx}
+                    type="button"
+                    onClick={() => selectActiveOrder(order._id || order.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 active:scale-95 ${
+                      isSelected
+                        ? "bg-primary text-text-on-primary shadow-sm shadow-primary/20"
+                        : "bg-surface border border-border-light text-text-secondary hover:text-text-primary hover:border-primary/40"
+                    }`}
+                  >
+                    <span>Round #{idx + 1}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                        isSelected
+                          ? "bg-black/20 text-white"
+                          : isOrderServed
+                          ? "bg-success-light text-primary"
+                          : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {orderNum}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Order Card */}
           {activeOrder && (
             <div className="bg-surface rounded-2xl p-5 border border-border-light shadow-sm">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h2 className="text-base font-bold text-text-primary mb-0.5">
-                    Current order
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold text-text-primary mb-0.5">
+                      Current order
+                    </h2>
+                    {activeOrder.orderNumber && (
+                      <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                        {sessionOrders?.length > 1
+                          ? `Round #${activeOrder.roundNumber || 1} • ${activeOrder.orderNumber}`
+                          : activeOrder.orderNumber}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-text-muted">
                     {activeOrder.items.length}{" "}
                     {activeOrder.items.length === 1 ? "dish" : "dishes"}
@@ -322,13 +378,22 @@ export default function TableSession() {
               <div className="space-y-4">
                 {sessionOrders.map((order, idx) => {
                   const orderNum = order.orderNumber || idx + 1;
+                  const isSelected = String(order._id || order.id) === String(activeOrder?.orderId);
                   const isOrderServed = (order.items || []).every(
                     (i) => i.status === "served" || i.status === "cancelled"
                   );
                   const isOrderPending = (order.items || []).some((i) => i.status === "pending");
 
                   return (
-                    <div key={order._id || idx} className="border-b border-border-light pb-4 last:border-0 last:pb-0">
+                    <div
+                      key={order._id || idx}
+                      onClick={() => selectActiveOrder(order._id || order.id)}
+                      className={`cursor-pointer rounded-2xl p-3.5 border transition-all ${
+                        isSelected
+                          ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
+                          : "border-border-light bg-surface hover:border-primary/40"
+                      }`}
+                    >
                       <div className="flex justify-between items-start mb-2.5">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-bold text-text-primary">Round #{idx + 1} (Order #{orderNum})</p>
@@ -341,6 +406,11 @@ export default function TableSession() {
                           }`}>
                             {isOrderServed ? "Served" : isOrderPending ? "Received" : "Preparing"}
                           </span>
+                          {isSelected && (
+                            <span className="text-[10px] font-bold text-primary bg-primary/15 px-2 py-0.5 rounded-full">
+                              Viewing
+                            </span>
+                          )}
                         </div>
                         <span className="text-sm font-bold text-text-primary">₹{order.total}</span>
                       </div>

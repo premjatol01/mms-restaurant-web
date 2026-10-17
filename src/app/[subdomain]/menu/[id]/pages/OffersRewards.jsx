@@ -89,6 +89,7 @@ const OffersRewards = () => {
     subtotal,
     cartItems,
     activeOrder,
+    currentSession,
     orderHistory,
     openOffersModal,
     appliedOffer,
@@ -103,7 +104,7 @@ const OffersRewards = () => {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const tableSpend = (activeOrder?.total ?? 0) + subtotal;
+  const tableSpend = (currentSession?.subtotal ?? activeOrder?.total ?? 0) + subtotal;
   const hasQualifyingPastOrder =
     (orderHistory || []).length > 0 &&
     orderHistory.some((o) => (o?.total ?? 0) >= 1000);

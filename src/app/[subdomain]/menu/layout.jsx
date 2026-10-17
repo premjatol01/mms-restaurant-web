@@ -121,6 +121,11 @@ export default function MenuLayout({ children }) {
           toast.success("Mobile number verified & linked to this table!");
         }
       },
+      onFavoritesUpdated: (data) => {
+        if (data?.favorites) {
+          useMenuOrderStore.getState().handleFavoritesUpdated(data.favorites);
+        }
+      },
       onSessionCompleted: () => {
         toast.info(
           "Your table session has been settled at the counter. Thank you for dining with us!"

@@ -60,83 +60,123 @@ function deriveSessionOrderHistory(orders) {
 }
 
 /**
- * Derives a consolidated active order view from the backend session and orders.
- * Unifies all orders placed at this table by any customer during this session.
+ * Derives the active order for the Current Order section.
+ * Represents a single specific order (not all orders across the entire session).
+ * By default selects the latest in-progress order (or latest order placed),
+ * or the order specified by selectedOrderId.
  */
-function deriveActiveOrder(session, orders, acknowledgedOrderIds = []) {
-  if (!session || !orders || orders.length === 0) return null;
+function deriveActiveOrder(session, orders, acknowledgedOrderIds = [], selectedOrderId = null) {
+  if (!session || !orders || !Array.isArray(orders) || orders.length === 0) return null;
 
-  const itemsMap = new Map();
-  orders.forEach((order) => {
-    (order.items || []).forEach((item) => {
-      const liveQty = Math.max(0, (item.quantity || 0) - (item.cancelledQty || 0));
-      if (liveQty > 0) {
-        const key = item._id || item.id || item.name;
-        const existing = itemsMap.get(key);
-        if (existing) {
-          existing.quantity += liveQty;
-        } else {
-          itemsMap.set(key, {
-            id: key,
-            title: item.name || item.title,
-            name: item.name || item.title,
-            price: item.price,
-            quantity: liveQty,
-            imageUrl: item.imageUrl || "",
-            status: item.status || "pending",
-          });
-        }
-      }
-    });
+  // Filter valid live orders (ignore completely cancelled orders)
+  const validOrders = orders.filter((o) => {
+    if (!o) return false;
+    if (o.status === "cancelled") return false;
+    const hasLiveItems = (o.items || []).some(
+      (i) => Math.max(0, (i.quantity || 0) - (i.cancelledQty || 0)) > 0
+    );
+    return hasLiveItems;
   });
 
-  const liveItems = Array.from(itemsMap.values());
-  if (liveItems.length === 0) return null;
+  if (validOrders.length === 0) return null;
 
-  // Derive progress status:
-  // - If any live item is pending => "received"
-  // - If any live item is processing => "preparing"
-  // - If all live items are served:
-  //     if already acknowledged by customer => "delivered"
-  //     if not yet acknowledged => "ready"
-  let overallStatus = "ready";
-  const allOrderItems = orders
-    .flatMap((o) => o.items || [])
-    .filter((i) => (i.quantity || 0) - (i.cancelledQty || 0) > 0);
+  // Find target order
+  let targetOrder = null;
+  if (selectedOrderId) {
+    targetOrder = validOrders.find(
+      (o) => String(o._id || o.id) === String(selectedOrderId)
+    );
+  }
 
-  if (allOrderItems.some((i) => i.status === "pending")) {
-    overallStatus = "received";
-  } else if (allOrderItems.some((i) => i.status === "processing")) {
-    overallStatus = "preparing";
-  } else {
-    // Check if every order that has live items has been acknowledged
-    const unacknowledgedOrders = orders.filter((o) => {
-      const hasLiveItems = (o.items || []).some(
-        (i) => (i.quantity || 0) - (i.cancelledQty || 0) > 0
+  if (!targetOrder) {
+    // Pick the latest in-progress order (i.e. not yet fully served, or served but not acknowledged)
+    const inProgressOrders = validOrders.filter((o) => {
+      const liveItems = (o.items || []).filter(
+        (i) => Math.max(0, (i.quantity || 0) - (i.cancelledQty || 0)) > 0
       );
-      const isAcknowledged = (acknowledgedOrderIds || []).includes(String(o._id || o.id));
-      return hasLiveItems && !isAcknowledged;
+      const isServed = liveItems.length > 0 && liveItems.every((i) => i.status === "served");
+      const isAcked = (acknowledgedOrderIds || []).includes(String(o._id || o.id));
+      return liveItems.length > 0 && (!isServed || !isAcked);
     });
 
-    if (unacknowledgedOrders.length === 0 && (acknowledgedOrderIds || []).length > 0) {
-      overallStatus = "delivered";
+    if (inProgressOrders.length > 0) {
+      targetOrder = inProgressOrders[inProgressOrders.length - 1];
     } else {
-      overallStatus = "ready";
+      // If all orders are delivered/served, show the latest order placed
+      targetOrder = validOrders[validOrders.length - 1];
     }
   }
 
+  if (!targetOrder) return null;
+
+  // Extract ONLY the items belonging to this particular order
+  const orderItems = (targetOrder.items || [])
+    .filter((i) => Math.max(0, (i.quantity || 0) - (i.cancelledQty || 0)) > 0)
+    .map((item) => {
+      const liveQty = Math.max(0, (item.quantity || 0) - (item.cancelledQty || 0));
+      return {
+        id: item._id || item.id || item.menuItemId || item.name,
+        _id: item._id || item.id,
+        menuItemId: item.menuItemId,
+        title: item.name || item.title,
+        name: item.name || item.title,
+        price: Number(item.price) || 0,
+        quantity: liveQty,
+        imageUrl: item.imageUrl || "",
+        status: item.status || "pending",
+      };
+    });
+
+  if (orderItems.length === 0) return null;
+
+  // Determine timeline status for this particular order
+  let orderStatus = "ready";
+  if (orderItems.some((i) => i.status === "pending")) {
+    orderStatus = "received";
+  } else if (orderItems.some((i) => i.status === "processing")) {
+    orderStatus = "preparing";
+  } else {
+    // All items served
+    const isAcked = (acknowledgedOrderIds || []).includes(String(targetOrder._id || targetOrder.id));
+    if (isAcked) {
+      orderStatus = "delivered";
+    } else {
+      orderStatus = "ready";
+    }
+  }
+
+  // Calculate this particular order's subtotal and total
+  const orderSubtotal = targetOrder.subtotal !== undefined
+    ? Number(targetOrder.subtotal)
+    : orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
+  const orderDiscount = Number(targetOrder.discount) || 0;
+  const orderTotal = targetOrder.total !== undefined
+    ? Number(targetOrder.total)
+    : Math.max(0, orderSubtotal - orderDiscount);
+
+  // Find round number index in the whole session
+  const orderIndex = orders.findIndex(
+    (o) => String(o._id || o.id) === String(targetOrder._id || targetOrder.id)
+  );
+  const roundNumber = orderIndex >= 0 ? orderIndex + 1 : 1;
+
   return {
-    id: session.sessionNumber || "SESSION-ACTIVE",
-    sessionId: session._id,
-    items: liveItems,
-    subtotal: session.subtotal || session.total,
-    discount: session.discount || 0,
-    gst: session.gst ?? Math.round((session.subtotal || 0) * 0.05),
-    total: session.total,
-    appliedOffer: orders[0]?.appliedOffer || null,
-    status: overallStatus,
-    placedAt: session.startedAt,
-    orders: orders,
+    id: targetOrder.orderNumber
+      ? `ORD-${targetOrder.orderNumber.replace("#", "")}`
+      : String(targetOrder._id || targetOrder.id),
+    orderId: String(targetOrder._id || targetOrder.id),
+    orderNumber: targetOrder.orderNumber || `#${roundNumber}`,
+    roundNumber,
+    sessionId: targetOrder.sessionId || session._id,
+    items: orderItems,
+    subtotal: orderSubtotal,
+    discount: orderDiscount,
+    total: orderTotal,
+    appliedOffer: targetOrder.appliedOffer || null,
+    status: orderStatus,
+    placedAt: targetOrder.createdAt || session.startedAt,
+    totalRounds: orders.length,
   };
 }
 
@@ -161,7 +201,8 @@ export const useMenuOrderStore = create(
 
       currentSession: null, // live active table session from backend
       sessionOrders: [], // all orders placed during this session
-      activeOrder: null, // derived consolidated active order for this table
+      selectedOrderId: null, // ID of the specific order currently being viewed/tracked
+      activeOrder: null, // derived active order view for that specific order
       acknowledgedOrderIds: [], // IDs of served orders acknowledged by customer ("I've received my order")
       orderHistory: [], // completed historical orders
       isSubmittingOrder: false,
@@ -232,12 +273,68 @@ export const useMenuOrderStore = create(
 
       clearCart: () => set({ items: {} }),
 
-      toggleFavorite: (id) =>
-        set((state) => ({
-          favorites: state.favorites.includes(id)
-            ? state.favorites.filter((favId) => favId !== id)
-            : [...state.favorites, id],
-        })),
+      handleFavoritesUpdated: (favorites) =>
+        set({ favorites: Array.isArray(favorites) ? favorites.map(String) : [] }),
+
+      toggleFavorite: async (id) => {
+        if (!id) return;
+        const itemId = String(id);
+        const previousFavorites = get().favorites || [];
+        const isCurrentlyFav = previousFavorites.some((favId) => String(favId) === itemId);
+        const nextFavorites = isCurrentlyFav
+          ? previousFavorites.filter((favId) => String(favId) !== itemId)
+          : [...previousFavorites, itemId];
+
+        // Optimistic update so UI reflects immediately
+        set({ favorites: nextFavorites });
+
+        const state = get();
+        const subdomain =
+          state.verifiedRestaurant?.subdomain ||
+          (typeof window !== "undefined" ? window.location.pathname.split("/")[1] : "");
+        const tableId =
+          state.verifiedTable?.tableId ||
+          state.verifiedTable?.id ||
+          state.verifiedTable?._id ||
+          state.tableId;
+        const sessionId = state.currentSession?._id;
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        try {
+          const res = await fetch(`${apiUrl}/orders/public/session/favorite`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              subdomain,
+              tableId,
+              sessionId,
+              itemId,
+            }),
+          });
+          const json = await res.json().catch(() => null);
+
+          if (res.ok && json?.success && json?.data) {
+            set((s) => ({
+              favorites: Array.isArray(json.data.favorites)
+                ? json.data.favorites.map(String)
+                : s.favorites,
+              currentSession:
+                !s.currentSession && json.data.sessionId
+                  ? { _id: json.data.sessionId, status: "active", favorites: json.data.favorites }
+                  : s.currentSession
+                  ? { ...s.currentSession, favorites: json.data.favorites }
+                  : null,
+            }));
+          } else {
+            // Rollback optimistic update on server error
+            set({ favorites: previousFavorites });
+          }
+        } catch (err) {
+          console.error("Error toggling favorite on server:", err);
+          // Rollback on network failure
+          set({ favorites: previousFavorites });
+        }
+      },
 
       // ---------------------------------------------------------------
       // Navigation / UI state
@@ -249,9 +346,23 @@ export const useMenuOrderStore = create(
       setTableId: (id) => set({ tableId: id }),
       setTableName: (name) => set({ tableName: name }),
 
+      setSelectedOrderId: (id) => {
+        const cleanId = id ? String(id) : null;
+        const { currentSession, sessionOrders, acknowledgedOrderIds = [] } = get();
+        const derived = deriveActiveOrder(currentSession, sessionOrders, acknowledgedOrderIds, cleanId);
+        set({
+          selectedOrderId: cleanId,
+          activeOrder: derived,
+        });
+      },
+
       setVerifiedSession: ({ restaurant, table, session, orders }) => {
         const acknowledgedIds = get().acknowledgedOrderIds || [];
-        const derived = deriveActiveOrder(session, orders, acknowledgedIds);
+        const previousSessionId = get().currentSession?._id;
+        const currentSessionId = session?._id;
+        const isNewSession = !currentSessionId || (previousSessionId && String(previousSessionId) !== String(currentSessionId));
+        const selectedId = isNewSession ? null : get().selectedOrderId;
+        const derived = deriveActiveOrder(session, orders, acknowledgedIds, selectedId);
         const sessionMobile = session?.customerMobile;
         const sessionOffer = session?.appliedOffer || (orders || []).find((o) => o.appliedOffer)?.appliedOffer || null;
 
@@ -267,11 +378,6 @@ export const useMenuOrderStore = create(
 
         // When a customer scans QR and session is new (no mobile yet), prompt verify popup!
         const shouldOpenOffersModal = !sessionMobile;
-
-        // Check if session has changed or started fresh
-        const previousSessionId = get().currentSession?._id;
-        const currentSessionId = session?._id;
-        const isNewSession = !currentSessionId || (previousSessionId && String(previousSessionId) !== String(currentSessionId));
 
         // Derive completed order history strictly from the current table session's orders
         const sessionHistory = deriveSessionOrderHistory(orders);
@@ -290,9 +396,11 @@ export const useMenuOrderStore = create(
           tableName: resolvedTableName || get().tableName || null,
           currentSession: session || null,
           sessionOrders: orders || [],
+          selectedOrderId: selectedId || (derived ? derived.orderId : null),
           activeOrder: derived,
           orderHistory: sessionHistory,
           items: isNewSession ? {} : get().items,
+          favorites: session?.favorites ? session.favorites.map(String) : [],
           acknowledgedOrderIds: isNewSession ? [] : acknowledgedIds,
           mobile: resolvedMobile,
           appliedOffer: sessionOffer || null,
@@ -317,7 +425,8 @@ export const useMenuOrderStore = create(
 
       updateLiveSession: (session, orders) => {
         const acknowledgedIds = get().acknowledgedOrderIds || [];
-        const derived = deriveActiveOrder(session, orders, acknowledgedIds);
+        const selectedId = get().selectedOrderId;
+        const derived = deriveActiveOrder(session, orders, acknowledgedIds, selectedId);
         const sessionMobile = session?.customerMobile;
         const sessionOffer = session?.appliedOffer || (orders || []).find((o) => o.appliedOffer)?.appliedOffer || null;
         const sessionHistory = deriveSessionOrderHistory(orders);
@@ -325,8 +434,10 @@ export const useMenuOrderStore = create(
         set((state) => ({
           currentSession: session || null,
           sessionOrders: orders || [],
+          selectedOrderId: selectedId || (derived ? derived.orderId : null),
           activeOrder: derived,
           orderHistory: sessionHistory,
+          favorites: session?.favorites !== undefined ? (session.favorites || []).map(String) : state.favorites,
           mobile: sessionMobile
             ? {
                 number: sessionMobile,
@@ -345,6 +456,7 @@ export const useMenuOrderStore = create(
         const syncMobile = data?.customerMobile;
         if (!syncMobile) return;
         set((state) => ({
+          favorites: Array.isArray(data.favorites) ? data.favorites.map(String) : state.favorites,
           mobile: {
             ...state.mobile,
             number: syncMobile,
@@ -370,10 +482,12 @@ export const useMenuOrderStore = create(
         set({
           currentSession: null,
           sessionOrders: [],
+          selectedOrderId: null,
           activeOrder: null,
           acknowledgedOrderIds: [],
           orderHistory: [],
           items: {},
+          favorites: [],
           mobile: initialMobile,
           appliedOffer: null,
           isOfferApplied: false,
@@ -412,11 +526,14 @@ export const useMenuOrderStore = create(
               }
             } else {
               const acknowledgedIds = get().acknowledgedOrderIds || [];
-              const derived = deriveActiveOrder(session, orders, acknowledgedIds);
+              const selectedId = get().selectedOrderId;
+              const derived = deriveActiveOrder(session, orders, acknowledgedIds, selectedId);
               set({
                 currentSession: session,
                 sessionOrders: orders || [],
+                selectedOrderId: selectedId || (derived ? derived.orderId : null),
                 activeOrder: derived,
+                favorites: session.favorites !== undefined ? (session.favorites || []).map(String) : get().favorites,
               });
             }
           }
@@ -604,6 +721,7 @@ export const useMenuOrderStore = create(
 
           if (res.ok && json?.success) {
             set((state) => ({
+              favorites: Array.isArray(json.data?.favorites) ? json.data.favorites.map(String) : state.favorites,
               mobile: {
                 ...state.mobile,
                 number: cleanMobile,
@@ -727,15 +845,19 @@ export const useMenuOrderStore = create(
             };
           }
 
-          const { session, orders } = json.data;
+          const { session, orders, order } = json.data;
           const acknowledgedIds = get().acknowledgedOrderIds || [];
-          const derived = deriveActiveOrder(session, orders, acknowledgedIds);
+          const newOrderId = order?._id
+            ? String(order._id)
+            : (orders && orders.length > 0 ? String(orders[orders.length - 1]._id || orders[orders.length - 1].id) : null);
+          const derived = deriveActiveOrder(session, orders, acknowledgedIds, newOrderId);
 
           set({
             items: {},
             isCartExpanded: true,
             currentSession: session,
             sessionOrders: orders,
+            selectedOrderId: newOrderId,
             activeOrder: derived,
             isSubmittingOrder: false,
           });
@@ -751,8 +873,8 @@ export const useMenuOrderStore = create(
         }
       },
 
-      completeActiveOrder: () => {
-        const { currentSession, sessionOrders, activeOrder, acknowledgedOrderIds = [] } = get();
+      completeActiveOrder: (targetOrderId) => {
+        const { currentSession, sessionOrders, activeOrder, acknowledgedOrderIds = [], selectedOrderId } = get();
 
         // If no active session (mock/demo fallback):
         if (!currentSession) {
@@ -769,10 +891,13 @@ export const useMenuOrderStore = create(
           return;
         }
 
-        // Live table session: acknowledge current orders as received/delivered
-        const liveOrderIds = (sessionOrders || []).map((o) => String(o._id || o.id));
-        const updatedAcknowledged = Array.from(new Set([...acknowledgedOrderIds, ...liveOrderIds]));
-        const derived = deriveActiveOrder(currentSession, sessionOrders, updatedAcknowledged);
+        // Live table session: acknowledge specific order as received/delivered
+        const orderIdToAck = targetOrderId || activeOrder?.orderId || selectedOrderId;
+        const updatedAcknowledged = orderIdToAck
+          ? Array.from(new Set([...acknowledgedOrderIds, String(orderIdToAck)]))
+          : acknowledgedOrderIds;
+
+        const derived = deriveActiveOrder(currentSession, sessionOrders, updatedAcknowledged, selectedOrderId);
         const currentCompleted = deriveSessionOrderHistory(sessionOrders);
 
         set({
@@ -865,19 +990,19 @@ export const useMenuOrderStore = create(
       skipHydration: true,
       partialize: (state) => ({
         items: state.items,
-        favorites: state.favorites,
-        // mobile & orderHistory & reviews are strictly scoped and fetched live, NEVER persisted across sessions
+        // favorites, mobile, reviews & orderHistory are strictly table-session scoped and fetched live, NEVER persisted across sessions in localStorage
         isOfferApplied: state.isOfferApplied,
         appliedOffer: state.appliedOffer,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          // Guarantee clean initial state on startup/refresh: no stale mobile, reviews, or previous orders
+          // Guarantee clean initial state on startup/refresh: no stale mobile, reviews, favorites, or previous orders
           state.mobile = initialMobile;
           state.orderHistory = [];
           state.acknowledgedOrderIds = [];
           state.reviews = [];
           state.reviewsLoading = false;
+          state.favorites = [];
         }
       },
     }
@@ -936,6 +1061,8 @@ export function useMenuOrder() {
 
   return {
     ...state,
+    selectedOrderId: state.selectedOrderId,
+    selectActiveOrder: state.setSelectedOrderId,
     cartItems,
     totalItems,
     subtotal,
@@ -944,7 +1071,7 @@ export function useMenuOrder() {
     finalTotal,
     hasDiscount: mrpTotal > subtotal || offerDiscount > 0,
     getQuantity: (id) => state.items[id]?.quantity ?? 0,
-    isFavorite: (id) => state.favorites.includes(id),
+    isFavorite: (id) => (state.favorites || []).some((favId) => String(favId) === String(id)),
     getItemsByCategory,
     getItemById,
     bestsellerItems,

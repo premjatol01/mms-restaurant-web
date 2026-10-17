@@ -11,7 +11,14 @@ const MyFavorites = () => {
   const { favorites, setActiveTab, menuItems } = useMenuOrder();
 
   const favoriteItems = useMemo(
-    () => (menuItems || []).filter((item) => favorites.includes(item.id)),
+    () =>
+      (menuItems || []).filter((item) =>
+        (favorites || []).some(
+          (favId) =>
+            String(favId) === String(item.id) ||
+            String(favId) === String(item._id)
+        )
+      ),
     [favorites, menuItems]
   );
 
@@ -36,7 +43,7 @@ const MyFavorites = () => {
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {favoriteItems.map((item) => (
-            <FoodCard key={item.id} item={item} />
+            <FoodCard key={item.id || item._id} item={item} />
           ))}
         </div>
       )}

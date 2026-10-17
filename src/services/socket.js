@@ -43,6 +43,10 @@ export function connectTableSocket(tableId, callbacks = {}) {
     socket.on("session:customer_synced", callbacks.onCustomerSynced);
   }
 
+  if (callbacks.onFavoritesUpdated) {
+    socket.on("session:favorites_updated", callbacks.onFavoritesUpdated);
+  }
+
   if (callbacks.onSessionCompleted) {
     socket.on("session:completed", callbacks.onSessionCompleted);
   }

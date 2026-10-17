@@ -115,6 +115,7 @@ const Cart = () => {
     placeOrder,
     mobile,
     activeOrder,
+    currentSession,
     isSubmittingOrder,
   } = useMenuOrder();
 
@@ -126,7 +127,7 @@ const Cart = () => {
     if (!subdomain || cartItems.length === 0 || appliedOffer) return;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-    const tableSpend = (activeOrder?.total ?? 0) + subtotal;
+    const tableSpend = (currentSession?.subtotal ?? activeOrder?.total ?? 0) + subtotal;
 
     fetch(`${apiUrl}/public/offers/check-eligibility`, {
       method: "POST",
