@@ -3,6 +3,7 @@ import Link from "next/link";
 import PublicMapView from "./components/PublicMapView";
 import InquiryForm from "./components/InquiryForm";
 import PublicFooter from "./components/PublicFooter";
+import PopularMenuSection from "./components/PopularMenuSection";
 import {
   Utensils,
   MapPin,
@@ -137,6 +138,7 @@ export default async function RestaurantPortfolioPage({ params }) {
     googleReviewLink,
     websiteColors = {},
     sections = [],
+    popularCategories = [],
     popularItems = [],
     activeOffers = [],
   } = restaurant;
@@ -512,157 +514,11 @@ export default async function RestaurantPortfolioPage({ params }) {
 
       {/* ───────────────── 3. POPULAR MENU SECTION (Only if enabled) ───────────────── */}
       {isSectionEnabled("menu") && (
-        <section
-          id="menu"
-          style={{ borderColor: "var(--theme-border)" }}
-          className="py-16 border-t"
-        >
-          <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-              <div>
-                <span
-                  style={{
-                    backgroundColor: "var(--theme-primary-soft)",
-                    color: "var(--theme-primary)",
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-2"
-                >
-                  <UtensilsCrossed className="w-3.5 h-3.5" />
-                  <span>Chef's Recommendations</span>
-                </span>
-                <h3
-                  style={{ color: "var(--theme-text)" }}
-                  className="text-2xl font-bold"
-                >
-                  {menuSection?.content?.title || "Popular Dishes"}
-                </h3>
-                <p
-                  style={{ color: "var(--theme-text-muted)" }}
-                  className="text-xs sm:text-sm mt-1"
-                >
-                  {menuSection?.content?.description || "Our most loved dishes, picked by our guests"}
-                </p>
-              </div>
-
-              <div
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium border shrink-0"
-                style={{
-                  backgroundColor: "var(--theme-surface)",
-                  borderColor: "var(--theme-border)",
-                  color: "var(--theme-text-muted)",
-                }}
-              >
-                <span>Scan table QR to order</span>
-              </div>
-            </div>
-
-            {popularItems && popularItems.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {popularItems.map((item) => (
-                  <div
-                    key={item._id}
-                    style={{
-                      backgroundColor: "var(--theme-surface)",
-                      borderColor: "var(--theme-border)",
-                    }}
-                    className="rounded-2xl border overflow-hidden shadow-sm flex flex-col justify-between transition-all hover:shadow-md hover:-translate-y-1 duration-200"
-                  >
-                    <div>
-                      <div className="relative aspect-[4/3] w-full bg-black/5 overflow-hidden">
-                        {item.image ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={item.image.startsWith("http") ? item.image : `http://localhost:5000${item.image}`}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-slate-300">
-                            <Utensils className="w-10 h-10 opacity-30" />
-                          </div>
-                        )}
-                        {item.foodType && (
-                          <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm p-1 rounded-md shadow-sm">
-                            <div
-                              className={`w-3 h-3 rounded-full ${
-                                item.foodType === "veg"
-                                  ? "bg-green-600"
-                                  : item.foodType === "egg"
-                                  ? "bg-amber-500"
-                                  : "bg-red-600"
-                              }`}
-                            />
-                          </div>
-                        )}
-                        {(item.isBestseller || item.isPopular) && (
-                          <span
-                            style={{
-                              backgroundColor: "var(--theme-primary)",
-                              color: "var(--theme-primary-text)",
-                            }}
-                            className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm"
-                          >
-                            Popular
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="p-4">
-                        <h4
-                          style={{ color: "var(--theme-text)" }}
-                          className="font-bold text-sm sm:text-base line-clamp-1"
-                        >
-                          {item.name}
-                        </h4>
-                        {item.description && (
-                          <p
-                            style={{ color: "var(--theme-text-muted)" }}
-                            className="text-xs mt-1 line-clamp-2 leading-relaxed"
-                          >
-                            {item.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="p-4 pt-0">
-                      <div
-                        className="pt-3 border-t flex items-center justify-between"
-                        style={{ borderColor: "var(--theme-border-subtle)" }}
-                      >
-                        <div className="flex items-baseline gap-1.5">
-                          <span
-                            style={{ color: "var(--theme-primary)" }}
-                            className="text-base sm:text-lg font-bold"
-                          >
-                            ₹{item.price}
-                          </span>
-                          {item.mrp && item.mrp > item.price && (
-                            <span className="text-xs line-through" style={{ color: "var(--theme-text-faint)" }}>
-                              ₹{item.mrp}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div
-                style={{
-                  backgroundColor: "var(--theme-surface)",
-                  borderColor: "var(--theme-border)",
-                }}
-                className="p-8 rounded-2xl border text-center space-y-3"
-              >
-                <p style={{ color: "var(--theme-text-muted)" }} className="text-sm">
-                  Explore our dishes and drinks by scanning the QR code at your table.
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
+        <PopularMenuSection
+          menuSection={menuSection}
+          popularCategories={popularCategories}
+          fallbackItems={popularItems}
+        />
       )}
 
       {/* ───────────────── 4. SPECIAL OFFERS SECTION (Only if enabled) ───────────────── */}
