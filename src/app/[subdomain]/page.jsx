@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import PublicMapView from "./components/PublicMapView";
 import InquiryForm from "./components/InquiryForm";
+import PublicFooter from "./components/PublicFooter";
 import {
   Utensils,
   MapPin,
@@ -184,6 +185,7 @@ export default async function RestaurantPortfolioPage({ params }) {
   const gallerySection = sections?.find((s) => s.sectionId === "gallery" || s.type === "gallery");
   const mapSection = sections?.find((s) => s.sectionId === "map" || s.type === "map");
   const inquirySection = sections?.find((s) => s.sectionId === "inquiry" || s.type === "inquiry");
+  const footerSection = sections?.find((s) => s.sectionId === "footer" || s.type === "footer") || restaurant.footer;
 
   const heroHeading = heroSection?.content?.heading || name;
   const heroDescription =
@@ -948,26 +950,17 @@ export default async function RestaurantPortfolioPage({ params }) {
       )}
 
       {/* ───────────────── 9. FOOTER ───────────────── */}
-      <footer
-        style={{
-          backgroundColor: "var(--theme-background)",
-          borderColor: "var(--theme-border)",
-          color: "var(--theme-text-faint)",
-        }}
-        className="py-8 border-t text-center text-xs space-y-2"
-      >
-        <p>&copy; {new Date().getFullYear()} {name}. All rights reserved.</p>
-        <p className="flex items-center justify-center gap-1">
-          <span>Powered by</span>
-          <Link
-            href="/"
-            style={{ color: "var(--theme-primary)" }}
-            className="hover:underline font-semibold"
-          >
-            Tablly
-          </Link>
-        </p>
-      </footer>
+      <PublicFooter
+        footerSection={footerSection}
+        restaurantName={name}
+        restaurantTagline={tagline}
+        restaurantDescription={shortDescription || fullDescription}
+        logo={logo}
+        address={displayAddress}
+        city={displayCity}
+        contact={contact}
+        businessHours={businessHours}
+      />
     </div>
   );
 }
