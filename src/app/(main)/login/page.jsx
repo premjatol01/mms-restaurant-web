@@ -91,7 +91,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md bg-[var(--color-surface)] p-8 rounded-2xl shadow-lg border border-[var(--color-border)]">
           <div className="text-center mb-8">
             <div className="lg:hidden flex justify-center mb-4 text-[var(--color-primary)]">
-              <div className="p-3 bg-[var(--color-primary-light)]/20 rounded-full">
+              <div className="p-3 bg-[var(--color-secondary)] rounded-full">
                 <Utensils className="h-8 w-8" />
               </div>
             </div>
@@ -172,7 +172,7 @@ export default function LoginPage() {
               </div>
 
               <div className="text-sm">
-                <Link href="#" className="font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors">
+                <Link href="/forgot-password" className="font-semibold text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors">
                   Forgot password?
                 </Link>
               </div>

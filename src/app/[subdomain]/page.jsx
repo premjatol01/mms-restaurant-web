@@ -4,6 +4,7 @@ import PublicMapView from "./components/PublicMapView";
 import InquiryForm from "./components/InquiryForm";
 import PublicFooter from "./components/PublicFooter";
 import PopularMenuSection from "./components/PopularMenuSection";
+import PublicReviewsSection from "./components/PublicReviewsSection";
 import {
   Utensils,
   MapPin,
@@ -72,29 +73,29 @@ export default async function RestaurantPortfolioPage({ params }) {
   if (!restaurant || restaurant.isUnpublished) {
     const isUnpublished = restaurant?.isUnpublished;
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between p-6">
+      <div className="min-h-screen bg-[#fffaf5] text-[#2b2118] flex flex-col justify-between p-6">
         <header className="max-w-6xl mx-auto w-full py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center text-slate-950 font-bold">
-              <Utensils className="w-5 h-5" />
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#d9480f] flex items-center justify-center text-white font-bold shadow-md shadow-[#d9480f]/20">
+              <Utensils className="w-5 h-5 stroke-[2.5]" />
             </div>
-            <span className="font-bold text-lg text-white">Tablly</span>
+            <span className="font-bold text-lg text-[#2b2118]">Tablly</span>
           </Link>
         </header>
 
         <main className="max-w-md mx-auto text-center space-y-6 py-16">
-          <div className="w-20 h-20 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto text-emerald-400 shadow-xl">
+          <div className="w-20 h-20 rounded-2xl bg-white border border-[#ede4dc] flex items-center justify-center mx-auto text-[#d9480f] shadow-lg shadow-[#d9480f]/5">
             <Search className="w-10 h-10" />
           </div>
 
           <div className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#d9480f] bg-[#ffe8cc] px-3.5 py-1 rounded-full border border-[#d9480f]/20">
               {isUnpublished ? "Unpublished • Not Available" : "404 • Not Found"}
             </span>
-            <h1 className="text-3xl font-extrabold text-white mt-3">
+            <h1 className="text-3xl font-extrabold text-[#2b2118] mt-3">
               {isUnpublished ? "Website Currently Unavailable" : "Restaurant Not Found"}
             </h1>
-            <p className="text-sm text-slate-400 leading-relaxed">
+            <p className="text-sm text-[#786154] leading-relaxed">
               {isUnpublished
                 ? `The website for ${subdomain} is currently unpublished or undergoing maintenance by the restaurant owner.`
                 : `We couldn't find an active restaurant portfolio for ${subdomain}. The restaurant may not exist or its subdomain may have changed.`}
@@ -104,7 +105,7 @@ export default async function RestaurantPortfolioPage({ params }) {
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition-colors shadow-lg shadow-emerald-500/20"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#d9480f] hover:bg-[#c93b07] text-white font-semibold text-sm transition-all shadow-lg shadow-[#d9480f]/25 hover:shadow-[#d9480f]/40 hover:-translate-y-0.5"
             >
               <Home className="w-4 h-4" />
               <span>Go to Tablly Homepage</span>
@@ -112,7 +113,7 @@ export default async function RestaurantPortfolioPage({ params }) {
           </div>
         </main>
 
-        <footer className="text-center text-xs text-slate-500 py-4">
+        <footer className="text-center text-xs text-[#9c887e] py-4">
           &copy; {new Date().getFullYear()} Tablly Platform. All rights reserved.
         </footer>
       </div>
@@ -141,6 +142,8 @@ export default async function RestaurantPortfolioPage({ params }) {
     popularCategories = [],
     popularItems = [],
     activeOffers = [],
+    reviews = [],
+    reviewStats = {},
   } = restaurant;
 
   // Derive theme colors (defaults match blush & mint or backend default)
@@ -185,6 +188,7 @@ export default async function RestaurantPortfolioPage({ params }) {
   const menuSection = sections?.find((s) => s.sectionId === "menu" || s.type === "menu");
   const offersSection = sections?.find((s) => s.sectionId === "offers" || s.type === "offers");
   const gallerySection = sections?.find((s) => s.sectionId === "gallery" || s.type === "gallery");
+  const reviewsSection = sections?.find((s) => s.sectionId === "reviews" || s.type === "reviews");
   const mapSection = sections?.find((s) => s.sectionId === "map" || s.type === "map");
   const inquirySection = sections?.find((s) => s.sectionId === "inquiry" || s.type === "inquiry");
   const footerSection = sections?.find((s) => s.sectionId === "footer" || s.type === "footer") || restaurant.footer;
@@ -272,17 +276,21 @@ export default async function RestaurantPortfolioPage({ params }) {
 
           {/* Quick Header Navigation for enabled sections */}
           <nav className="hidden md:flex items-center gap-6 text-xs font-semibold" style={{ color: "var(--theme-text-muted)" }}>
+            <a href="#hero" className="hover:opacity-80 transition-opacity">Home</a>
+            {isSectionEnabled("about") && (
+              <a href="#about" className="hover:opacity-80 transition-opacity">About</a>
+            )}
             {isSectionEnabled("menu") && (
               <a href="#menu" className="hover:opacity-80 transition-opacity">Menu</a>
             )}
             {isSectionEnabled("offers") && (
               <a href="#offers" className="hover:opacity-80 transition-opacity">Offers</a>
             )}
-            {isSectionEnabled("about") && (
-              <a href="#about" className="hover:opacity-80 transition-opacity">About</a>
-            )}
             {isSectionEnabled("gallery") && (
               <a href="#gallery" className="hover:opacity-80 transition-opacity">Gallery</a>
+            )}
+            {isSectionEnabled("reviews") && (
+              <a href="#reviews" className="hover:opacity-80 transition-opacity">Reviews</a>
             )}
             {isSectionEnabled("map") && (
               <a href="#map" className="hover:opacity-80 transition-opacity">Location</a>
@@ -315,7 +323,7 @@ export default async function RestaurantPortfolioPage({ params }) {
 
       {/* ───────────────── 1. HERO SECTION (Only if enabled) ───────────────── */}
       {isSectionEnabled("hero") && (
-        <section className="relative overflow-hidden pt-8 pb-16">
+        <section id="hero" className="relative overflow-hidden pt-8 pb-16">
           {heroCover && (
             <div className="absolute inset-0 z-0 opacity-20">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -678,7 +686,17 @@ export default async function RestaurantPortfolioPage({ params }) {
         </section>
       )}
 
-      {/* ───────────────── 6. MAP & LOCATION SECTION (Only if enabled) ───────────────── */}
+      {/* ───────────────── 6. CUSTOMER REVIEWS SECTION (Only if enabled) ───────────────── */}
+      {isSectionEnabled("reviews") && (
+        <PublicReviewsSection
+          reviewsSection={reviewsSection}
+          reviews={reviews}
+          reviewStats={reviewStats}
+          googleReviewLink={googleReviewLink}
+        />
+      )}
+
+      {/* ───────────────── 7. MAP & LOCATION SECTION (Only if enabled) ───────────────── */}
       {isSectionEnabled("map") && (
         <section
           id="map"

@@ -147,10 +147,10 @@ export default function MenuLayout({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center text-slate-100">
-        <Loader2 className="w-10 h-10 animate-spin text-emerald-400 mb-4" />
-        <h2 className="text-lg font-bold text-white tracking-tight">Verifying Table & Restaurant...</h2>
-        <p className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed">
+      <div className="min-h-screen bg-[#fffaf5] flex flex-col items-center justify-center p-6 text-center text-[#2b2118]">
+        <Loader2 className="w-10 h-10 animate-spin text-[#d9480f] mb-4" />
+        <h2 className="text-lg font-bold text-[#2b2118] tracking-tight">Verifying Table & Restaurant...</h2>
+        <p className="text-xs text-[#786154] mt-1 max-w-xs leading-relaxed">
           Setting up your digital dining session. Please wait a moment.
         </p>
       </div>

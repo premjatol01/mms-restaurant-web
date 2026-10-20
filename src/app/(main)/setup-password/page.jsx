@@ -71,7 +71,7 @@ function SetupPasswordForm() {
   if (success) {
     return (
       <div className="text-center flex flex-col items-center">
-        <CheckCircle className="h-16 w-16 text-green-500 mb-4" />
+        <CheckCircle className="h-16 w-16 text-[var(--color-primary)] mb-4" />
         <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-2">Account Activated!</h2>
         <p className="text-[var(--color-text-muted)] mb-6">Your password has been successfully set. You can now login to your restaurant dashboard.</p>
         <p className="text-sm text-[var(--color-primary)]">Redirecting to login...</p>
@@ -83,7 +83,7 @@ function SetupPasswordForm() {
     <>
       <div className="text-center mb-8">
         <div className="lg:hidden flex justify-center mb-4 text-[var(--color-primary)]">
-          <div className="p-3 bg-[var(--color-primary-light)]/20 rounded-full">
+          <div className="p-3 bg-[var(--color-secondary)] rounded-full">
             <Utensils className="h-8 w-8" />
           </div>
         </div>
