@@ -153,7 +153,10 @@ export default function PublicFooter({
   const visibleSectionLinks = rawSectionLinks.filter((link) => link && link.enabled !== false);
 
   const displayPhone = contact?.primaryPhone || contact?.phone;
+  const displayAltPhone = contact?.alternatePhone;
+  const displaySupportPhone = contact?.supportPhone;
   const displayEmail = contact?.email;
+  const displayAltEmail = contact?.alternateEmail;
   const displayWhatsapp = contact?.whatsapp || socialLinksData?.whatsapp;
 
   return (
@@ -322,6 +325,34 @@ export default function PublicFooter({
                 </div>
               )}
 
+              {displayAltPhone && (
+                <div className="flex items-center gap-2.5">
+                  <Phone className="w-4 h-4 shrink-0" style={{ color: "var(--theme-primary)" }} />
+                  <span className="text-[11px] font-semibold opacity-75" style={{ color: "var(--theme-text-muted)" }}>Alt:</span>
+                  <a
+                    href={`tel:${displayAltPhone.replace(/[^0-9+]/g, "")}`}
+                    className="hover:underline font-medium"
+                    style={{ color: "var(--theme-text)" }}
+                  >
+                    {displayAltPhone}
+                  </a>
+                </div>
+              )}
+
+              {displaySupportPhone && (
+                <div className="flex items-center gap-2.5">
+                  <Phone className="w-4 h-4 shrink-0" style={{ color: "var(--theme-primary)" }} />
+                  <span className="text-[11px] font-semibold opacity-75" style={{ color: "var(--theme-text-muted)" }}>Support:</span>
+                  <a
+                    href={`tel:${displaySupportPhone.replace(/[^0-9+]/g, "")}`}
+                    className="hover:underline font-medium"
+                    style={{ color: "var(--theme-text)" }}
+                  >
+                    {displaySupportPhone}
+                  </a>
+                </div>
+              )}
+
               {displayWhatsapp && (
                 <div className="flex items-center gap-2.5">
                   <MessageCircle className="w-4 h-4 shrink-0" style={{ color: "var(--theme-primary)" }} />
@@ -346,6 +377,20 @@ export default function PublicFooter({
                     style={{ color: "var(--theme-text)" }}
                   >
                     {displayEmail}
+                  </a>
+                </div>
+              )}
+
+              {displayAltEmail && (
+                <div className="flex items-center gap-2.5">
+                  <Mail className="w-4 h-4 shrink-0" style={{ color: "var(--theme-primary)" }} />
+                  <span className="text-[11px] font-semibold opacity-75" style={{ color: "var(--theme-text-muted)" }}>Alt:</span>
+                  <a
+                    href={`mailto:${displayAltEmail}`}
+                    className="hover:underline font-medium truncate"
+                    style={{ color: "var(--theme-text)" }}
+                  >
+                    {displayAltEmail}
                   </a>
                 </div>
               )}

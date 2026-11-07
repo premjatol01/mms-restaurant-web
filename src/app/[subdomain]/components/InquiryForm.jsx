@@ -9,6 +9,7 @@ import {
   Mail,
   MapPin,
   MessageSquare,
+  MessageCircle,
   Sparkles,
 } from "lucide-react";
 
@@ -193,14 +194,94 @@ export default function InquiryForm({
               </div>
               <div>
                 <p className="text-xs text-muted" style={{ color: "var(--theme-text-muted)" }}>
-                  Call or WhatsApp
+                  Primary Phone
                 </p>
                 <a
-                  href={`tel:${contactInfo.phone}`}
+                  href={`tel:${contactInfo.phone.replace(/[^0-9+]/g, "")}`}
                   style={{ color: "var(--theme-text)" }}
                   className="text-sm font-semibold hover:underline"
                 >
                   {contactInfo.phone}
+                </a>
+              </div>
+            </div>
+          )}
+
+          {contactInfo.alternatePhone && (
+            <div className="flex items-start gap-3">
+              <div
+                style={{
+                  backgroundColor: "var(--theme-primary-soft)",
+                  color: "var(--theme-primary)",
+                }}
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+              >
+                <Phone className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs text-muted" style={{ color: "var(--theme-text-muted)" }}>
+                  Alternate Phone
+                </p>
+                <a
+                  href={`tel:${contactInfo.alternatePhone.replace(/[^0-9+]/g, "")}`}
+                  style={{ color: "var(--theme-text)" }}
+                  className="text-sm font-semibold hover:underline"
+                >
+                  {contactInfo.alternatePhone}
+                </a>
+              </div>
+            </div>
+          )}
+
+          {contactInfo.supportPhone && (
+            <div className="flex items-start gap-3">
+              <div
+                style={{
+                  backgroundColor: "var(--theme-primary-soft)",
+                  color: "var(--theme-primary)",
+                }}
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+              >
+                <Phone className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs text-muted" style={{ color: "var(--theme-text-muted)" }}>
+                  Customer Support
+                </p>
+                <a
+                  href={`tel:${contactInfo.supportPhone.replace(/[^0-9+]/g, "")}`}
+                  style={{ color: "var(--theme-text)" }}
+                  className="text-sm font-semibold hover:underline"
+                >
+                  {contactInfo.supportPhone}
+                </a>
+              </div>
+            </div>
+          )}
+
+          {contactInfo.whatsapp && (
+            <div className="flex items-start gap-3">
+              <div
+                style={{
+                  backgroundColor: "var(--theme-primary-soft)",
+                  color: "var(--theme-primary)",
+                }}
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+              >
+                <MessageCircle className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs text-muted" style={{ color: "var(--theme-text-muted)" }}>
+                  WhatsApp
+                </p>
+                <a
+                  href={`https://wa.me/${contactInfo.whatsapp.replace(/[^0-9]/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "var(--theme-primary)" }}
+                  className="text-sm font-semibold hover:underline"
+                >
+                  Chat on WhatsApp
                 </a>
               </div>
             </div>
@@ -227,6 +308,32 @@ export default function InquiryForm({
                   className="text-sm font-semibold hover:underline break-all"
                 >
                   {contactInfo.email}
+                </a>
+              </div>
+            </div>
+          )}
+
+          {contactInfo.alternateEmail && (
+            <div className="flex items-start gap-3">
+              <div
+                style={{
+                  backgroundColor: "var(--theme-primary-soft)",
+                  color: "var(--theme-primary)",
+                }}
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+              >
+                <Mail className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs text-muted" style={{ color: "var(--theme-text-muted)" }}>
+                  Alternate Email
+                </p>
+                <a
+                  href={`mailto:${contactInfo.alternateEmail}`}
+                  style={{ color: "var(--theme-text)" }}
+                  className="text-sm font-semibold hover:underline break-all"
+                >
+                  {contactInfo.alternateEmail}
                 </a>
               </div>
             </div>

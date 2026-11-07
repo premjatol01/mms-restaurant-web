@@ -210,12 +210,31 @@ export default async function RestaurantPortfolioPage({ params }) {
     "";
   const aboutImage = aboutSection?.content?.imageUrl || aboutSection?.content?.image;
 
+  const formatFullAddress = (detAddr, addr) => {
+    if (detAddr && typeof detAddr === "object") {
+      const parts = [
+        detAddr.line1,
+        detAddr.line2,
+        detAddr.landmark ? `Near ${detAddr.landmark}` : null,
+        detAddr.area,
+        detAddr.city,
+        detAddr.state,
+        detAddr.pincode,
+        detAddr.country || "India",
+      ].filter((p) => Boolean(p && String(p).trim()));
+      if (parts.length > 0) return parts.join(", ");
+    }
+    if (addr && typeof addr === "object") {
+      if (addr.fullAddress && addr.fullAddress.trim()) return addr.fullAddress.trim();
+      const parts = [addr.city, addr.state, addr.pincode, addr.country || "India"]
+        .filter((p) => Boolean(p && String(p).trim()));
+      if (parts.length > 0) return parts.join(", ");
+    }
+    return addr?.city ? `${addr.city}, India` : "";
+  };
+
   const displayCity = detailedAddress?.city || address?.city || "Local City";
-  const displayAddress =
-    detailedAddress?.line1 ||
-    detailedAddress?.area ||
-    address?.fullAddress ||
-    `${displayCity}, ${detailedAddress?.state || address?.state || "India"}`;
+  const displayAddress = formatFullAddress(detailedAddress, address);
 
   return (
     <div
@@ -753,8 +772,12 @@ export default async function RestaurantPortfolioPage({ params }) {
               content={inquirySection?.content}
               restaurantName={name}
               contactInfo={{
-                phone: contact?.primaryPhone,
+                phone: contact?.primaryPhone || contact?.phone,
+                alternatePhone: contact?.alternatePhone,
+                supportPhone: contact?.supportPhone,
+                whatsapp: contact?.whatsapp,
                 email: contact?.email,
+                alternateEmail: contact?.alternateEmail,
                 address: displayAddress,
               }}
             />
