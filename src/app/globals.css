@@ -380,3 +380,51 @@ svg {
     right: max(16px, calc((100vw - 28rem) / 2 + 16px)) !important;
   }
 }
+
+
+/* =========================================================
+   Custom Slim Scrollbar (Tablly Primary Brand Color #d9480f)
+   ========================================================= */
+
+/* WebKit browsers (Chrome, Edge, Safari, Opera) */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fffaf5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d9480f;
+  border-radius: 9999px;
+  border: 1px solid #fffaf5;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c93b07;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d9480f #fffaf5;
+}
+
+/* =========================================================
+   Automated Demo Progress Animation
+   ========================================================= */
+@keyframes demoProgressFill {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-demo-progress {
+  animation: demoProgressFill 3.5s linear forwards;
+}

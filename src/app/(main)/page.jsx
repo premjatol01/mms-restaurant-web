@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   UtensilsCrossed,
@@ -27,33 +27,99 @@ import {
   TrendingUp,
   CreditCard,
   Building2,
+  Tag,
+  MessageSquare,
+  Globe,
 } from "lucide-react";
+import CtaTrialModal from "../../components/CtaTrialModal";
+import ChatbotWidget from "../../components/ChatbotWidget";
+import AutomatedDemoModal from "../../components/AutomatedDemoModal";
 
 export default function MarketingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("guest");
-  const [billingCycle, setBillingCycle] = useState("monthly");
+  const [billingCycle, setBillingCycle] = useState("1_month"); // "1_month" | "6_months" | "12_months"
   const [openFaq, setOpenFaq] = useState(null);
+
+  // Modals state
+  const [isTrialOpen, setIsTrialOpen] = useState(false);
+  const [trialPlan, setTrialPlan] = useState("Standard");
+  const [trialDuration, setTrialDuration] = useState("1_month");
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
+
+  // Keep refs in sync for timer callbacks
+  const isTrialOpenRef = useRef(isTrialOpen);
+  const isDemoOpenRef = useRef(isDemoOpen);
+  const billingCycleRef = useRef(billingCycle);
+
+  useEffect(() => {
+    isTrialOpenRef.current = isTrialOpen;
+  }, [isTrialOpen]);
+
+  useEffect(() => {
+    isDemoOpenRef.current = isDemoOpen;
+  }, [isDemoOpen]);
+
+  useEffect(() => {
+    billingCycleRef.current = billingCycle;
+  }, [billingCycle]);
+
+  // Automatically open CTA form after 10s on website, then recurring every 50s
+  useEffect(() => {
+    let recurringInterval = null;
+
+    const initialTimer = setTimeout(() => {
+      // Open if CTA modal is not already open and user is not currently in Automated Demo modal
+      if (!isTrialOpenRef.current && !isDemoOpenRef.current) {
+        setTrialPlan("Standard");
+        setTrialDuration(billingCycleRef.current || "1_month");
+        setIsTrialOpen(true);
+      }
+
+      // After 10s initial trigger, start recurring every 50 seconds
+      recurringInterval = setInterval(() => {
+        if (!isTrialOpenRef.current && !isDemoOpenRef.current) {
+          setTrialPlan("Standard");
+          setTrialDuration(billingCycleRef.current || "1_month");
+          setIsTrialOpen(true);
+        }
+      }, 50000); // 50 seconds
+    }, 10000); // 10 seconds
+
+    return () => {
+      clearTimeout(initialTimer);
+      if (recurringInterval) clearInterval(recurringInterval);
+    };
+  }, []);
 
   const toggleFaq = (index) => {
     setOpenFaq(openFaq === index ? null : index);
   };
 
+  const handleOpenTrial = (planName = "Standard", duration = billingCycle) => {
+    setTrialPlan(planName);
+    setTrialDuration(duration);
+    setIsTrialOpen(true);
+  };
+
   return (
-    <div className="min-h-screen bg-[#fffaf5] text-[#2b2118] selection:bg-[#d9480f] selection:text-white font-sans antialiased">
+    <div className="min-h-screen bg-[#fffaf5] text-[#2b2118] selection:bg-[#d9480f] selection:text-white font-sans antialiased relative">
       {/* ───────────────── TOP ANNOUNCEMENT BAR ───────────────── */}
       <div className="bg-gradient-to-r from-[#c93b07] via-[#d9480f] to-[#f76707] text-white text-xs md:text-sm font-medium py-2 px-4 text-center flex items-center justify-center gap-2">
         <span className="inline-flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full text-[11px] font-semibold tracking-wide uppercase">
-          New
+          Live
         </span>
         <span>Introducing Tablly 2.0: Instant Table-Side Ordering & Real-Time Kitchen Sync</span>
-        <a href="#demo" className="underline underline-offset-2 hover:opacity-90 font-semibold ml-1">
-          Explore Demo &rarr;
-        </a>
+        <button
+          onClick={() => setIsDemoOpen(true)}
+          className="underline underline-offset-2 hover:opacity-90 font-semibold ml-1 cursor-pointer"
+        >
+          Watch Automated Demo &rarr;
+        </button>
       </div>
 
       {/* ───────────────── NAVIGATION BAR ───────────────── */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#fffaf5]/90 border-b border-[#ede4dc]">
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#fffaf5]/90 border-b border-[#ede4dc]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
@@ -63,7 +129,7 @@ export default function MarketingPage() {
             <div className="flex flex-col">
               <span className="text-xl font-bold tracking-tight text-[#2b2118] flex items-center gap-1.5">
                 Tablly
-                <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-[#d9480f]/10 text-[#ff922b] border border-[#d9480f]/25">
+                <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-[#d9480f]/10 text-[#d9480f] border border-[#d9480f]/25">
                   Cloud
                 </span>
               </span>
@@ -98,12 +164,12 @@ export default function MarketingPage() {
             >
               Restaurant Login
             </Link>
-            <a
-              href="#pricing"
+            <button
+              onClick={() => handleOpenTrial("Standard")}
               className="text-sm font-semibold bg-[#d9480f] hover:bg-[#c93b07] text-white px-4 py-2 rounded-lg shadow-lg shadow-[#d9480f]/25 transition-all hover:shadow-[#d9480f]/40 hover:-translate-y-0.5 cursor-pointer"
             >
-              Get Started Free
-            </a>
+              Start Free 14-Day Trial
+            </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -161,13 +227,15 @@ export default function MarketingPage() {
               >
                 Restaurant Login
               </Link>
-              <a
-                href="#pricing"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center py-2.5 rounded-lg bg-[#d9480f] font-semibold text-white shadow-md shadow-[#d9480f]/20"
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleOpenTrial("Standard");
+                }}
+                className="w-full text-center py-2.5 rounded-lg bg-[#d9480f] font-semibold text-white shadow-md shadow-[#d9480f]/20 cursor-pointer"
               >
-                Get Started Free
-              </a>
+                Start Free 14-Day Trial
+              </button>
             </div>
           </div>
         )}
@@ -197,26 +265,26 @@ export default function MarketingPage() {
 
             {/* Subtext */}
             <p className="text-base sm:text-lg md:text-xl text-[#786154] leading-relaxed font-normal">
-              Empower your diners to scan, browse delicious visual menus, order, and pay right from their phone with
+              Empower diners to scan, browse delicious visual menus, order, and pay right from their phone with
               <span className="text-[#2b2118] font-semibold"> zero apps to install</span>. Instant kitchen KOT sync, 35% faster table turnover, and happy repeat guests.
             </p>
 
             {/* CTAs */}
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-              <a
-                href="#pricing"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-[#d9480f] hover:bg-[#c93b07] text-white font-bold text-base shadow-xl shadow-[#d9480f]/25 transition-all hover:shadow-[#d9480f]/40 hover:-translate-y-0.5"
+              <button
+                onClick={() => handleOpenTrial("Standard")}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-[#d9480f] hover:bg-[#c93b07] text-white font-bold text-base shadow-xl shadow-[#d9480f]/25 transition-all hover:shadow-[#d9480f]/40 hover:-translate-y-0.5 cursor-pointer"
               >
                 <span>Start Free 14-Day Trial</span>
                 <ArrowRight className="w-4 h-4" />
-              </a>
-              <a
-                href="#demo"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-[#d9480f]/35 bg-white hover:bg-[#ffe8cc]/40 text-[#d9480f] font-semibold shadow-sm text-base transition-colors"
+              </button>
+              <button
+                onClick={() => setIsDemoOpen(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-[#d9480f]/35 bg-white hover:bg-[#ffe8cc]/40 text-[#d9480f] font-semibold shadow-sm text-base transition-colors cursor-pointer"
               >
                 <QrCode className="w-4 h-4 text-[#d9480f]" />
-                <span>Try Live Demo</span>
-              </a>
+                <span>Open Menu View &rarr;</span>
+              </button>
             </div>
 
             {/* Trust Badges */}
@@ -231,7 +299,7 @@ export default function MarketingPage() {
               </div>
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-[#d9480f]" />
-                <span>Ready in 5 Minutes</span>
+                <span>Ready in 15 Minutes</span>
               </div>
             </div>
           </div>
@@ -246,7 +314,7 @@ export default function MarketingPage() {
                   <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
                   <span className="w-3 h-3 rounded-full bg-[#d9480f]/80 inline-block" />
                   <span className="ml-3 font-mono text-[11px] text-[#786154] hidden sm:inline">
-                    https://urbancafe.tablly.com/menu/TBL-04
+                    https://urbangreen.tablly.com/menu/Table 04
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -283,7 +351,7 @@ export default function MarketingPage() {
                   </div>
 
                   <p className="text-[12px] text-[#786154] leading-snug">
-                    Scan with any phone camera to view menu, order food & split the bill.
+                    Scan with any phone camera to view menu, order food & get discounts.
                   </p>
                 </div>
 
@@ -302,67 +370,69 @@ export default function MarketingPage() {
                     </div>
                   </div>
 
-                  {/* Menu Items demo list */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Item 1 */}
-                    <div className="p-3 rounded-lg bg-[#fffaf5] border border-[#ede4dc] hover:border-[#d9480f]/40 transition-colors flex gap-3">
-                      <div className="w-16 h-16 rounded-lg bg-[#ffe8cc] border border-[#d9480f]/25 flex items-center justify-center text-[#d9480f] shrink-0">
-                        <Flame className="w-8 h-8" />
+                  {/* Interactive Item Row */}
+                  <div className="p-3.5 rounded-xl border border-[#ede4dc] bg-[#fffaf5] flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-lg bg-[#ffd8a8] flex items-center justify-center text-xl shrink-0">
+                        🍔
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h5 className="font-semibold text-sm text-[#2b2118] truncate">Truffle Wild Burger</h5>
-                          <span className="text-xs font-bold text-[#d9480f]">$14.50</span>
-                        </div>
-                        <p className="text-[11px] text-[#786154] line-clamp-1 mt-0.5">Brioche, garlic aioli & aged cheddar</p>
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className="text-[10px] bg-[#ffe8cc] text-[#d9480f] px-1.5 py-0.5 rounded font-medium">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h5 className="font-bold text-sm text-[#2b2118]">Truffle Paneer Burger</h5>
+                          <span className="text-[10px] bg-amber-500/20 text-amber-700 px-1.5 py-0.2 rounded font-semibold">
                             Bestseller
                           </span>
-                          <span className="text-xs font-medium text-[#d9480f] bg-[#ffe8cc] font-semibold px-2 py-0.5 rounded cursor-pointer hover:bg-[#d9480f] hover:text-white transition-colors">
-                            + Add
-                          </span>
                         </div>
+                        <p className="text-xs text-[#786154]">Herb patty, truffle mayo, brioche bun</p>
                       </div>
                     </div>
-
-                    {/* Item 2 */}
-                    <div className="p-3 rounded-lg bg-[#fffaf5] border border-[#ede4dc] hover:border-[#d9480f]/40 transition-colors flex gap-3">
-                      <div className="w-16 h-16 rounded-lg bg-[#ffe8cc] border border-[#d9480f]/25 flex items-center justify-center text-[#d9480f] shrink-0">
-                        <Coffee className="w-8 h-8" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h5 className="font-semibold text-sm text-[#2b2118] truncate">Iced Matcha Latte</h5>
-                          <span className="text-xs font-bold text-[#d9480f]">$6.20</span>
-                        </div>
-                        <p className="text-[11px] text-[#786154] line-clamp-1 mt-0.5">Oat milk, ceremonial grade green tea</p>
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className="text-[10px] bg-[#ffe8cc] text-[#d9480f] px-1.5 py-0.5 rounded font-medium">
-                            Organic
-                          </span>
-                          <span className="text-xs font-medium text-[#d9480f] bg-[#ffe8cc] font-semibold px-2 py-0.5 rounded cursor-pointer hover:bg-[#d9480f] hover:text-white transition-colors">
-                            + Add
-                          </span>
-                        </div>
-                      </div>
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-[#2b2118]">₹299</span>
+                      <button
+                        onClick={() => setIsDemoOpen(true)}
+                        className="mt-1 block text-xs bg-[#d9480f] text-white px-3 py-1 rounded-md font-semibold hover:bg-[#c93b07] transition-colors cursor-pointer"
+                      >
+                        + ADD
+                      </button>
                     </div>
                   </div>
 
-                  {/* Bottom Instant Checkout Bar Mock */}
-                  <div className="mt-auto pt-3 border-t border-[#ede4dc] flex items-center justify-between">
+                  <div className="p-3.5 rounded-xl border border-[#ede4dc] bg-[#fffaf5] flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#ffe8cc] text-[#d9480f] flex items-center justify-center text-xs font-bold">
-                        2
+                      <div className="w-12 h-12 rounded-lg bg-[#ffd8a8] flex items-center justify-center text-xl shrink-0">
+                        ☕
                       </div>
                       <div>
-                        <div className="text-xs font-medium text-[#2b2118]">2 items selected</div>
-                        <div className="text-[11px] text-[#786154]">Subtotal: $20.70</div>
+                        <div className="flex items-center gap-2">
+                          <h5 className="font-bold text-sm text-[#2b2118]">Hazelnut Iced Latte</h5>
+                          <span className="text-[10px] bg-emerald-500/20 text-emerald-700 px-1.5 py-0.2 rounded font-semibold">
+                            50% Off Code
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#786154]">Cold brewed espresso with hazelnut syrup</p>
                       </div>
                     </div>
-                    <button className="bg-[#d9480f] hover:bg-[#c93b07] text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow-md shadow-[#d9480f]/20">
-                      <span>Place Table Order</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                    <div className="text-right">
+                      <span className="text-sm font-bold text-[#2b2118]">₹180</span>
+                      <button
+                        onClick={() => setIsDemoOpen(true)}
+                        className="mt-1 block text-xs bg-[#d9480f] text-white px-3 py-1 rounded-md font-semibold hover:bg-[#c93b07] transition-colors cursor-pointer"
+                      >
+                        + ADD
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Bottom bar preview */}
+                  <div className="pt-2 border-t border-[#ede4dc] flex items-center justify-between text-xs">
+                    <span className="text-[#786154]">
+                      Current Table Bill: <strong className="text-[#2b2118]">₹479</strong> (2 items)
+                    </span>
+                    <button
+                      onClick={() => setIsDemoOpen(true)}
+                      className="px-3 py-1.5 bg-[#d9480f] hover:bg-[#c93b07] text-white rounded-lg font-bold flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
+                    >
+                      <span>Simulate Order & Payment</span> &rarr;
                     </button>
                   </div>
                 </div>
@@ -372,33 +442,45 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      {/* ───────────────── STATS & SOCIAL PROOF ───────────────── */}
-      <section className="py-12 border-y border-[#ede4dc] bg-[#fff4e6]/50">
+      {/* ───────────────── TRUSTED BY RESTAURANTS ───────────────── */}
+      <section className="py-12 border-y border-[#ede4dc] bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div className="space-y-1">
-              <div className="text-3xl sm:text-4xl font-extrabold text-[#2b2118]">
-                <span className="text-[#d9480f]">35</span>%
+          <p className="text-center text-xs font-semibold text-[#786154] tracking-wider uppercase mb-8">
+            Powering over 1,200+ Cafes, Bistros & Dining Venues Across India
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-14 opacity-75">
+            {[
+              "The Urban Bistro",
+              "Copper Spoon Cafe",
+              "Chai & Co. Lounge",
+              "Barbeque Craft",
+              "Green Fork Kitchen",
+              "Spice Heritage",
+            ].map((name, i) => (
+              <div key={i} className="flex items-center gap-2 font-bold text-sm sm:text-base text-[#4a3b32]">
+                <UtensilsCrossed className="w-4 h-4 text-[#d9480f]" />
+                <span>{name}</span>
               </div>
-              <p className="text-xs sm:text-sm text-[#786154] font-medium">Faster Table Turnover</p>
+            ))}
+          </div>
+
+          {/* Social Proof Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-12 pt-8 border-t border-[#ede4dc]/60">
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl font-extrabold text-[#d9480f]">1,200+</div>
+              <p className="text-xs sm:text-sm text-[#786154] font-medium mt-1">Live Restaurants</p>
             </div>
-            <div className="space-y-1">
-              <div className="text-3xl sm:text-4xl font-extrabold text-[#2b2118]">
-                <span className="text-[#d9480f]">+24</span>%
-              </div>
-              <p className="text-xs sm:text-sm text-[#786154] font-medium">Average Order Value (AOV)</p>
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl font-extrabold text-[#2b2118]">4.8M+</div>
+              <p className="text-xs sm:text-sm text-[#786154] font-medium mt-1">Orders Processed</p>
             </div>
-            <div className="space-y-1">
-              <div className="text-3xl sm:text-4xl font-extrabold text-[#2b2118]">
-                <span className="text-[#d9480f]">0</span> sec
-              </div>
-              <p className="text-xs sm:text-sm text-[#786154] font-medium">Wait Time For Menus</p>
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl font-extrabold text-[#d9480f]">35%</div>
+              <p className="text-xs sm:text-sm text-[#786154] font-medium mt-1">Faster Table Turnover</p>
             </div>
-            <div className="space-y-1">
-              <div className="text-3xl sm:text-4xl font-extrabold text-[#2b2118]">
-                <span className="text-[#d9480f]">99.9</span>%
-              </div>
-              <p className="text-xs sm:text-sm text-[#786154] font-medium">Platform Uptime</p>
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl font-extrabold text-[#2b2118]">99.98%</div>
+              <p className="text-xs sm:text-sm text-[#786154] font-medium mt-1">Platform Uptime SLA</p>
             </div>
           </div>
         </div>
@@ -409,80 +491,80 @@ export default function MarketingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
             <h2 className="text-xs sm:text-sm font-semibold tracking-wider text-[#d9480f] uppercase">
-              Everything Your Restaurant Needs
+              Core Capabilities
             </h2>
             <h3 className="text-3xl sm:text-4xl font-extrabold text-[#2b2118] tracking-tight">
-              Built to Solve Real Floor & Kitchen Bottlenecks
+              Built to Solve Real Floor, Kitchen & Billing Bottlenecks
             </h3>
             <p className="text-[#786154] text-sm sm:text-base">
-              Say goodbye to printed menus that get dirty, understaffed lunch rushes, and order mistakes. Tablly streamlines the full dining lifecycle.
+              Say goodbye to printed menus that get dirty, understaffed rush hours, and missed billing items. Tablly powers the full restaurant operations lifecycle.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Feature 1 */}
+            {/* Feature 1: QR Generator */}
             <div className="p-7 rounded-2xl bg-white border border-[#ede4dc] hover:border-[#d9480f]/50 hover:shadow-md transition-all group shadow-sm">
               <div className="w-12 h-12 rounded-xl bg-[#ffe8cc] border border-[#d9480f]/25 text-[#d9480f] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                 <QrCode className="w-6 h-6" />
               </div>
-              <h4 className="text-lg font-bold text-[#2b2118] mb-2">Unique Table QR Codes</h4>
+              <h4 className="text-lg font-bold text-[#2b2118] mb-2">Smart QR Codes & Standee Designs</h4>
               <p className="text-sm text-[#786154] leading-relaxed">
-                Generate high-resolution printable QR codes per table with automatic session identification. Diners scan and order without creating an account.
+                Generate high-resolution printable QR codes per table with automatic table session tracking. Diners scan and order without creating an account or downloading an app.
               </p>
             </div>
 
-            {/* Feature 2 */}
+            {/* Feature 2: Live KOT */}
             <div className="p-7 rounded-2xl bg-white border border-[#ede4dc] hover:border-[#d9480f]/50 hover:shadow-md transition-all group shadow-sm">
               <div className="w-12 h-12 rounded-xl bg-[#ffe8cc] border border-[#d9480f]/25 text-[#d9480f] flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                 <ChefHat className="w-6 h-6" />
               </div>
               <h4 className="text-lg font-bold text-[#2b2118] mb-2">Live Kitchen Display (KOT)</h4>
               <p className="text-sm text-[#786154] leading-relaxed">
-                Orders instantly fire directly to your kitchen screen or thermal printer. Chefs see dish modifications, allergies, and table numbers with zero delays.
+                Orders instantly fire directly to your kitchen screen. Chefs see dish customizations, cooking notes, and table numbers with live status progression from Pending to Delivered.
               </p>
             </div>
 
-            {/* Feature 3 */}
+            {/* Feature 3: Offers & Promos */}
             <div className="p-7 rounded-2xl bg-white border border-[#ede4dc] hover:border-[#d9480f]/50 hover:shadow-md transition-all group shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <Sparkles className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                <Tag className="w-6 h-6" />
               </div>
-              <h4 className="text-lg font-bold text-[#2b2118] mb-2">Smart Upselling & Combos</h4>
+              <h4 className="text-lg font-bold text-[#2b2118] mb-2">Offers & Discount Coupons</h4>
               <p className="text-sm text-[#786154] leading-relaxed">
-                Intelligently suggest drink pairings, sides, and desserts when diners add main courses. Automatic deals and promotions trigger at checkout.
+                Run targeted percentage or flat discounts (e.g. WELCOME50, HAPPYHOUR). Diners apply promo codes directly at their table before settling the bill.
               </p>
             </div>
 
-            {/* Feature 4 */}
+            {/* Feature 4: Active Sessions & Settle Bill */}
             <div className="p-7 rounded-2xl bg-white border border-[#ede4dc] hover:border-[#d9480f]/50 hover:shadow-md transition-all group shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-500 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                 <CreditCard className="w-6 h-6" />
               </div>
-              <h4 className="text-lg font-bold text-[#2b2118] mb-2">Flexible Bill & Payments</h4>
+              <h4 className="text-lg font-bold text-[#2b2118] mb-2">Active Sessions & Instant Settlement</h4>
               <p className="text-sm text-[#786154] leading-relaxed">
-                Guests can request the check, pay online via UPI, card, Apple Pay, or choose cash-at-counter. Split bills effortlessly among table members.
+                Track live orders per table, 5% GST computation, and settle bills with 1-click counter payment (Cash, UPI/QR, Card). Tables are freed automatically for the next guest.
               </p>
             </div>
 
-            {/* Feature 5 */}
+            {/* Feature 5: Website Builder */}
             <div className="p-7 rounded-2xl bg-white border border-[#ede4dc] hover:border-[#d9480f]/50 hover:shadow-md transition-all group shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <BarChart3 className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-500 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                <Globe className="w-6 h-6" />
               </div>
-              <h4 className="text-lg font-bold text-[#2b2118] mb-2">Real-Time Floor Analytics</h4>
+              <h4 className="text-lg font-bold text-[#2b2118] mb-2">Branded Restaurant Website</h4>
               <p className="text-sm text-[#786154] leading-relaxed">
-                Track revenue, peak hour velocity, best-selling dishes, and staff fulfillment times from any browser, tablet, or smartphone.
+                Every restaurant gets its own live public website (yourname.tablly.com) with hero cover, live digital menu, contact & address details, and customer inquiry lead capture.
               </p>
             </div>
 
-            {/* Feature 6 */}
+            {/* Feature 6: Google Review Booster */}
             <div className="p-7 rounded-2xl bg-white border border-[#ede4dc] hover:border-[#d9480f]/50 hover:shadow-md transition-all group shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                <Building2 className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                <Star className="w-6 h-6" />
               </div>
-              <h4 className="text-lg font-bold text-[#2b2118] mb-2">Multi-Outlet Management</h4>
+              <h4 className="text-lg font-bold text-[#2b2118] mb-2">Google Review Booster</h4>
               <p className="text-sm text-[#786154] leading-relaxed">
-                Run single cafes or a chain of 50 franchise restaurants from one unified Super Admin console with customized pricing and stock controls.
+                Automatically prompt satisfied guests to leave a 5-star Google Review on their phone right after settling their meal. Skyrocket your local SEO and footfall.
               </p>
             </div>
           </div>
@@ -493,11 +575,11 @@ export default function MarketingPage() {
       <section id="how-it-works" className="py-24 bg-[#fff4e6]/40 border-y border-[#ede4dc]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
-            <h2 className="text-xs sm:text-sm font-semibold tracking-wider text-[#ff922b] uppercase">
-              Effortless Simplicity
+            <h2 className="text-xs sm:text-sm font-semibold tracking-wider text-[#d9480f] uppercase">
+              Simple 4-Step Flow
             </h2>
             <h3 className="text-3xl sm:text-4xl font-extrabold text-[#2b2118] tracking-tight">
-              How Tablly Works in 4 Steps
+              From Scan to Kitchen in 30 Seconds
             </h3>
             <p className="text-[#786154] text-sm sm:text-base">
               No technical expertise needed. You can set up your entire digital restaurant in under 15 minutes.
@@ -513,7 +595,7 @@ export default function MarketingPage() {
               </div>
               <h4 className="text-base font-bold text-[#2b2118] mb-2">Table QR Placement</h4>
               <p className="text-xs text-[#786154] leading-relaxed">
-                Print and place custom QR stands on each table. Each QR code is uniquely tied to that table number.
+                Print and place designer QR stands on each table. Each code is uniquely assigned to that table.
               </p>
             </div>
 
@@ -525,7 +607,7 @@ export default function MarketingPage() {
               </div>
               <h4 className="text-base font-bold text-[#2b2118] mb-2">Instant Guest Scan</h4>
               <p className="text-xs text-[#786154] leading-relaxed">
-                Customers scan with their phone camera. The rich digital menu opens instantly without downloading any app.
+                Customers scan with their phone camera. The visual menu opens in under a second with zero app installs.
               </p>
             </div>
 
@@ -535,9 +617,9 @@ export default function MarketingPage() {
               <div className="w-10 h-10 rounded-lg bg-[#ffe8cc] text-[#d9480f] flex items-center justify-center font-bold mb-4">
                 <ChefHat className="w-5 h-5" />
               </div>
-              <h4 className="text-base font-bold text-[#2b2118] mb-2">Live Kitchen Ticket</h4>
+              <h4 className="text-base font-bold text-[#2b2118] mb-2">Live Kitchen KOT Ticket</h4>
               <p className="text-xs text-[#786154] leading-relaxed">
-                The order immediately appears on the kitchen display system (KOT) with dish details, table #, and special cooking notes.
+                The order instantly appears on the kitchen display system (KOT) with dish details, table #, and special cooking notes.
               </p>
             </div>
 
@@ -547,9 +629,9 @@ export default function MarketingPage() {
               <div className="w-10 h-10 rounded-lg bg-[#ffe8cc] text-[#d9480f] flex items-center justify-center font-bold mb-4">
                 <Receipt className="w-5 h-5" />
               </div>
-              <h4 className="text-base font-bold text-[#2b2118] mb-2">Quick Pay & Feedback</h4>
+              <h4 className="text-base font-bold text-[#2b2118] mb-2">Settle Bill & Free Table</h4>
               <p className="text-xs text-[#786154] leading-relaxed">
-                Guests easily request the final bill, settle payment, review their meal, and vacate the table faster.
+                Diners request the bill, cashier marks payment with 1-click (Cash / UPI / Card), and the table is freed instantly.
               </p>
             </div>
           </div>
@@ -559,104 +641,94 @@ export default function MarketingPage() {
       {/* ───────────────── INTERACTIVE DEMO PREVIEW SECTION ───────────────── */}
       <section id="demo" className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto space-y-4 mb-12">
+          <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
             <h2 className="text-xs sm:text-sm font-semibold tracking-wider text-[#d9480f] uppercase">
-              See Tablly In Action
+              Interactive Preview
             </h2>
             <h3 className="text-3xl sm:text-4xl font-extrabold text-[#2b2118] tracking-tight">
-              One Unified System, Multiple Perspectives
+              Experience the Guest & Kitchen Flow
             </h3>
             <p className="text-[#786154] text-sm sm:text-base">
-              Experience the workflow from both your customer&apos;s eyes and your management staff.
+              See how smooth the table ordering experience feels from both the diner's and kitchen's perspective.
             </p>
 
-            {/* View Switcher Tabs */}
-            <div className="inline-flex p-1.5 rounded-xl bg-white border border-[#ede4dc] gap-1.5 mt-4 shadow-sm">
+            {/* Tab switch */}
+            <div className="inline-flex p-1 rounded-full bg-white border border-[#ede4dc] shadow-sm">
               <button
                 onClick={() => setActiveTab("guest")}
-                className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
                   activeTab === "guest"
-                    ? "bg-[#d9480f] text-white shadow-md"
+                    ? "bg-[#d9480f] text-white shadow-sm"
                     : "text-[#786154] hover:text-[#2b2118]"
                 }`}
               >
-                📱 Guest Table Menu
+                Guest Mobile Experience
               </button>
               <button
                 onClick={() => setActiveTab("kitchen")}
-                className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
                   activeTab === "kitchen"
-                    ? "bg-[#d9480f] text-white shadow-md"
+                    ? "bg-[#d9480f] text-white shadow-sm"
                     : "text-[#786154] hover:text-[#2b2118]"
                 }`}
               >
-                🍳 Kitchen KOT Screen
-              </button>
-              <button
-                onClick={() => setActiveTab("admin")}
-                className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                  activeTab === "admin"
-                    ? "bg-[#d9480f] text-white shadow-md"
-                    : "text-[#786154] hover:text-[#2b2118]"
-                }`}
-              >
-                📊 Manager Dashboard
+                Kitchen KOT Display
               </button>
             </div>
           </div>
 
-          {/* Interactive Screen Container */}
-          <div className="max-w-4xl mx-auto rounded-2xl border border-[#ede4dc] bg-white p-6 sm:p-8 shadow-xl">
+          <div className="max-w-4xl mx-auto rounded-3xl bg-white border border-[#ede4dc] p-6 sm:p-10 shadow-xl">
             {activeTab === "guest" && (
               <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-[#ede4dc] pb-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-[#ede4dc] pb-4 gap-2">
                   <div>
                     <span className="text-xs text-[#d9480f] font-semibold tracking-wide uppercase">
-                      Guest Mobile Interface
+                      Guest Viewpoint
                     </span>
-                    <h4 className="text-lg font-bold text-[#2b2118]">Table #04 • Dine-In Guest View</h4>
+                    <h4 className="text-lg font-bold text-[#2b2118]">Diner Table-Side Menu Experience</h4>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-[#ffe8cc] text-[#d9480f] text-xs font-semibold border border-[#d9480f]/25">
-                    App-free Web App
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-xs font-semibold border border-emerald-500/20">
+                    Zero App Installation
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="p-4 rounded-xl bg-[#fffaf5] border border-[#ede4dc]">
-                    <div className="text-xs text-[#786154]">Categories</div>
-                    <div className="font-bold text-[#2b2118] text-base mt-1">Appetizers, Mains, Drinks</div>
-                    <p className="text-xs text-[#786154] mt-2">Filter by Vegan, Gluten-Free, Chef Special</p>
+                    <div className="text-xs text-[#786154]">Ordering Speed</div>
+                    <div className="font-bold text-[#2b2118] text-base mt-1">Under 45 Seconds</div>
+                    <p className="text-xs text-[#786154] mt-2">Browse categories, view photos & add items</p>
                   </div>
                   <div className="p-4 rounded-xl bg-[#fffaf5] border border-[#ede4dc]">
                     <div className="text-xs text-[#786154]">Order Add-Ons</div>
-                    <div className="font-bold text-[#2b2118] text-base mt-1">Custom Spice & Extras</div>
-                    <p className="text-xs text-[#786154] mt-2">Special preparation instructions field included</p>
+                    <div className="font-bold text-[#2b2118] text-base mt-1">Custom Notes & Extras</div>
+                    <p className="text-xs text-[#786154] mt-2">Special cooking instructions included</p>
                   </div>
                   <div className="p-4 rounded-xl bg-[#fffaf5] border border-[#ede4dc]">
                     <div className="text-xs text-[#786154]">Table Session</div>
-                    <div className="font-bold text-[#2b2118] text-base mt-1">Shared Bill & Re-Ordering</div>
-                    <p className="text-xs text-[#786154] mt-2">Order round 2 of drinks with 1 click</p>
+                    <div className="font-bold text-[#2b2118] text-base mt-1">Offers & Re-Ordering</div>
+                    <p className="text-xs text-[#786154] mt-2">Apply promo coupons with 1 click</p>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#fff4e6] border border-[#d9480f]/25 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="p-5 rounded-xl bg-[#fff4e6] border border-[#d9480f]/25 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#d9480f]/20 text-[#ff922b] flex items-center justify-center font-bold">
+                    <div className="w-10 h-10 rounded-full bg-[#d9480f]/20 text-[#d9480f] flex items-center justify-center font-bold">
                       ✓
                     </div>
                     <div>
-                      <h5 className="text-sm font-bold text-[#2b2118]">Experience it right now</h5>
+                      <h5 className="text-sm font-bold text-[#2b2118]">Experience the full customer journey</h5>
                       <p className="text-xs text-[#786154]">
-                        Check out an active demo restaurant menu route right in this deployment.
+                        Watch an automated simulated walkthrough of ordering, coupons, kitchen KOT, and counter payment.
                       </p>
                     </div>
                   </div>
-                  <Link
-                    href="/restaurant/demo/menu/TBL-1"
-                    className="px-4 py-2 rounded-lg bg-[#d9480f] hover:bg-[#c93b07] text-white text-xs font-bold transition-colors whitespace-nowrap"
+                  <button
+                    type="button"
+                    onClick={() => setIsDemoOpen(true)}
+                    className="px-5 py-2.5 rounded-xl bg-[#d9480f] hover:bg-[#c93b07] text-white text-xs font-bold transition-all shadow-md shadow-[#d9480f]/25 whitespace-nowrap cursor-pointer flex items-center gap-2 hover:-translate-y-0.5"
                   >
-                    Open Menu View &rarr;
-                  </Link>
+                    <span>Open Menu View</span> &rarr;
+                  </button>
                 </div>
               </div>
             )}
@@ -670,8 +742,8 @@ export default function MarketingPage() {
                     </span>
                     <h4 className="text-lg font-bold text-[#2b2118]">Live Kitchen Display System</h4>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-xs font-semibold border border-amber-500/20">
-                    Auto-Refreshes
+                  <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 text-xs font-semibold border border-amber-500/20">
+                    Real-Time Sync
                   </span>
                 </div>
 
@@ -679,106 +751,42 @@ export default function MarketingPage() {
                   {/* Ticket 1 */}
                   <div className="p-4 rounded-xl bg-[#fffaf5] border border-amber-500/30 space-y-3">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="font-bold text-amber-400">Table 04 • KOT #1042</span>
+                      <span className="font-bold text-amber-700">Table 04 • KOT #1042</span>
                       <span className="text-[#786154]">Ordered 3 min ago</span>
                     </div>
                     <div className="space-y-1 text-sm font-medium">
                       <div className="text-[#2b2118] flex justify-between">
-                        <span>1x Truffle Wild Burger</span>
-                        <span className="text-xs text-[#786154]">Medium Rare</span>
+                        <span>1x Truffle Paneer Burger</span>
+                        <span className="text-xs text-[#786154]">Extra crispy</span>
                       </div>
                       <div className="text-[#2b2118] flex justify-between">
-                        <span>1x Garlic Parmesan Fries</span>
-                        <span className="text-xs text-[#786154]">Extra Crispy</span>
+                        <span>1x Hazelnut Iced Latte</span>
+                        <span className="text-xs text-[#786154]">Less sweet</span>
                       </div>
                     </div>
-                    <div className="pt-2 border-t border-[#ede4dc] flex justify-between items-center">
-                      <span className="text-[11px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">
-                        In Preparation
-                      </span>
-                      <button className="text-xs bg-[#d9480f] text-white font-bold px-3 py-1 rounded">
-                        Mark Ready
-                      </button>
+                    <div className="flex items-center justify-between pt-2 border-t border-[#ede4dc] text-xs">
+                      <span className="text-amber-700 font-semibold">Cooking in Kitchen 🍳</span>
+                      <span className="text-xs font-bold text-[#d9480f]">Est: 9m</span>
                     </div>
                   </div>
 
                   {/* Ticket 2 */}
-                  <div className="p-4 rounded-xl bg-[#fffaf5] border border-[#d9480f]/25 space-y-3">
+                  <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/30 space-y-3">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="font-bold text-[#ff922b]">Table 09 • KOT #1041</span>
-                      <span className="text-[#786154]">Ordered 8 min ago</span>
+                      <span className="font-bold text-emerald-700">Table 02 • KOT #1041</span>
+                      <span className="text-[#786154]">Served 8 min ago</span>
                     </div>
                     <div className="space-y-1 text-sm font-medium">
                       <div className="text-[#2b2118] flex justify-between">
-                        <span>2x Iced Matcha Latte</span>
-                        <span className="text-xs text-[#786154]">Oat milk</span>
-                      </div>
-                      <div className="text-[#2b2118] flex justify-between">
-                        <span>1x Avocado Toast</span>
-                        <span className="text-xs text-[#786154]">No chilli flakes</span>
+                        <span>2x Wood-Fired Margherita Pizza</span>
+                        <span className="text-xs text-[#786154]">Thin crust</span>
                       </div>
                     </div>
-                    <div className="pt-2 border-t border-[#ede4dc] flex justify-between items-center">
-                      <span className="text-[11px] bg-[#ffe8cc] text-[#d9480f] font-semibold px-2 py-0.5 rounded">
-                        Ready to Serve
-                      </span>
-                      <button className="text-xs bg-[#ede4dc] text-[#786154] hover:bg-[#d9480f] hover:text-white transition-colors font-bold px-3 py-1 rounded">
-                        Completed
-                      </button>
+                    <div className="flex items-center justify-between pt-2 border-t border-[#ede4dc] text-xs">
+                      <span className="text-emerald-700 font-semibold">Delivered to Table ✓</span>
+                      <span className="text-xs font-bold text-emerald-700">Ready for Bill</span>
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === "admin" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-[#ede4dc] pb-4">
-                  <div>
-                    <span className="text-xs text-[#d9480f] font-semibold tracking-wide uppercase">
-                      Manager Portal
-                    </span>
-                    <h4 className="text-lg font-bold text-[#2b2118]">Live Floor Status & Revenue</h4>
-                  </div>
-                  <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold border border-blue-500/20">
-                    Live Sync
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="p-3.5 rounded-xl bg-[#fffaf5] border border-[#ede4dc]">
-                    <div className="text-xs text-[#786154]">Total Tables</div>
-                    <div className="text-xl font-bold text-[#2b2118] mt-1">18 Tables</div>
-                    <div className="text-[11px] text-[#d9480f] font-semibold mt-1">14 Occupied (78%)</div>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-[#fffaf5] border border-[#ede4dc]">
-                    <div className="text-xs text-[#786154]">Today&apos;s Revenue</div>
-                    <div className="text-xl font-bold text-[#2b2118] mt-1">$3,420</div>
-                    <div className="text-[11px] text-[#ff922b] mt-1">+18% vs yesterday</div>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-[#fffaf5] border border-[#ede4dc]">
-                    <div className="text-xs text-[#786154]">Avg Prep Time</div>
-                    <div className="text-xl font-bold text-[#2b2118] mt-1">11.4 min</div>
-                    <div className="text-[11px] text-[#ff922b] mt-1">3.2 min faster</div>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-[#fffaf5] border border-[#ede4dc]">
-                    <div className="text-xs text-[#786154]">Customer Rating</div>
-                    <div className="text-xl font-bold text-[#2b2118] mt-1">4.9 / 5.0</div>
-                    <div className="text-[11px] text-amber-400 mt-1">★ 94 reviews</div>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-[#fffaf5] border border-[#ede4dc] flex items-center justify-between">
-                  <div>
-                    <h5 className="text-sm font-bold text-[#2b2118]">Want to manage your restaurant panel?</h5>
-                    <p className="text-xs text-[#786154]">Sign in to add food items, adjust prices, and monitor staff.</p>
-                  </div>
-                  <Link
-                    href="/login"
-                    className="px-4 py-2 rounded-lg bg-[#d9480f] hover:bg-[#c93b07] text-white text-xs font-bold transition-colors whitespace-nowrap"
-                  >
-                    Go To Admin Login
-                  </Link>
                 </div>
               </div>
             )}
@@ -786,64 +794,101 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      {/* ───────────────── PRICING PLANS ───────────────── */}
+      {/* ───────────────── PRICING PLANS (UPDATED BACKEND PACKAGES) ───────────────── */}
       <section id="pricing" className="py-24 bg-[#fff4e6]/40 border-y border-[#ede4dc]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
             <h2 className="text-xs sm:text-sm font-semibold tracking-wider text-[#d9480f] uppercase">
-              Transparent Pricing
+              Transparent Pricing Plans
             </h2>
             <h3 className="text-3xl sm:text-4xl font-extrabold text-[#2b2118] tracking-tight">
-              Pick the Right Plan for Your Restaurant
+              Pick the Perfect Plan for Your Restaurant
             </h3>
             <p className="text-[#786154] text-sm sm:text-base">
-              No hidden fees, no hardware locking. Start your 14-day free trial now.
+              No hidden fees, no costly hardware locking. Start with a 14-day free trial on any plan.
             </p>
 
-            {/* Billing Cycle Toggle */}
-            <div className="inline-flex items-center gap-3 p-1 rounded-full bg-white border border-[#ede4dc] mt-4 shadow-sm">
+            {/* Billing Duration Switcher: 1 Month | 6 Months | 12 Months */}
+            <div className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-white border border-[#ede4dc] mt-4 shadow-sm max-w-full overflow-x-auto">
               <button
-                onClick={() => setBillingCycle("monthly")}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                  billingCycle === "monthly"
-                    ? "bg-[#d9480f] text-white"
+                type="button"
+                onClick={() => setBillingCycle("1_month")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  billingCycle === "1_month"
+                    ? "bg-[#d9480f] text-white shadow-xs"
                     : "text-[#786154] hover:text-[#2b2118]"
                 }`}
               >
-                Monthly
+                1 Month
               </button>
               <button
-                onClick={() => setBillingCycle("yearly")}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  billingCycle === "yearly"
-                    ? "bg-[#d9480f] text-white"
+                type="button"
+                onClick={() => setBillingCycle("6_months")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  billingCycle === "6_months"
+                    ? "bg-[#d9480f] text-white shadow-xs"
                     : "text-[#786154] hover:text-[#2b2118]"
                 }`}
               >
-                <span>Yearly</span>
-                <span className="text-[10px] bg-[#ffe8cc] text-[#d9480f] px-1.5 py-0.2 rounded font-bold">
-                  Save 20%
+                <span>6 Months</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
+                  billingCycle === "6_months" ? "bg-white/20 text-white" : "bg-[#ffe8cc] text-[#d9480f]"
+                }`}>
+                  Save ~17%
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setBillingCycle("12_months")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  billingCycle === "12_months"
+                    ? "bg-[#d9480f] text-white shadow-xs"
+                    : "text-[#786154] hover:text-[#2b2118]"
+                }`}
+              >
+                <span>12 Months / 1 Year</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
+                  billingCycle === "12_months" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
+                }`}>
+                  Save up to 25% ✨
                 </span>
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
-            {/* Plan 1: Starter */}
+            {/* Plan 1: Basic */}
             <div className="p-8 rounded-2xl bg-white border border-[#ede4dc] flex flex-col justify-between hover:border-[#d9480f]/40 hover:shadow-md transition-all shadow-sm">
               <div>
-                <h4 className="text-xl font-bold text-[#2b2118]">Starter</h4>
-                <p className="text-xs text-[#786154] mt-1">Perfect for cafes, food trucks, and small bakeries.</p>
+                <h4 className="text-xl font-bold text-[#2b2118]">Basic Plan</h4>
+                <p className="text-xs text-[#786154] mt-1">Ideal for cafes, small bakeries, and quick-serve outlets.</p>
+                
                 <div className="mt-6 mb-6">
                   <span className="text-4xl font-extrabold text-[#2b2118]">
-                    {billingCycle === "monthly" ? "$29" : "$24"}
+                    {billingCycle === "1_month" ? "₹999" : billingCycle === "6_months" ? "₹833" : "₹750"}
                   </span>
                   <span className="text-xs text-[#786154]"> / month</span>
+                  {billingCycle === "1_month" && (
+                    <p className="text-[11px] text-[#786154] font-medium mt-1">
+                      Billed monthly at ₹999
+                    </p>
+                  )}
+                  {billingCycle === "6_months" && (
+                    <p className="text-[11px] text-amber-700 font-semibold mt-1">
+                      Billed ₹4,999 for 6 months (Save ₹995)
+                    </p>
+                  )}
+                  {billingCycle === "12_months" && (
+                    <p className="text-[11px] text-emerald-600 font-semibold mt-1">
+                      Billed annually at ₹8,999 (Save ₹2,989)
+                    </p>
+                  )}
                 </div>
+
                 <ul className="space-y-3 text-xs sm:text-sm text-[#4a3b32]">
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Up to 12 Restaurant Tables</span>
+                    <span>Up to <strong>15 Restaurant Tables</strong></span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
@@ -851,60 +896,87 @@ export default function MarketingPage() {
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Real-Time Digital Menu</span>
+                    <span>Contactless Digital Menu & Ordering</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Basic Kitchen Order Display</span>
+                    <span>Active Table Sessions & Bill Management</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Email & Community Support</span>
+                    <span>Branded Restaurant Portfolio Website</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
+                    <span>Standard Email Support</span>
                   </li>
                 </ul>
               </div>
-              <a
-                href="#signup"
-                className="mt-8 block text-center py-3 rounded-xl border border-[#d9480f] bg-white text-[#d9480f] font-semibold text-sm hover:bg-[#d9480f] hover:text-white transition-colors shadow-sm"
+
+              <button
+                onClick={() => handleOpenTrial("Basic", billingCycle)}
+                className="mt-8 block w-full text-center py-3 rounded-xl border-2 border-[#d9480f] bg-white text-[#d9480f] font-bold text-sm hover:bg-[#d9480f] hover:text-white transition-colors shadow-sm cursor-pointer"
               >
-                Start Starter Trial
-              </a>
+                Choose Basic Plan
+              </button>
             </div>
 
-            {/* Plan 2: Growth (Featured) */}
-            <div className="p-8 rounded-2xl bg-white border-2 border-[#d9480f] flex flex-col justify-between relative shadow-xl shadow-[#d9480f]/10 scale-105">
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#d9480f] text-white text-[11px] font-extrabold uppercase px-3.5 py-1 rounded-full shadow-md">
+            {/* Plan 2: Standard (Most Popular) */}
+            <div className="p-8 rounded-2xl bg-white border-2 border-[#d9480f] flex flex-col justify-between relative shadow-xl shadow-[#d9480f]/15 scale-105">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#d9480f] text-white text-[11px] font-extrabold uppercase px-4 py-1 rounded-full shadow-md">
                 Most Popular
               </div>
+
               <div>
-                <h4 className="text-xl font-bold text-[#2b2118]">Growth & Bistro</h4>
-                <p className="text-xs text-[#786154] mt-1">For busy dining restaurants and cocktail bars.</p>
+                <h4 className="text-xl font-bold text-[#2b2118]">Standard Plan</h4>
+                <p className="text-xs text-[#786154] mt-1">For busy dining restaurants, bistros, and cocktail lounges.</p>
+
                 <div className="mt-6 mb-6">
                   <span className="text-4xl font-extrabold text-[#2b2118]">
-                    {billingCycle === "monthly" ? "$69" : "$55"}
+                    {billingCycle === "1_month" ? "₹2,499" : billingCycle === "6_months" ? "₹2,083" : "₹1,916"}
                   </span>
                   <span className="text-xs text-[#786154]"> / month</span>
+                  {billingCycle === "1_month" && (
+                    <p className="text-[11px] text-[#786154] font-medium mt-1">
+                      Billed monthly at ₹2,499
+                    </p>
+                  )}
+                  {billingCycle === "6_months" && (
+                    <p className="text-[11px] text-amber-700 font-semibold mt-1">
+                      Billed ₹12,499 for 6 months (Save ₹2,495)
+                    </p>
+                  )}
+                  {billingCycle === "12_months" && (
+                    <p className="text-[11px] text-emerald-600 font-semibold mt-1">
+                      Billed annually at ₹22,999 (Save ₹6,989)
+                    </p>
+                  )}
                 </div>
+
                 <ul className="space-y-3 text-xs sm:text-sm text-[#4a3b32]">
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Unlimited Tables & Sessions</span>
+                    <span>Up to <strong>50 Restaurant Tables</strong></span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Full Multi-Screen KOT Display</span>
+                    <span>Premium Designer QR Standee Templates</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Automated Smart Upselling Engine</span>
+                    <span>Live Kitchen Display System (KOT)</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Split Bills & Online Payment Gateway</span>
+                    <span>Promotional Offers & Coupon Engine</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Advanced Floor Analytics & POS Sync</span>
+                    <span>Customer Google Review Booster</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
+                    <span>Customer Inquiry Lead Capture</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
@@ -912,52 +984,77 @@ export default function MarketingPage() {
                   </li>
                 </ul>
               </div>
-              <a
-                href="#signup"
-                className="mt-8 block text-center py-3 rounded-xl bg-[#d9480f] hover:bg-[#c93b07] text-white font-bold text-sm shadow-lg shadow-[#d9480f]/30 transition-all hover:-translate-y-0.5"
+
+              <button
+                onClick={() => handleOpenTrial("Standard", billingCycle)}
+                className="mt-8 block w-full text-center py-3.5 rounded-xl bg-[#d9480f] hover:bg-[#c93b07] text-white font-extrabold text-sm shadow-lg shadow-[#d9480f]/30 transition-all hover:-translate-y-0.5 cursor-pointer"
               >
-                Start 14-Day Free Trial
-              </a>
+                Choose Standard Plan
+              </button>
             </div>
 
-            {/* Plan 3: Enterprise */}
+            {/* Plan 3: Premium */}
             <div className="p-8 rounded-2xl bg-white border border-[#ede4dc] flex flex-col justify-between hover:border-[#d9480f]/40 hover:shadow-md transition-all shadow-sm">
               <div>
-                <h4 className="text-xl font-bold text-[#2b2118]">Franchise & Enterprise</h4>
-                <p className="text-xs text-[#786154] mt-1">Multi-location restaurant groups and hotel dining.</p>
+                <h4 className="text-xl font-bold text-[#2b2118]">Premium Plan</h4>
+                <p className="text-xs text-[#786154] mt-1">For multi-floor dining venues, large resorts & high-volume spaces.</p>
+
                 <div className="mt-6 mb-6">
-                  <span className="text-4xl font-extrabold text-[#2b2118]">Custom</span>
-                  <span className="text-xs text-[#786154]"> / tailored quote</span>
+                  <span className="text-4xl font-extrabold text-[#2b2118]">
+                    {billingCycle === "1_month" ? "₹4,999" : billingCycle === "6_months" ? "₹4,166" : "₹3,750"}
+                  </span>
+                  <span className="text-xs text-[#786154]"> / month</span>
+                  {billingCycle === "1_month" && (
+                    <p className="text-[11px] text-[#786154] font-medium mt-1">
+                      Billed monthly at ₹4,999
+                    </p>
+                  )}
+                  {billingCycle === "6_months" && (
+                    <p className="text-[11px] text-amber-700 font-semibold mt-1">
+                      Billed ₹24,999 for 6 months (Save ₹4,995)
+                    </p>
+                  )}
+                  {billingCycle === "12_months" && (
+                    <p className="text-[11px] text-emerald-600 font-semibold mt-1">
+                      Billed annually at ₹44,999 (Save ₹14,989)
+                    </p>
+                  )}
                 </div>
+
                 <ul className="space-y-3 text-xs sm:text-sm text-[#4a3b32]">
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Unlimited Outlets & Super Admin</span>
+                    <span>Up to <strong>150 Restaurant Tables</strong></span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Custom White-Label Subdomains</span>
+                    <span>Unlimited Additional Custom QR Standees</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Custom POS & ERP Integrations</span>
+                    <span>Multi-Floor / Multi-Section Management</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Dedicated Technical Account Manager</span>
+                    <span>Customer Visit & Lifetime Spend CRM</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>99.99% SLA Uptime Guarantee</span>
+                    <span>Advanced Floor, GST & Revenue Reports</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
+                    <span>Dedicated Onboarding Manager & 24/7 SLA</span>
                   </li>
                 </ul>
               </div>
-              <a
-                href="mailto:contact@tablly.com"
-                className="mt-8 block text-center py-3 rounded-xl border border-[#d9480f] bg-white text-[#d9480f] font-semibold text-sm hover:bg-[#d9480f] hover:text-white transition-colors shadow-sm"
+
+              <button
+                onClick={() => handleOpenTrial("Premium", billingCycle)}
+                className="mt-8 block w-full text-center py-3 rounded-xl border-2 border-[#d9480f] bg-white text-[#d9480f] font-bold text-sm hover:bg-[#d9480f] hover:text-white transition-colors shadow-sm cursor-pointer"
               >
-                Contact Sales Team
-              </a>
+                Choose Premium Plan
+              </button>
             </div>
           </div>
         </div>
@@ -968,14 +1065,15 @@ export default function MarketingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
             <h2 className="text-xs sm:text-sm font-semibold tracking-wider text-[#d9480f] uppercase">
-              Loved By Restaurateurs
+              Proven Social Proof
             </h2>
             <h3 className="text-3xl sm:text-4xl font-extrabold text-[#2b2118] tracking-tight">
-              What Restaurant Owners Are Saying
+              Trusted by 1,200+ Restaurateurs Nationwide
             </h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Testimonial 1 */}
             <div className="p-6 rounded-2xl bg-white border border-[#ede4dc] space-y-4 shadow-sm">
               <div className="flex gap-1 text-amber-400">
                 {[...Array(5)].map((_, i) => (
@@ -983,19 +1081,20 @@ export default function MarketingPage() {
                 ))}
               </div>
               <p className="text-sm text-[#4a3b32] leading-relaxed italic">
-                &ldquo;Tablly reduced our weekend rush chaos by 80%. Guests sit down, order immediately, and we save at least 15 minutes per table. Our servers can finally focus on hospitality.&rdquo;
+                &ldquo;Tablly eliminated weekend billing chaos completely. Diners scan and order right away, saving us 15 minutes per table. Our servers now focus on genuine hospitality instead of running around with paper notepads.&rdquo;
               </p>
               <div className="pt-2 border-t border-[#ede4dc] flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-[#ffe8cc] text-[#d9480f] font-bold flex items-center justify-center text-xs">
-                  MJ
+                  RM
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-[#2b2118]">Marco Rossi</div>
-                  <div className="text-[11px] text-[#786154]">Head Chef & Owner, Bella Cucina</div>
+                  <div className="text-xs font-bold text-[#2b2118]">Rajiv Menon</div>
+                  <div className="text-[11px] text-[#786154]">Co-Founder, The Urban Green Bistro (Mumbai)</div>
                 </div>
               </div>
             </div>
 
+            {/* Testimonial 2 */}
             <div className="p-6 rounded-2xl bg-white border border-[#ede4dc] space-y-4 shadow-sm">
               <div className="flex gap-1 text-amber-400">
                 {[...Array(5)].map((_, i) => (
@@ -1003,19 +1102,20 @@ export default function MarketingPage() {
                 ))}
               </div>
               <p className="text-sm text-[#4a3b32] leading-relaxed italic">
-                &ldquo;The smart combo recommendations alone increased our dessert and beverage sales by 28%. Diners love seeing actual high-res photos before choosing their food.&rdquo;
+                &ldquo;The promotional coupon engine and Google review booster delivered huge ROI. In our first 60 days on the Standard plan, our dessert sales jumped 26% and we gained over 140 genuine 5-star Google reviews.&rdquo;
               </p>
               <div className="pt-2 border-t border-[#ede4dc] flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-[#ffe8cc] text-[#d9480f] font-bold flex items-center justify-center text-xs">
-                  SL
+                  AR
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-[#2b2118]">Sarah Lin</div>
-                  <div className="text-[11px] text-[#786154]">General Manager, Urban Garden Cafe</div>
+                  <div className="text-xs font-bold text-[#2b2118]">Ananya Roy</div>
+                  <div className="text-[11px] text-[#786154]">Operations Head, Copper Spoon Cafe & Roastery (Bengaluru)</div>
                 </div>
               </div>
             </div>
 
+            {/* Testimonial 3 */}
             <div className="p-6 rounded-2xl bg-white border border-[#ede4dc] space-y-4 shadow-sm">
               <div className="flex gap-1 text-amber-400">
                 {[...Array(5)].map((_, i) => (
@@ -1023,15 +1123,15 @@ export default function MarketingPage() {
                 ))}
               </div>
               <p className="text-sm text-[#4a3b32] leading-relaxed italic">
-                &ldquo;Zero app download was the main reason we switched to Tablly. Customers open their camera, point at the QR code, and that&apos;s it. Outstanding support as well!&rdquo;
+                &ldquo;The zero-app-download feature is a game changer. Guests point their phone camera, point and click their dishes, and orders sync straight into our live kitchen display (KOT). Unbelievable speed!&rdquo;
               </p>
               <div className="pt-2 border-t border-[#ede4dc] flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-[#ffe8cc] text-[#d9480f] font-bold flex items-center justify-center text-xs">
-                  DK
+                  VS
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-[#2b2118]">David Kapoor</div>
-                  <div className="text-[11px] text-[#786154]">Founder, Spice & Barrel Lounge</div>
+                  <div className="text-xs font-bold text-[#2b2118]">Vikram Sehgal</div>
+                  <div className="text-[11px] text-[#786154]">General Manager, Barbeque Craft & Lounge (Delhi NCR)</div>
                 </div>
               </div>
             </div>
@@ -1052,24 +1152,28 @@ export default function MarketingPage() {
           <div className="space-y-4">
             {[
               {
-                q: "Do diners have to download an app or register an account?",
-                a: "No! Tablly works seamlessly inside any standard mobile web browser (Safari, Chrome, etc.). Diners simply point their camera at the table QR code and the menu opens in under a second.",
+                q: "Do diners have to download any mobile app to place orders?",
+                a: "No! Tablly works seamlessly inside any standard mobile web browser (Chrome, Safari, Firefox). Guests simply scan the table QR code and the full visual menu opens instantly in under a second.",
               },
               {
-                q: "How do orders reach the kitchen?",
-                a: "As soon as a guest presses 'Place Order', it sends a live ticket directly to your Kitchen Display System (KDS) and POS dashboard with the table number, items, and preparation notes. You can also connect standard thermal ESC/POS receipt printers.",
+                q: "How do orders reach the kitchen from the table?",
+                a: "The moment a guest taps 'Place Order', it sends a live ticket directly to your Kitchen Display System (KDS) screen with table number, items, and special cooking instructions.",
               },
               {
-                q: "Can I update food prices, items, or 86 out-of-stock dishes during service?",
-                a: "Yes! Changes made in your admin panel update instantaneously across all guest phones without requiring page refreshes.",
+                q: "Can I update item prices, add daily specials, or mark dishes out-of-stock?",
+                a: "Yes! Any modification made in your Restaurant Admin panel immediately reflects on all diners' phones in real time without refreshing.",
               },
               {
-                q: "How long does it take to onboard my restaurant?",
-                a: "Most restaurants go live within 15 to 30 minutes. You can upload your menu categories and items, generate table QR codes, print them, and start accepting orders immediately.",
+                q: "How long does onboarding and QR standee setup take?",
+                a: "Most restaurants go live within 15 to 30 minutes. You can import your menu items, generate table QR codes, print them, and begin accepting table orders immediately.",
               },
               {
-                q: "Can guests split bills or pay cash if they prefer?",
-                a: "Yes! Tablly supports full digital payments (cards, Apple Pay, UPI) as well as a 'Pay at Counter / Cash' option so you accommodate every dining preference.",
+                q: "How does bill settlement work at the end of a meal?",
+                a: "When diners finish eating, they request the bill. The cashier verifies the table's active session in the admin panel and marks payment as Cash, UPI/QR, or Card. Once paid, the table is freed automatically for the next guest.",
+              },
+              {
+                q: "Can I manage multiple outlets or franchises?",
+                a: "Yes! The Tablly Super Admin console provides complete multi-restaurant oversight, chain-wide analytics, package management, and centralized controls.",
               },
             ].map((faq, index) => (
               <div
@@ -1107,19 +1211,19 @@ export default function MarketingPage() {
               <Zap className="w-7 h-7" />
             </div>
             <h3 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#2b2118] tracking-tight">
-              Ready to modernise your dining experience?
+              Ready to modernize your dining floor?
             </h3>
             <p className="text-[#786154] text-sm sm:text-base max-w-xl mx-auto">
-              Join forward-thinking restaurants and cafes that use Tablly to serve faster, boost ticket sizes, and delight their guests.
+              Join over 1,200 forward-thinking restaurants and cafes that use Tablly to serve faster, boost ticket sizes, and delight their guests.
             </p>
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                href="/login"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#d9480f] hover:bg-[#c93b07] text-white font-bold text-base shadow-xl shadow-[#d9480f]/30 transition-all hover:-translate-y-0.5"
+              <button
+                onClick={() => handleOpenTrial("Standard")}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#d9480f] hover:bg-[#c93b07] text-white font-bold text-base shadow-xl shadow-[#d9480f]/30 transition-all hover:-translate-y-0.5 cursor-pointer"
               >
-                <span>Get Started Now</span>
+                <span>Start Free 14-Day Trial</span>
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </button>
               <Link
                 href="/login"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-[#d9480f]/40 bg-white hover:bg-[#ffe8cc]/40 text-[#d9480f] font-semibold text-base transition-colors shadow-sm"
@@ -1141,13 +1245,13 @@ export default function MarketingPage() {
                 <div className="w-7 h-7 rounded-lg bg-[#d9480f] flex items-center justify-center text-white font-bold">
                   <UtensilsCrossed className="w-4 h-4" />
                 </div>
-                <span className="text-lg font-bold text-[#2b2118]">Tablly</span>
+                <span className="text-lg font-bold text-[#2b2118]">Tablly Cloud</span>
               </div>
               <p className="text-xs text-[#786154] max-w-sm">
-                Next-generation restaurant table commerce platform. QR menus, real-time KOT kitchen sync, and unified management.
+                Next-generation restaurant table commerce platform. QR menus, real-time KOT kitchen sync, active sessions, and unified restaurant website builder.
               </p>
               <p className="text-xs text-[#9c887e]">
-                Designed for modern bistros, cafes, fine dining & multi-outlet chains.
+                Designed for modern Indian bistros, cafes, fine dining & multi-outlet chains.
               </p>
             </div>
 
@@ -1157,8 +1261,8 @@ export default function MarketingPage() {
               <ul className="space-y-1.5 text-xs text-[#786154]">
                 <li><a href="#features" className="hover:text-[#d9480f]">QR Ordering</a></li>
                 <li><a href="#features" className="hover:text-[#d9480f]">Kitchen Display (KOT)</a></li>
-                <li><a href="#features" className="hover:text-[#d9480f]">Table Management</a></li>
-                <li><a href="#features" className="hover:text-[#d9480f]">Analytics & Insights</a></li>
+                <li><a href="#features" className="hover:text-[#d9480f]">Active Table Sessions</a></li>
+                <li><a href="#features" className="hover:text-[#d9480f]">Website Builder</a></li>
               </ul>
             </div>
 
@@ -1167,7 +1271,7 @@ export default function MarketingPage() {
               <div className="font-semibold text-[#2b2118] text-xs uppercase tracking-wider">Resources</div>
               <ul className="space-y-1.5 text-xs text-[#786154]">
                 <li><a href="#how-it-works" className="hover:text-[#d9480f]">How It Works</a></li>
-                <li><a href="#demo" className="hover:text-[#d9480f]">Live Demo</a></li>
+                <li><button onClick={() => setIsDemoOpen(true)} className="hover:text-[#d9480f] cursor-pointer">Live Demo</button></li>
                 <li><a href="#pricing" className="hover:text-[#d9480f]">Pricing</a></li>
                 <li><a href="#faq" className="hover:text-[#d9480f]">FAQ</a></li>
               </ul>
@@ -1177,9 +1281,9 @@ export default function MarketingPage() {
             <div className="space-y-2.5">
               <div className="font-semibold text-[#2b2118] text-xs uppercase tracking-wider">Portals</div>
               <ul className="space-y-1.5 text-xs text-[#786154]">
-                <li><Link href="/login" className="hover:text-[#d9480f]">Restaurant Admin</Link></li>
-                <li><a href="http://localhost:3002" className="hover:text-[#d9480f]">Admin Dashboard</a></li>
-                <li><a href="http://localhost:5000" className="hover:text-[#d9480f]">API Backend</a></li>
+                <li><Link href="/login" className="hover:text-[#d9480f]">Restaurant Login</Link></li>
+                <li><button onClick={() => handleOpenTrial("Standard")} className="hover:text-[#d9480f] cursor-pointer">Start Free Trial</button></li>
+                <li><a href="http://localhost:3002" className="hover:text-[#d9480f]">Admin Panel</a></li>
               </ul>
             </div>
           </div>
@@ -1196,6 +1300,23 @@ export default function MarketingPage() {
           </div>
         </div>
       </footer>
+
+      {/* ───────────────── MODALS & WIDGETS ───────────────── */}
+      <CtaTrialModal
+        isOpen={isTrialOpen}
+        onClose={() => setIsTrialOpen(false)}
+        preselectedPlan={trialPlan}
+        preselectedDuration={trialDuration}
+      />
+
+      <AutomatedDemoModal
+        isOpen={isDemoOpen}
+        onClose={() => setIsDemoOpen(false)}
+      />
+
+      <ChatbotWidget
+        onOpenTrial={() => handleOpenTrial("Standard")}
+      />
     </div>
   );
 }
