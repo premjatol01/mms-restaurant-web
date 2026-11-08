@@ -783,6 +783,10 @@ export const useMenuOrderStore = create(
         const cartItems = Object.values(items);
         if (cartItems.length === 0) return { ok: false, error: "Your cart is empty" };
 
+        if (verifiedRestaurant?.settings?.acceptOrders === false) {
+          return { ok: false, error: "This restaurant is currently not accepting new orders." };
+        }
+
         set({ isSubmittingOrder: true });
 
         const resolvedSubdomain = subdomain || verifiedRestaurant?.subdomain;

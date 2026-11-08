@@ -14,6 +14,7 @@ import {
   Tag,
   Sparkles,
   CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
 import PageHeader from "@/components/menuComp/PageHeader";
@@ -99,6 +100,7 @@ const Cart = () => {
     tableId,
     tableName,
     verifiedTable,
+    verifiedRestaurant,
     cartItems,
     subtotal,
     offerDiscount,
@@ -367,6 +369,18 @@ const Cart = () => {
               )}
             </div>
 
+            {verifiedRestaurant?.settings?.acceptOrders === false && (
+              <div className="mb-4 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5 text-amber-700 dark:text-amber-400">
+                <AlertCircle size={18} className="flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                <div className="text-xs space-y-0.5">
+                  <p className="font-bold text-xs">Orders Temporarily Paused</p>
+                  <p className="text-[11px] leading-snug opacity-90">
+                    This restaurant is currently not accepting new orders online. Please check with your server.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="border-t border-dashed border-border-light pt-4 mb-5">
               <div className="flex justify-between items-center">
                 <div>
@@ -396,10 +410,16 @@ const Cart = () => {
             <button
               type="button"
               onClick={handlePlaceOrder}
-              disabled={isSubmittingOrder}
+              disabled={isSubmittingOrder || verifiedRestaurant?.settings?.acceptOrders === false}
               className="w-full bg-primary hover:bg-primary-hover active:scale-[0.98] disabled:opacity-75 disabled:cursor-not-allowed text-text-on-primary font-bold rounded-xl py-4 flex items-center justify-between px-6 transition-all shadow-lg shadow-primary/20"
             >
-              <span>{isSubmittingOrder ? "Placing order..." : "Place order"}</span>
+              <span>
+                {verifiedRestaurant?.settings?.acceptOrders === false
+                  ? "Orders Paused"
+                  : isSubmittingOrder
+                  ? "Placing order..."
+                  : "Place order"}
+              </span>
               <span className="font-extrabold">₹{finalTotal}</span>
             </button>
           </div>

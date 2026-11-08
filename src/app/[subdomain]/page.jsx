@@ -28,6 +28,9 @@ async function getRestaurantData(subdomain) {
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => null);
+      if (errJson?.isInactive) {
+        return { isInactive: true, message: errJson?.message };
+      }
       if (errJson?.isUnpublished) {
         return { isUnpublished: true };
       }
@@ -70,7 +73,8 @@ export default async function RestaurantPortfolioPage({ params }) {
   const restaurant = await getRestaurantData(subdomain);
 
   // If no restaurant data is returned by the API or website is unpublished, show the not-found/unavailable page
-  if (!restaurant || restaurant.isUnpublished) {
+  if (!restaurant || restaurant.isUnpublished || restaurant.isInactive) {
+    const isInactive = restaurant?.isInactive;
     const isUnpublished = restaurant?.isUnpublished;
     return (
       <div className="min-h-screen bg-[#fffaf5] text-[#2b2118] flex flex-col justify-between p-6">
@@ -90,13 +94,15 @@ export default async function RestaurantPortfolioPage({ params }) {
 
           <div className="space-y-2">
             <span className="text-xs font-bold uppercase tracking-wider text-[#d9480f] bg-[#ffe8cc] px-3.5 py-1 rounded-full border border-[#d9480f]/20">
-              {isUnpublished ? "Unpublished • Not Available" : "404 • Not Found"}
+              {isInactive ? "Temporarily Inactive" : isUnpublished ? "Unpublished • Not Available" : "404 • Not Found"}
             </span>
             <h1 className="text-3xl font-extrabold text-[#2b2118] mt-3">
-              {isUnpublished ? "Website Currently Unavailable" : "Restaurant Not Found"}
+              {isInactive ? "Restaurant Currently Closed" : isUnpublished ? "Website Currently Unavailable" : "Restaurant Not Found"}
             </h1>
             <p className="text-sm text-[#786154] leading-relaxed">
-              {isUnpublished
+              {isInactive
+                ? "This restaurant is currently closed and not taking visitors or orders at this time. Please check back later."
+                : isUnpublished
                 ? `The website for ${subdomain} is currently unpublished or undergoing maintenance by the restaurant owner.`
                 : `We couldn't find an active restaurant portfolio for ${subdomain}. The restaurant may not exist or its subdomain may have changed.`}
             </p>
