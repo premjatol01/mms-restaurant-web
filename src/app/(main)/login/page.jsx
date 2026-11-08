@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Utensils, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 
@@ -13,6 +13,20 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const err = params.get("error");
+      if (err === "inactive") {
+        setError("Your account or restaurant is currently inactive. Please contact administrator.");
+      } else if (err === "token_expired") {
+        setError("Your session has expired (12-hour limit reached). Please sign in again.");
+      } else if (err === "session_expired") {
+        setError("Your session has expired. Please sign in again.");
+      }
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -24,19 +38,34 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        // Store token locally just in case
+        // Store locally on web client
         localStorage.setItem("restaurant_token", data.data.token);
         localStorage.setItem("restaurant_user", JSON.stringify(data.data.user));
+        if (data.data.refreshToken) {
+          localStorage.setItem("restaurant_refresh_token", data.data.refreshToken);
+        } else {
+          localStorage.removeItem("restaurant_refresh_token");
+        }
+        localStorage.setItem("restaurant_remember", rememberMe ? "true" : "false");
         
         // Redirect to the restaurant-admin panel (running on port 3002)
-        // We pass the token in the URL so the admin panel can grab it and log them in
-        window.location.href = `http://localhost:3002?token=${data.data.token}`;
+        // Pass token, refreshToken (if any), and remember flag in URL params
+        const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL || "http://localhost:3002";
+        const queryParams = new URLSearchParams({
+          token: data.data.token,
+          remember: rememberMe ? "1" : "0",
+        });
+        if (data.data.refreshToken) {
+          queryParams.set("refreshToken", data.data.refreshToken);
+        }
+
+        window.location.href = `${adminUrl}?${queryParams.toString()}`;
       } else {
         setError(data.message || "Invalid credentials");
       }
