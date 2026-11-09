@@ -64,6 +64,7 @@ export default function TableSession() {
     tableId, 
     tableName,
     verifiedTable,
+    verifiedRestaurant,
     activeOrder, 
     sessionOrders,
     selectedOrderId,
@@ -99,7 +100,21 @@ export default function TableSession() {
   );
   const itemTotal = currentSession?.subtotal || sessionItemsTotal || activeOrder?.subtotal || activeOrder?.total || 0;
   
-  const gstAmount = currentSession?.gst ?? Math.round(itemTotal * 0.05); // 5% GST
+  const gstSettings = verifiedRestaurant?.gstSettings;
+  const isGstEnabled = gstSettings?.enabled !== undefined ? Boolean(gstSettings.enabled) : (Boolean(currentSession?.gst && currentSession.gst > 0));
+  const gstRate = Number(gstSettings?.percentage ?? 5);
+  const chargeType = gstSettings?.chargeType || "exclusive";
+
+  let gstAmount = 0;
+  if (currentSession?.gst !== undefined && currentSession?.gst !== null) {
+    gstAmount = currentSession.gst;
+  } else if (isGstEnabled && gstRate > 0) {
+    if (chargeType === "inclusive") {
+      gstAmount = Math.round(Math.max(0, itemTotal) * (gstRate / (100 + gstRate)));
+    } else {
+      gstAmount = Math.round(Math.max(0, itemTotal) * (gstRate / 100));
+    }
+  }
   
   const offerToUse = currentSession?.appliedOffer || appliedOffer || activeOrder?.appliedOffer;
   const promoName = offerToUse ? offerToUse.name : "Special Offer";
@@ -115,7 +130,7 @@ export default function TableSession() {
 
   const grandTotal = (currentSession?.total !== undefined && currentSession?.total !== null && !isOfferApplied)
     ? currentSession.total
-    : Math.max(itemTotal + gstAmount - discount, 0);
+    : Math.max(itemTotal + (chargeType === "inclusive" ? 0 : gstAmount) - discount, 0);
   const isMobileRequired = isOfferApplied;
 
   const handleApplyPromo = () => {
@@ -546,10 +561,14 @@ export default function TableSession() {
                 <span className="font-semibold text-text-primary">₹{itemTotal}</span>
               </div>
 
-              <div className="flex justify-between text-sm">
-                <span className="text-text-secondary">Taxes (GST 5%)</span>
-                <span className="font-medium text-text-primary">₹{gstAmount}</span>
-              </div>
+              {isGstEnabled && gstAmount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-text-secondary">
+                    Taxes (GST {gstRate}%{chargeType === "inclusive" ? " incl." : ""})
+                  </span>
+                  <span className="font-medium text-text-primary">₹{gstAmount}</span>
+                </div>
+              )}
 
               {isOfferApplied && discount > 0 && (
                 <div className="flex justify-between text-sm">
