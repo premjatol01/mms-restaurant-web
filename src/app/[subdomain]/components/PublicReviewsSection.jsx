@@ -1,11 +1,10 @@
 import React from "react";
-import { Star, MessageSquareQuote, ShieldCheck, ExternalLink, Sparkles } from "lucide-react";
+import { Star, MessageSquareQuote, ShieldCheck } from "lucide-react";
 
 export default function PublicReviewsSection({
   reviewsSection,
   reviews = [],
   reviewStats = {},
-  googleReviewLink = "",
 }) {
   const title = reviewsSection?.content?.title || "Customer Reviews";
   const description =
@@ -58,7 +57,7 @@ export default function PublicReviewsSection({
             )}
           </div>
 
-          {/* Aggregate Rating Banner / Google Review CTA */}
+          {/* Aggregate Rating Banner (Display only, no write review button) */}
           {reviews.length > 0 && (
             <div
               style={{
@@ -92,25 +91,9 @@ export default function PublicReviewsSection({
                   style={{ color: "var(--theme-text-muted)" }}
                   className="text-xs mt-1"
                 >
-                  Based on {totalReviews} {totalReviews === 1 ? "review" : "reviews"}
+                  Based on {totalReviews} verified {totalReviews === 1 ? "diner review" : "diner reviews"}
                 </p>
               </div>
-
-              {googleReviewLink && (
-                <a
-                  href={googleReviewLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    backgroundColor: "var(--theme-primary)",
-                    color: "var(--theme-primary-text)",
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold shadow-sm hover:opacity-95 transition-opacity shrink-0"
-                >
-                  <span>Review Us</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              )}
             </div>
           )}
         </div>
@@ -224,7 +207,7 @@ export default function PublicReviewsSection({
             })}
           </div>
         ) : (
-          /* Empty State */
+          /* Empty State - purely informative, no write review button */
           <div
             style={{
               backgroundColor: "var(--theme-surface)",
@@ -241,7 +224,7 @@ export default function PublicReviewsSection({
             >
               <MessageSquareQuote className="w-6 h-6" />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <h4
                 style={{ color: "var(--theme-text)" }}
                 className="font-bold text-base"
@@ -250,26 +233,11 @@ export default function PublicReviewsSection({
               </h4>
               <p
                 style={{ color: "var(--theme-text-muted)" }}
-                className="text-xs leading-relaxed"
+                className="text-xs leading-relaxed max-w-sm mx-auto"
               >
-                Scan the QR code at your table during your visit to share your feedback and experience with us!
+                Verified customer reviews submitted by diners from the table menu portal will appear here automatically.
               </p>
             </div>
-            {googleReviewLink && (
-              <a
-                href={googleReviewLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  backgroundColor: "var(--theme-primary)",
-                  color: "var(--theme-primary-text)",
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold shadow-sm hover:opacity-95 transition-opacity"
-              >
-                <span>Write a Google Review</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            )}
           </div>
         )}
       </div>

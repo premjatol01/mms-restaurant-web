@@ -919,13 +919,16 @@ export const useMenuOrderStore = create(
       // ---------------------------------------------------------------
       // Reviews
       // ---------------------------------------------------------------
-      fetchPublicReviews: async (subdomain) => {
+      fetchPublicReviews: async (subdomain, customerMobile) => {
         if (!subdomain) return;
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        const state = get();
+        const mobileToUse = customerMobile || state.mobile?.number || (typeof window !== "undefined" ? localStorage.getItem("tablly_customer_mobile") || "" : "");
+        const queryParam = mobileToUse ? `?customerMobile=${encodeURIComponent(mobileToUse)}` : "";
         try {
-          const res = await fetch(`${apiUrl}/reviews/public/${subdomain}`);
+          const res = await fetch(`${apiUrl}/reviews/public/${subdomain}${queryParam}`);
           const json = await res.json();
-          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          if (json.success && Array.isArray(json.data)) {
             set({ reviews: json.data });
           }
         } catch (err) {
@@ -936,10 +939,19 @@ export const useMenuOrderStore = create(
       submitReview: async ({ name, rating, comment, mobileNumber, subdomain }) => {
         const state = get();
         const resolvedSubdomain = subdomain || state.verifiedRestaurant?.subdomain || (typeof window !== "undefined" ? window.location.pathname.split("/")[1] : "");
-        const resolvedMobile = mobileNumber || (state.mobile?.verified ? state.mobile.number : "");
+        const rawMobile = mobileNumber || state.mobile?.number || (typeof window !== "undefined" ? localStorage.getItem("tablly_customer_mobile") || "" : "");
+        const resolvedMobile = String(rawMobile).replace(/\D/g, "").slice(-10);
 
-        if (!resolvedMobile) {
-          return { ok: false, error: "Mobile number is required to submit a review." };
+        if (!resolvedMobile || resolvedMobile.length !== 10) {
+          return { ok: false, error: "Please enter a valid 10-digit mobile number to submit a review." };
+        }
+
+        // Save mobile number in store and local storage
+        if (typeof window !== "undefined") {
+          localStorage.setItem("tablly_customer_mobile", resolvedMobile);
+        }
+        if (!state.mobile?.number && get().setMobileNumber) {
+          get().setMobileNumber(resolvedMobile);
         }
 
         const rawTable = state.verifiedTable?.tableName || state.verifiedTable?.tableNo || state.verifiedTable?.name || state.tableName || "";
@@ -968,23 +980,13 @@ export const useMenuOrderStore = create(
             return { ok: false, error: json.message || "Failed to submit review" };
           }
 
-          // Prepend to local reviews for instant visual gratification
-          const newReview = {
-            id: json.data?.id || `r-${Date.now()}`,
-            name: name?.trim() || `User ${resolvedMobile.slice(-4)}`,
-            rating: Number(rating),
-            comment: comment?.trim() || "",
-            createdAt: new Date().toISOString()
-          };
-
-          set((s) => ({
-            reviews: [newReview, ...s.reviews]
-          }));
+          // Refresh reviews passing this customer's mobile number so their pending review shows immediately
+          await get().fetchPublicReviews(resolvedSubdomain, resolvedMobile);
 
           return { ok: true, data: json.data };
         } catch (err) {
           console.error("Error submitting review:", err);
-          return { ok: false, error: "Network error while submitting review." };
+          return { ok: false, error: err.message || "Failed to submit review" };
         }
       },
     }),

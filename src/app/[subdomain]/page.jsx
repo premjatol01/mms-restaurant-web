@@ -5,6 +5,7 @@ import InquiryForm from "./components/InquiryForm";
 import PublicFooter from "./components/PublicFooter";
 import PopularMenuSection from "./components/PopularMenuSection";
 import PublicReviewsSection from "./components/PublicReviewsSection";
+import GoogleReviewBanner from "./components/GoogleReviewBanner";
 import {
   Utensils,
   MapPin,
@@ -193,6 +194,7 @@ export default async function RestaurantPortfolioPage({ params }) {
   const aboutSection = sections?.find((s) => s.sectionId === "about" || s.type === "about");
   const menuSection = sections?.find((s) => s.sectionId === "menu" || s.type === "menu");
   const offersSection = sections?.find((s) => s.sectionId === "offers" || s.type === "offers");
+  const googleReviewSection = sections?.find((s) => s.sectionId === "googleReview" || s.type === "googleReview" || s.id === "googleReview");
   const gallerySection = sections?.find((s) => s.sectionId === "gallery" || s.type === "gallery");
   const reviewsSection = sections?.find((s) => s.sectionId === "reviews" || s.type === "reviews");
   const mapSection = sections?.find((s) => s.sectionId === "map" || s.type === "map");
@@ -677,7 +679,15 @@ export default async function RestaurantPortfolioPage({ params }) {
         </section>
       )}
 
-      {/* ───────────────── 5. GALLERY SECTION (Only if enabled) ───────────────── */}
+      {/* ───────────────── 5. GOOGLE REVIEW BANNER (Middle Banner, only if enabled) ───────────────── */}
+      {isSectionEnabled("googleReview") && (
+        <GoogleReviewBanner
+          googleReviewSection={googleReviewSection}
+          fallbackLink={googleReviewLink}
+        />
+      )}
+
+      {/* ───────────────── 6. GALLERY SECTION (Only if enabled) ───────────────── */}
       {isSectionEnabled("gallery") && gallerySection?.content?.images?.length > 0 && (
         <section
           id="gallery"
@@ -717,7 +727,6 @@ export default async function RestaurantPortfolioPage({ params }) {
           reviewsSection={reviewsSection}
           reviews={reviews}
           reviewStats={reviewStats}
-          googleReviewLink={googleReviewLink}
         />
       )}
 

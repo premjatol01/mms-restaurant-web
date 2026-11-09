@@ -85,32 +85,38 @@ const Rating = () => {
 
   const [rating, setRating] = useState(0);
   const [name, setName] = useState(mobile?.name || "");
+  const [mobileNumber, setMobileNumber] = useState(
+    mobile?.number || (typeof window !== "undefined" ? localStorage.getItem("tablly_customer_mobile") || "" : "")
+  );
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [pendingReviewSubmit, setPendingReviewSubmit] = useState(false);
 
-  // Fetch approved public reviews for this restaurant
+  // Fetch approved public reviews and customer's own pending reviews
   useEffect(() => {
     if (subdomain && fetchPublicReviews) {
-      fetchPublicReviews(subdomain);
+      const activeMobile = mobileNumber || mobile?.number || (typeof window !== "undefined" ? localStorage.getItem("tablly_customer_mobile") || "" : "");
+      fetchPublicReviews(subdomain, activeMobile);
     }
-  }, [subdomain, fetchPublicReviews]);
+  }, [subdomain, fetchPublicReviews, mobileNumber, mobile?.number]);
 
-  // Keep name synced if mobile profile name is known
+  // Keep name and mobile synced if mobile profile is known
   useEffect(() => {
     if (!name && mobile?.name) {
       setName(mobile.name);
     }
-  }, [mobile?.name]);
+    if (!mobileNumber && mobile?.number) {
+      setMobileNumber(mobile.number);
+    }
+  }, [mobile?.name, mobile?.number]);
 
-  const executeSubmit = async (verifiedMobileNumber) => {
+  const executeSubmit = async (cleanMobile) => {
     setSubmitting(true);
     try {
       const res = await submitReview({
         name,
         rating,
         comment,
-        mobileNumber: verifiedMobileNumber,
+        mobileNumber: cleanMobile,
         subdomain,
       });
 
@@ -119,6 +125,8 @@ const Rating = () => {
         setRating(0);
         setName("");
         setComment("");
+        // Immediately refresh reviews so this customer sees their submitted review
+        fetchPublicReviews(subdomain, cleanMobile);
       } else {
         toast.error(res?.error || "Failed to submit review");
       }
@@ -129,29 +137,23 @@ const Rating = () => {
     }
   };
 
-  // If user completed mobile verification popup after clicking submit, auto-submit!
-  useEffect(() => {
-    if (pendingReviewSubmit && mobile?.verified && mobile?.number && rating > 0 && !submitting) {
-      setPendingReviewSubmit(false);
-      executeSubmit(mobile.number);
-    }
-  }, [pendingReviewSubmit, mobile?.verified, mobile?.number, rating, submitting]);
-
   const handleSubmit = async () => {
     if (rating === 0) {
-      toast.error("Pick a star rating first");
+      toast.error("Please pick a star rating first");
       return;
     }
 
-    // Validate mobile number: if not verified yet, prompt via popup
-    if (!mobile?.verified || !mobile?.number) {
-      toast.info("Please verify your mobile number to submit review");
-      setPendingReviewSubmit(true);
-      openOffersModal("review");
+    const cleanMobile = String(mobileNumber || mobile?.number || "").replace(/\D/g, "").slice(-10);
+    if (!cleanMobile || cleanMobile.length !== 10) {
+      toast.error("Please enter a valid 10-digit mobile number to submit review");
       return;
     }
 
-    await executeSubmit(mobile.number);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("tablly_customer_mobile", cleanMobile);
+    }
+
+    await executeSubmit(cleanMobile);
   };
 
   const handleBack = () => {
@@ -279,6 +281,23 @@ const Rating = () => {
             placeholder="Your name"
             className="w-full bg-surface-soft border border-transparent rounded-xl px-4 py-3 text-sm text-text-primary focus:outline-none focus:bg-surface focus:border-primary/30 focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-text-muted"
           />
+
+          {/* Mobile Number (Mandatory to submit a review) */}
+          <div className="flex items-center bg-surface-soft border border-transparent rounded-xl overflow-hidden focus-within:bg-surface focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+            <span className="pl-4 pr-2 text-xs font-semibold text-text-muted select-none">
+              +91
+            </span>
+            <div className="w-px h-5 bg-border my-auto" />
+            <input
+              type="tel"
+              value={mobileNumber}
+              onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+              placeholder="Mobile number (required)"
+              maxLength={10}
+              className="w-full bg-transparent px-3 py-3 text-sm text-text-primary focus:outline-none placeholder:text-text-muted"
+            />
+          </div>
+
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
