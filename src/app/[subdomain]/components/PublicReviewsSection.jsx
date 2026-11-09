@@ -139,11 +139,24 @@ export default function PublicReviewsSection({
                           >
                             {displayName}
                           </h4>
-                          <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                            <ShieldCheck className="w-3 h-3" />
-                            <span>
-                              {r.tableName ? `Table ${r.tableName} • Dine-in` : "Verified Guest"}
+                          <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                            <span className="flex items-center gap-1">
+                              <ShieldCheck className="w-3 h-3" />
+                              <span>{r.tableName ? `Table ${r.tableName} • Dine-in` : "Verified Guest"}</span>
                             </span>
+                            {r.selectedForPortfolio && (
+                              <span
+                                style={{
+                                  backgroundColor: "color-mix(in srgb, var(--theme-primary) 15%, transparent)",
+                                  color: "var(--theme-primary)",
+                                  borderColor: "color-mix(in srgb, var(--theme-primary) 30%, transparent)",
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-0.2 rounded-full text-[10px] font-bold border"
+                              >
+                                <Star className="w-2.5 h-2.5 fill-current" />
+                                <span>Featured Pick</span>
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
