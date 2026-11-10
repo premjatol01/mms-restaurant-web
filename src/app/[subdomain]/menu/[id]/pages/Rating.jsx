@@ -5,6 +5,7 @@ import { useParams, useRouter, usePathname, useSearchParams } from "next/navigat
 import { toast } from "sonner";
 import { Send, ExternalLink, Star, MessageSquareQuote } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
+import { formatTableName } from "@/utils/formatTableName";
 import PageHeader from "@/components/menuComp/PageHeader";
 import EmptyState from "@/components/menuComp/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
@@ -364,7 +365,7 @@ const Rating = () => {
                           </span>
                           {review.tableName && (
                             <span className="text-[10px] text-text-muted font-medium bg-surface-soft px-1.5 py-0.5 rounded">
-                              {review.tableName}
+                              {formatTableName(review.tableName)}
                             </span>
                           )}
                         </div>

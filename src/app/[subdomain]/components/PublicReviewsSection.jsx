@@ -1,5 +1,6 @@
 import React from "react";
 import { Star, MessageSquareQuote, ShieldCheck } from "lucide-react";
+import { formatTableName } from "@/utils/formatTableName";
 
 export default function PublicReviewsSection({
   reviewsSection,
@@ -142,7 +143,7 @@ export default function PublicReviewsSection({
                           <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
                             <span className="flex items-center gap-1">
                               <ShieldCheck className="w-3 h-3" />
-                              <span>{r.tableName ? `Table ${r.tableName} • Dine-in` : "Verified Guest"}</span>
+                              <span>{r.tableName ? `${formatTableName(r.tableName)} • Dine-in` : "Verified Guest"}</span>
                             </span>
                             {r.selectedForPortfolio && (
                               <span
