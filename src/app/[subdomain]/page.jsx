@@ -218,9 +218,10 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
   const googleReviewSection = sections?.find((s) => s.sectionId === "googleReview" || s.type === "googleReview" || s.id === "googleReview");
   const gallerySection = sections?.find((s) => s.sectionId === "gallery" || s.type === "gallery");
   const reviewsSection = sections?.find((s) => s.sectionId === "reviews" || s.type === "reviews");
+  const hoursSection = sections?.find((s) => s.sectionId === "hours" || s.type === "hours");
   const mapSection = sections?.find((s) => s.sectionId === "map" || s.type === "map");
   const inquirySection = sections?.find((s) => s.sectionId === "inquiry" || s.type === "inquiry");
-  const footerSection = sections?.find((s) => s.sectionId === "footer" || s.type === "footer") || restaurant.footer;
+  const footerSection = sections?.find((s) => (s.sectionId === "footer" || s.type === "footer") && s.enabled !== false);
 
   const heroHeading = heroSection?.content?.heading || name;
   const heroDescription =
@@ -239,17 +240,29 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
     "";
   const aboutImage = aboutSection?.content?.imageUrl || aboutSection?.content?.image;
 
-  const formatFullAddress = (detAddr, addr) => {
-    if (detAddr && typeof detAddr === "object") {
+  const formatFullAddress = (detAddr, addr, mapLoc) => {
+    const loc = mapLoc || {};
+    const effectiveDet = (detAddr && (detAddr.line1 || detAddr.city)) ? detAddr : {
+      line1: loc.houseNumber || loc.line1,
+      line2: loc.street || loc.line2,
+      area: loc.area,
+      landmark: loc.landmark,
+      city: loc.city,
+      state: loc.state,
+      pincode: loc.pincode,
+      country: loc.country || "India"
+    };
+
+    if (effectiveDet && typeof effectiveDet === "object") {
       const parts = [
-        detAddr.line1,
-        detAddr.line2,
-        detAddr.landmark ? `Near ${detAddr.landmark}` : null,
-        detAddr.area,
-        detAddr.city,
-        detAddr.state,
-        detAddr.pincode,
-        detAddr.country || "India",
+        effectiveDet.line1,
+        effectiveDet.line2,
+        effectiveDet.area,
+        effectiveDet.landmark ? `Near ${effectiveDet.landmark}` : null,
+        effectiveDet.city,
+        effectiveDet.state,
+        effectiveDet.pincode,
+        effectiveDet.country || "India",
       ].filter((p) => Boolean(p && String(p).trim()));
       if (parts.length > 0) return parts.join(", ");
     }
@@ -262,8 +275,8 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
     return addr?.city ? `${addr.city}, India` : "";
   };
 
-  const displayCity = detailedAddress?.city || address?.city || "Local City";
-  const displayAddress = formatFullAddress(detailedAddress, address);
+  const displayCity = detailedAddress?.city || mapSection?.content?.location?.city || address?.city || "Local City";
+  const displayAddress = formatFullAddress(detailedAddress, address, mapSection?.content?.location);
 
   return (
     <div
@@ -723,12 +736,22 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
           className="py-16 border-t"
         >
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <h3
-              style={{ color: "var(--theme-text)" }}
-              className="text-2xl font-bold mb-6"
-            >
-              {gallerySection.content.title || "Photo Gallery"}
-            </h3>
+            <div className="mb-8">
+              <h3
+                style={{ color: "var(--theme-text)" }}
+                className="text-2xl sm:text-3xl font-bold"
+              >
+                {gallerySection.content?.title || gallerySection.title || "Photo Gallery"}
+              </h3>
+              {(gallerySection.content?.description || gallerySection.description) && (
+                <p
+                  style={{ color: "var(--theme-text-muted)" }}
+                  className="mt-2 text-sm sm:text-base max-w-2xl"
+                >
+                  {gallerySection.content?.description || gallerySection.description}
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {gallerySection.content.images.slice(0, 8).map((img, idx) => (
                 <div
@@ -828,26 +851,45 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
         </section>
       )}
 
-      {/* ───────────────── 8. BUSINESS HOURS (If configured) ───────────────── */}
-      {businessHours && businessHours.length > 0 && (
+      {/* ───────────────── 8. BUSINESS HOURS (Only if enabled) ───────────────── */}
+      {isSectionEnabled("hours") && (
         <section
           id="hours"
           style={{
             backgroundColor: "var(--theme-surface-soft)",
             borderColor: "var(--theme-border)",
           }}
-          className="py-12 border-t"
+          className="py-16 border-t"
         >
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <h3
-              style={{ color: "var(--theme-text)" }}
-              className="text-xl font-bold mb-6 flex items-center gap-2"
-            >
-              <Clock className="w-5 h-5" style={{ color: "var(--theme-primary)" }} />
-              Opening Hours
-            </h3>
+            <div className="text-center max-w-xl mx-auto mb-10">
+              <span
+                style={{
+                  backgroundColor: "var(--theme-primary-soft)",
+                  color: "var(--theme-primary)",
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-2"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Operating Hours</span>
+              </span>
+              <h3
+                style={{ color: "var(--theme-text)" }}
+                className="text-2xl sm:text-3xl font-extrabold tracking-tight"
+              >
+                {hoursSection?.content?.title || hoursSection?.title || "Opening Hours"}
+              </h3>
+              {(hoursSection?.content?.description || hoursSection?.description) && (
+                <p
+                  style={{ color: "var(--theme-text-muted)" }}
+                  className="mt-2 text-xs sm:text-sm"
+                >
+                  {hoursSection?.content?.description || hoursSection?.description}
+                </p>
+              )}
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
-              {businessHours.map((slot, index) => (
+              {(hoursSection?.content?.businessHours || businessHours || []).map((slot, index) => (
                 <div
                   key={index}
                   style={{
@@ -855,13 +897,13 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
                     borderColor: slot.isOpen ? "var(--theme-border)" : "var(--theme-border-subtle)",
                     opacity: slot.isOpen ? 1 : 0.65,
                   }}
-                  className="p-3.5 rounded-xl border text-center shadow-sm transition-all"
+                  className="p-3.5 rounded-xl border text-center shadow-xs transition-all"
                 >
                   <div
                     style={{ color: slot.isOpen ? "var(--theme-text)" : "var(--theme-text-muted)" }}
                     className="text-xs font-bold"
                   >
-                    {slot.day.slice(0, 3)}
+                    {slot.day?.slice(0, 3)}
                   </div>
                   <div className="mt-1">
                     {slot.isOpen ? (
@@ -890,17 +932,20 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
       )}
 
       {/* ───────────────── 9. FOOTER ───────────────── */}
-      <PublicFooter
-        footerSection={footerSection}
-        restaurantName={name}
-        restaurantTagline={tagline}
-        restaurantDescription={shortDescription || fullDescription}
-        logo={logo}
-        address={displayAddress}
-        city={displayCity}
-        contact={contact}
-        businessHours={businessHours}
-      />
+      {footerSection && (
+        <PublicFooter
+          footerSection={footerSection}
+          restaurantName={name}
+          restaurantTagline={tagline}
+          restaurantDescription={shortDescription || fullDescription}
+          logo={logo}
+          address={displayAddress}
+          city={displayCity}
+          contact={contact}
+          businessHours={businessHours}
+          sections={sections}
+        />
+      )}
     </div>
   );
 }

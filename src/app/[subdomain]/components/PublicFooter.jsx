@@ -91,7 +91,8 @@ export default function PublicFooter({
   address,
   city,
   contact = {},
-  businessHours = []
+  businessHours = [],
+  sections = []
 }) {
   // Resolve content object safely whether footerSection is the section wrapper or content itself
   const content = footerSection?.content
@@ -100,7 +101,7 @@ export default function PublicFooter({
       ? footerSection
       : {};
 
-  const isEnabled = footerSection ? footerSection.enabled !== false : true;
+  const isEnabled = footerSection ? footerSection.enabled !== false : false;
 
   if (!isEnabled) {
     return null;
@@ -149,8 +150,23 @@ export default function PublicFooter({
     ? content.sectionLinks
     : defaultSectionLinks;
 
-  // Filter only enabled section links
-  const visibleSectionLinks = rawSectionLinks.filter((link) => link && link.enabled !== false);
+  // Filter only enabled section links whose corresponding section is also active on the website
+  const isSectionActive = (link) => {
+    if (!link || link.enabled === false) return false;
+    const anchor = link.href?.replace(/^#/, "");
+    const secId = link.id || anchor;
+    if (sections && Array.isArray(sections) && sections.length > 0 && secId) {
+      const match = sections.find(
+        (s) => s.sectionId === secId || s.type === secId || s.id === secId
+      );
+      if (match) {
+        return match.enabled !== false;
+      }
+    }
+    return true;
+  };
+
+  const visibleSectionLinks = rawSectionLinks.filter(isSectionActive);
 
   const displayPhone = contact?.primaryPhone || contact?.phone;
   const displayAltPhone = contact?.alternatePhone;
@@ -312,30 +328,32 @@ export default function PublicFooter({
                 </div>
               )}
 
-              {displayPhone && (
+              {(displayPhone || displayAltPhone) && (
                 <div className="flex items-center gap-2.5">
                   <Phone className="w-4 h-4 shrink-0" style={{ color: "var(--theme-primary)" }} />
-                  <a
-                    href={`tel:${displayPhone.replace(/[^0-9+]/g, "")}`}
-                    className="hover:underline font-medium"
-                    style={{ color: "var(--theme-text)" }}
-                  >
-                    {displayPhone}
-                  </a>
-                </div>
-              )}
-
-              {displayAltPhone && (
-                <div className="flex items-center gap-2.5">
-                  <Phone className="w-4 h-4 shrink-0" style={{ color: "var(--theme-primary)" }} />
-                  <span className="text-[11px] font-semibold opacity-75" style={{ color: "var(--theme-text-muted)" }}>Alt:</span>
-                  <a
-                    href={`tel:${displayAltPhone.replace(/[^0-9+]/g, "")}`}
-                    className="hover:underline font-medium"
-                    style={{ color: "var(--theme-text)" }}
-                  >
-                    {displayAltPhone}
-                  </a>
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm font-medium">
+                    {displayPhone && (
+                      <a
+                        href={`tel:${displayPhone.replace(/[^0-9+]/g, "")}`}
+                        className="hover:underline"
+                        style={{ color: "var(--theme-text)" }}
+                      >
+                        {displayPhone}
+                      </a>
+                    )}
+                    {displayPhone && displayAltPhone && (
+                      <span style={{ color: "var(--theme-text-muted)" }}>/</span>
+                    )}
+                    {displayAltPhone && (
+                      <a
+                        href={`tel:${displayAltPhone.replace(/[^0-9+]/g, "")}`}
+                        className="hover:underline"
+                        style={{ color: "var(--theme-text)" }}
+                      >
+                        {displayAltPhone}
+                      </a>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -345,7 +363,7 @@ export default function PublicFooter({
                   <span className="text-[11px] font-semibold opacity-75" style={{ color: "var(--theme-text-muted)" }}>Support:</span>
                   <a
                     href={`tel:${displaySupportPhone.replace(/[^0-9+]/g, "")}`}
-                    className="hover:underline font-medium"
+                    className="hover:underline font-medium text-xs sm:text-sm"
                     style={{ color: "var(--theme-text)" }}
                   >
                     {displaySupportPhone}
@@ -356,42 +374,45 @@ export default function PublicFooter({
               {displayWhatsapp && (
                 <div className="flex items-center gap-2.5">
                   <MessageCircle className="w-4 h-4 shrink-0" style={{ color: "var(--theme-primary)" }} />
+                  <span className="text-[11px] font-semibold opacity-75" style={{ color: "var(--theme-text-muted)" }}>WhatsApp:</span>
                   <a
-                    href={`https://wa.me/${displayWhatsapp.replace(/[^0-9]/g, "")}`}
+                    href={`https://wa.me/${displayWhatsapp.replace(/[^0-9]/g, "").length === 10 ? `91${displayWhatsapp.replace(/[^0-9]/g, "")}` : displayWhatsapp.replace(/[^0-9]/g, "")}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="hover:underline font-medium"
+                    className="hover:underline font-medium text-xs sm:text-sm"
                     style={{ color: "var(--theme-primary)" }}
                   >
-                    Chat on WhatsApp
+                    {displayWhatsapp}
                   </a>
                 </div>
               )}
 
-              {displayEmail && (
+              {(displayEmail || displayAltEmail) && (
                 <div className="flex items-center gap-2.5">
                   <Mail className="w-4 h-4 shrink-0" style={{ color: "var(--theme-primary)" }} />
-                  <a
-                    href={`mailto:${displayEmail}`}
-                    className="hover:underline font-medium truncate"
-                    style={{ color: "var(--theme-text)" }}
-                  >
-                    {displayEmail}
-                  </a>
-                </div>
-              )}
-
-              {displayAltEmail && (
-                <div className="flex items-center gap-2.5">
-                  <Mail className="w-4 h-4 shrink-0" style={{ color: "var(--theme-primary)" }} />
-                  <span className="text-[11px] font-semibold opacity-75" style={{ color: "var(--theme-text-muted)" }}>Alt:</span>
-                  <a
-                    href={`mailto:${displayAltEmail}`}
-                    className="hover:underline font-medium truncate"
-                    style={{ color: "var(--theme-text)" }}
-                  >
-                    {displayAltEmail}
-                  </a>
+                  <div className="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm font-medium break-all">
+                    {displayEmail && (
+                      <a
+                        href={`mailto:${displayEmail}`}
+                        className="hover:underline"
+                        style={{ color: "var(--theme-text)" }}
+                      >
+                        {displayEmail}
+                      </a>
+                    )}
+                    {displayEmail && displayAltEmail && (
+                      <span style={{ color: "var(--theme-text-muted)" }}>/</span>
+                    )}
+                    {displayAltEmail && (
+                      <a
+                        href={`mailto:${displayAltEmail}`}
+                        className="hover:underline"
+                        style={{ color: "var(--theme-text)" }}
+                      >
+                        {displayAltEmail}
+                      </a>
+                    )}
+                  </div>
                 </div>
               )}
 

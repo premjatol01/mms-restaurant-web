@@ -181,7 +181,8 @@ export default function InquiryForm({
         </div>
 
         <div className="space-y-4 pt-2 border-t" style={{ borderColor: "var(--theme-border)" }}>
-          {contactInfo.phone && (
+          {/* 1. Phone Numbers (Primary / Alternate) */}
+          {(contactInfo.phone || contactInfo.alternatePhone) && (
             <div className="flex items-start gap-3">
               <div
                 style={{
@@ -193,72 +194,37 @@ export default function InquiryForm({
                 <Phone className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs text-muted" style={{ color: "var(--theme-text-muted)" }}>
-                  Primary Phone
+                <p className="text-xs font-medium" style={{ color: "var(--theme-text-muted)" }}>
+                  Phone Number
                 </p>
-                <a
-                  href={`tel:${contactInfo.phone.replace(/[^0-9+]/g, "")}`}
-                  style={{ color: "var(--theme-text)" }}
-                  className="text-sm font-semibold hover:underline"
-                >
-                  {contactInfo.phone}
-                </a>
+                <div className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+                  {contactInfo.phone && (
+                    <a
+                      href={`tel:${contactInfo.phone.replace(/[^0-9+]/g, "")}`}
+                      style={{ color: "var(--theme-text)" }}
+                      className="hover:underline"
+                    >
+                      {contactInfo.phone}
+                    </a>
+                  )}
+                  {contactInfo.phone && contactInfo.alternatePhone && (
+                    <span style={{ color: "var(--theme-text-muted)" }}>/</span>
+                  )}
+                  {contactInfo.alternatePhone && (
+                    <a
+                      href={`tel:${contactInfo.alternatePhone.replace(/[^0-9+]/g, "")}`}
+                      style={{ color: "var(--theme-text)" }}
+                      className="hover:underline"
+                    >
+                      {contactInfo.alternatePhone}
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
-          {contactInfo.alternatePhone && (
-            <div className="flex items-start gap-3">
-              <div
-                style={{
-                  backgroundColor: "var(--theme-primary-soft)",
-                  color: "var(--theme-primary)",
-                }}
-                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-              >
-                <Phone className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs text-muted" style={{ color: "var(--theme-text-muted)" }}>
-                  Alternate Phone
-                </p>
-                <a
-                  href={`tel:${contactInfo.alternatePhone.replace(/[^0-9+]/g, "")}`}
-                  style={{ color: "var(--theme-text)" }}
-                  className="text-sm font-semibold hover:underline"
-                >
-                  {contactInfo.alternatePhone}
-                </a>
-              </div>
-            </div>
-          )}
-
-          {contactInfo.supportPhone && (
-            <div className="flex items-start gap-3">
-              <div
-                style={{
-                  backgroundColor: "var(--theme-primary-soft)",
-                  color: "var(--theme-primary)",
-                }}
-                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-              >
-                <Phone className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs text-muted" style={{ color: "var(--theme-text-muted)" }}>
-                  Customer Support
-                </p>
-                <a
-                  href={`tel:${contactInfo.supportPhone.replace(/[^0-9+]/g, "")}`}
-                  style={{ color: "var(--theme-text)" }}
-                  className="text-sm font-semibold hover:underline"
-                >
-                  {contactInfo.supportPhone}
-                </a>
-              </div>
-            </div>
-          )}
-
+          {/* 2. WhatsApp Number */}
           {contactInfo.whatsapp && (
             <div className="flex items-start gap-3">
               <div
@@ -271,23 +237,51 @@ export default function InquiryForm({
                 <MessageCircle className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs text-muted" style={{ color: "var(--theme-text-muted)" }}>
-                  WhatsApp
+                <p className="text-xs font-medium" style={{ color: "var(--theme-text-muted)" }}>
+                  WhatsApp Number
                 </p>
                 <a
-                  href={`https://wa.me/${contactInfo.whatsapp.replace(/[^0-9]/g, "")}`}
+                  href={`https://wa.me/${contactInfo.whatsapp.replace(/[^0-9]/g, "").length === 10 ? `91${contactInfo.whatsapp.replace(/[^0-9]/g, "")}` : contactInfo.whatsapp.replace(/[^0-9]/g, "")}`}
                   target="_blank"
                   rel="noreferrer"
-                  style={{ color: "var(--theme-primary)" }}
+                  style={{ color: "var(--theme-text)" }}
                   className="text-sm font-semibold hover:underline"
                 >
-                  Chat on WhatsApp
+                  {contactInfo.whatsapp}
                 </a>
               </div>
             </div>
           )}
 
-          {contactInfo.email && (
+          {/* 3. Customer Support Number */}
+          {contactInfo.supportPhone && (
+            <div className="flex items-start gap-3">
+              <div
+                style={{
+                  backgroundColor: "var(--theme-primary-soft)",
+                  color: "var(--theme-primary)",
+                }}
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+              >
+                <Phone className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-medium" style={{ color: "var(--theme-text-muted)" }}>
+                  Support Number
+                </p>
+                <a
+                  href={`tel:${contactInfo.supportPhone.replace(/[^0-9+]/g, "")}`}
+                  style={{ color: "var(--theme-text)" }}
+                  className="text-sm font-semibold hover:underline"
+                >
+                  {contactInfo.supportPhone}
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* 4. Email Addresses (Primary / Alternate) */}
+          {(contactInfo.email || contactInfo.alternateEmail) && (
             <div className="flex items-start gap-3">
               <div
                 style={{
@@ -299,46 +293,37 @@ export default function InquiryForm({
                 <Mail className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs text-muted" style={{ color: "var(--theme-text-muted)" }}>
+                <p className="text-xs font-medium" style={{ color: "var(--theme-text-muted)" }}>
                   Email Address
                 </p>
-                <a
-                  href={`mailto:${contactInfo.email}`}
-                  style={{ color: "var(--theme-text)" }}
-                  className="text-sm font-semibold hover:underline break-all"
-                >
-                  {contactInfo.email}
-                </a>
+                <div className="flex flex-wrap items-center gap-1.5 text-sm font-semibold break-all">
+                  {contactInfo.email && (
+                    <a
+                      href={`mailto:${contactInfo.email}`}
+                      style={{ color: "var(--theme-text)" }}
+                      className="hover:underline"
+                    >
+                      {contactInfo.email}
+                    </a>
+                  )}
+                  {contactInfo.email && contactInfo.alternateEmail && (
+                    <span style={{ color: "var(--theme-text-muted)" }}>/</span>
+                  )}
+                  {contactInfo.alternateEmail && (
+                    <a
+                      href={`mailto:${contactInfo.alternateEmail}`}
+                      style={{ color: "var(--theme-text)" }}
+                      className="hover:underline"
+                    >
+                      {contactInfo.alternateEmail}
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
-          {contactInfo.alternateEmail && (
-            <div className="flex items-start gap-3">
-              <div
-                style={{
-                  backgroundColor: "var(--theme-primary-soft)",
-                  color: "var(--theme-primary)",
-                }}
-                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-              >
-                <Mail className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs text-muted" style={{ color: "var(--theme-text-muted)" }}>
-                  Alternate Email
-                </p>
-                <a
-                  href={`mailto:${contactInfo.alternateEmail}`}
-                  style={{ color: "var(--theme-text)" }}
-                  className="text-sm font-semibold hover:underline break-all"
-                >
-                  {contactInfo.alternateEmail}
-                </a>
-              </div>
-            </div>
-          )}
-
+          {/* 5. Address */}
           {contactInfo.address && (
             <div className="flex items-start gap-3">
               <div
@@ -351,8 +336,8 @@ export default function InquiryForm({
                 <MapPin className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs text-muted" style={{ color: "var(--theme-text-muted)" }}>
-                  Visit Us At
+                <p className="text-xs font-medium" style={{ color: "var(--theme-text-muted)" }}>
+                  Restaurant Address
                 </p>
                 <p
                   style={{ color: "var(--theme-text)" }}
