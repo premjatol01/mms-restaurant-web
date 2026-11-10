@@ -21,12 +21,13 @@ import {
   Percent,
 } from "lucide-react";
 
-async function getRestaurantData(subdomain) {
+async function getRestaurantData(subdomain, previewToken) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
   try {
-    const res = await fetch(`${apiUrl}/restaurants/portfolio/${subdomain}`, {
-      cache: "no-store",
-    });
+    const url = previewToken
+      ? `${apiUrl}/restaurants/portfolio/${subdomain}?preview=${previewToken}`
+      : `${apiUrl}/restaurants/portfolio/${subdomain}`;
+    const res = await fetch(url, { cache: "no-store" });
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => null);
@@ -78,9 +79,10 @@ function isDarkColor(hexColor) {
   return getContrastColor(hexColor) === "#ffffff";
 }
 
-export default async function RestaurantPortfolioPage({ params }) {
+export default async function RestaurantPortfolioPage({ params, searchParams }) {
   const { subdomain } = await params;
-  const restaurant = await getRestaurantData(subdomain);
+  const { preview } = await searchParams || {};
+  const restaurant = await getRestaurantData(subdomain, preview);
 
   if (restaurant?.isMaintenance) {
     return (
@@ -272,6 +274,13 @@ export default async function RestaurantPortfolioPage({ params }) {
       }}
       className="min-h-screen font-sans antialiased transition-colors duration-200"
     >
+      {/* Preview Mode Banner */}
+      {preview && (
+        <div className="sticky top-0 z-50 bg-orange-500 text-white text-center text-xs font-semibold py-2 px-4 flex items-center justify-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          Preview Mode — These are your unpublished draft changes. Publish to make them live.
+        </div>
+      )}
       {/* ───────────────── TOP NAV ───────────────── */}
       <header
         style={{
