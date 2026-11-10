@@ -34,12 +34,27 @@ import {
 import CtaTrialModal from "../../components/CtaTrialModal";
 import ChatbotWidget from "../../components/ChatbotWidget";
 import AutomatedDemoModal from "../../components/AutomatedDemoModal";
+import MaintenanceScreen from "../../components/MaintenanceScreen";
 
 export default function MarketingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("guest");
   const [billingCycle, setBillingCycle] = useState("1_month"); // "1_month" | "6_months" | "12_months"
   const [openFaq, setOpenFaq] = useState(null);
+  const [maintenanceState, setMaintenanceState] = useState(null);
+
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    fetch(`${apiUrl}/platform-settings`, { cache: "no-store" })
+      .then((res) => res.json())
+      .then((json) => {
+        const data = json?.data || json;
+        if (data?.maintenanceEnabled || data?.platformStatus === "Maintenance") {
+          setMaintenanceState(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Modals state
   const [isTrialOpen, setIsTrialOpen] = useState(false);
@@ -101,6 +116,16 @@ export default function MarketingPage() {
     setTrialDuration(duration);
     setIsTrialOpen(true);
   };
+
+  if (maintenanceState) {
+    return (
+      <MaintenanceScreen
+        message={maintenanceState.maintenanceMessage}
+        platformName={maintenanceState.platformName}
+        logoUrl={maintenanceState.logoUrl}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#fffaf5] text-[#2b2118] selection:bg-[#d9480f] selection:text-white font-sans antialiased relative">

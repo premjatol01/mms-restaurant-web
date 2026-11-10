@@ -11,7 +11,8 @@ import {
   RotateCcw,
   Globe,
   Home,
-  Utensils
+  Utensils,
+  Wrench
 } from "lucide-react";
 
 export default function TableSessionError({ error, subdomain, tableId, onRetry }) {
@@ -55,6 +56,15 @@ export default function TableSessionError({ error, subdomain, tableId, onRetry }
       badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
       title: "Restaurant Unavailable",
       suggestion: "This restaurant is currently inactive and is not taking orders right now. Please check back later."
+    },
+    MAINTENANCE_MODE: {
+      icon: Wrench,
+      iconColor: "text-amber-600",
+      iconBg: "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/50",
+      badge: "503 • Under Maintenance",
+      badgeColor: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+      title: "Under Scheduled Maintenance",
+      suggestion: message || "The platform is currently undergoing scheduled maintenance. Please check back shortly."
     },
     DEFAULT: {
       icon: AlertTriangle,

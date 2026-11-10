@@ -58,10 +58,11 @@ export default function MenuLayout({ children }) {
       const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.success) {
+        const isMaintenance = res.status === 503 || json?.isMaintenance || json?.errorType === "MAINTENANCE_MODE";
         const errPayload = {
           errorType:
             json?.errorType ||
-            (res.status === 404 ? "TABLE_NOT_FOUND" : "VERIFICATION_FAILED"),
+            (isMaintenance ? "MAINTENANCE_MODE" : res.status === 404 ? "TABLE_NOT_FOUND" : "VERIFICATION_FAILED"),
           message:
             json?.message || `Unable to verify table session (HTTP ${res.status}).`,
         };

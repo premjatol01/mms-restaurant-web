@@ -6,6 +6,7 @@ import PublicFooter from "./components/PublicFooter";
 import PopularMenuSection from "./components/PopularMenuSection";
 import PublicReviewsSection from "./components/PublicReviewsSection";
 import GoogleReviewBanner from "./components/GoogleReviewBanner";
+import MaintenanceScreen from "@/components/MaintenanceScreen";
 import {
   Utensils,
   MapPin,
@@ -29,6 +30,14 @@ async function getRestaurantData(subdomain) {
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => null);
+      if (errJson?.isMaintenance) {
+        return {
+          isMaintenance: true,
+          message: errJson?.message,
+          platformName: errJson?.platformName,
+          logoUrl: errJson?.logoUrl,
+        };
+      }
       if (errJson?.isInactive) {
         return { isInactive: true, message: errJson?.message };
       }
@@ -72,6 +81,16 @@ function isDarkColor(hexColor) {
 export default async function RestaurantPortfolioPage({ params }) {
   const { subdomain } = await params;
   const restaurant = await getRestaurantData(subdomain);
+
+  if (restaurant?.isMaintenance) {
+    return (
+      <MaintenanceScreen
+        message={restaurant.message}
+        platformName={restaurant.platformName}
+        logoUrl={restaurant.logoUrl}
+      />
+    );
+  }
 
   // If no restaurant data is returned by the API or website is unpublished, show the not-found/unavailable page
   if (!restaurant || restaurant.isUnpublished || restaurant.isInactive) {
