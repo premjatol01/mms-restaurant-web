@@ -240,18 +240,32 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
     "";
   const aboutImage = aboutSection?.content?.imageUrl || aboutSection?.content?.image;
 
-  const formatFullAddress = (detAddr, addr, mapLoc) => {
+  const formatFullAddress = (detAddr, addr, mapLoc, isPreviewMode = false) => {
     const loc = mapLoc || {};
-    const effectiveDet = (detAddr && (detAddr.line1 || detAddr.city)) ? detAddr : {
-      line1: loc.houseNumber || loc.line1,
-      line2: loc.street || loc.line2,
-      area: loc.area,
-      landmark: loc.landmark,
-      city: loc.city,
-      state: loc.state,
-      pincode: loc.pincode,
-      country: loc.country || "India"
-    };
+    const hasMapLoc = Boolean(loc.city || loc.street || loc.houseNumber || loc.addressLine);
+    const effectiveDet = (isPreviewMode && hasMapLoc)
+      ? {
+          line1: loc.houseNumber || loc.line1,
+          line2: loc.street || loc.line2,
+          area: loc.area,
+          landmark: loc.landmark,
+          city: loc.city,
+          state: loc.state,
+          pincode: loc.pincode,
+          country: loc.country || "India"
+        }
+      : (detAddr && (detAddr.line1 || detAddr.city))
+        ? detAddr
+        : {
+            line1: loc.houseNumber || loc.line1,
+            line2: loc.street || loc.line2,
+            area: loc.area,
+            landmark: loc.landmark,
+            city: loc.city,
+            state: loc.state,
+            pincode: loc.pincode,
+            country: loc.country || "India"
+          };
 
     if (effectiveDet && typeof effectiveDet === "object") {
       const parts = [
@@ -275,8 +289,11 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
     return addr?.city ? `${addr.city}, India` : "";
   };
 
-  const displayCity = detailedAddress?.city || mapSection?.content?.location?.city || address?.city || "Local City";
-  const displayAddress = formatFullAddress(detailedAddress, address, mapSection?.content?.location);
+  const isPreview = Boolean(preview);
+  const displayCity = (isPreview && mapSection?.content?.location?.city)
+    ? mapSection.content.location.city
+    : (detailedAddress?.city || mapSection?.content?.location?.city || address?.city || "Local City");
+  const displayAddress = formatFullAddress(detailedAddress, address, mapSection?.content?.location, isPreview);
 
   return (
     <div
