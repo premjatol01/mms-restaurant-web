@@ -12,6 +12,7 @@ import MyFavorites from "./pages/MyFavorites";
 import Cart from "./pages/Cart";
 import OrderHistory from "./pages/OrderHistory";
 import AllCategories from "./pages/AllCategories";
+import GamePage from "./pages/GamePage";
 
 const TABS = {
   Home,
@@ -23,12 +24,15 @@ const TABS = {
   Cart,
   History: OrderHistory,
   Categories: AllCategories,
+  Games: GamePage,
 };
 
 function MenuPageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const { activeTab, setActiveTab, setTableId } = useMenuOrder();
+  const { activeTab, setActiveTab, setTableId, offers } = useMenuOrder();
+
+  const hasOffers = Array.isArray(offers) && offers.length > 0;
 
 
 
@@ -54,7 +58,8 @@ function MenuPageContent() {
     }
   }, [searchParams, setActiveTab]);
 
-  const ActiveComponent = TABS[activeTab] ?? Home;
+  const matchedComponent = activeTab === "Offers" && !hasOffers ? Home : (TABS[activeTab] ?? Home);
+  const ActiveComponent = matchedComponent;
   return <ActiveComponent />;
 }
 

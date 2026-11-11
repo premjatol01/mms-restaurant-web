@@ -8,6 +8,8 @@ import Header from "@/components/menuComp/Header";
 import TableSessionError from "@/components/menuComp/TableSessionError";
 import { useMenuOrder, useMenuOrderStore } from "@/store/menuOrderStore";
 import UnlockOffersModal from "./[id]/modals/UnlockOffersModal";
+import RequestWaiterModal from "./[id]/modals/RequestWaiterModal";
+import GamesModal from "./[id]/modals/GamesModal";
 import { connectTableSocket, disconnectTableSocket } from "@/services/socket";
 import { toast } from "sonner";
 
@@ -16,6 +18,10 @@ export default function MenuLayout({ children }) {
   const {
     offersModalOpen,
     closeOffersModal,
+    waiterModalOpen,
+    closeWaiterModal,
+    gamesModalOpen,
+    closeGamesModal,
     setVerifiedSession,
     setVerificationError,
     setVerificationLoading,
@@ -179,6 +185,8 @@ export default function MenuLayout({ children }) {
       <Footer />
 
       {offersModalOpen && <UnlockOffersModal onClose={closeOffersModal} />}
+      {waiterModalOpen && <RequestWaiterModal isOpen={waiterModalOpen} onClose={closeWaiterModal} />}
+      {gamesModalOpen && <GamesModal isOpen={gamesModalOpen} onClose={closeGamesModal} />}
     </div>
   );
 }

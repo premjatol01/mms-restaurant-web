@@ -124,9 +124,10 @@ const Cart = () => {
   const rawTable = verifiedTable?.tableName || verifiedTable?.tableNo || verifiedTable?.name || (tableName && tableName.length !== 24 ? tableName : null);
   const displayTableName = formatTableName(rawTable, "Table");
 
-  // If no offer is selected, check eligibility and auto-suggest the best qualified offer
+  // If no offer is selected, check eligibility and auto-suggest the best qualified offer (strictly requires verified phone)
   useEffect(() => {
-    if (!subdomain || cartItems.length === 0 || appliedOffer) return;
+    const hasPhone = mobile?.verified || (mobile?.number && String(mobile.number).replace(/\D/g, "").length >= 10);
+    if (!subdomain || cartItems.length === 0 || appliedOffer || !hasPhone) return;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
     const tableSpend = (currentSession?.subtotal ?? activeOrder?.total ?? 0) + subtotal;

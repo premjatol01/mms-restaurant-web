@@ -13,13 +13,25 @@ export default function RecentlyOrders() {
     const seen = new Map();
     orders.forEach((order) => {
       (order.items || []).forEach((line) => {
-        if (!line?.id || seen.has(line.id)) return;
-        const catalogItem = getItemById ? getItemById(line.id) : null;
+        if (!line) return;
+        const catalogItem = getItemById
+          ? (getItemById(line.menuItemId) || getItemById(line.id) || getItemById(line._id))
+          : null;
+        const key = String(
+          (catalogItem && (catalogItem.id || catalogItem._id)) ||
+          line.menuItemId ||
+          line.id ||
+          line.name ||
+          line.title ||
+          ""
+        );
+        if (!key || seen.has(key)) return;
+
         if (catalogItem) {
-          seen.set(line.id, catalogItem);
+          seen.set(key, catalogItem);
         } else if (line.title || line.name) {
-          seen.set(line.id, {
-            id: line.id,
+          seen.set(key, {
+            id: line.menuItemId || line.id || key,
             title: line.title || line.name,
             price: line.price,
             imageUrl: line.imageUrl || "",
@@ -28,7 +40,7 @@ export default function RecentlyOrders() {
       });
     });
     return Array.from(seen.values()).slice(0, 4);
-  }, [orderHistory, activeOrder, menuItems]);
+  }, [orderHistory, activeOrder, menuItems, getItemById]);
 
   if (visible.length === 0) return null;
 

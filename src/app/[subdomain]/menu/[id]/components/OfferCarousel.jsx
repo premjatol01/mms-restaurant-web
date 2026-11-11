@@ -10,36 +10,6 @@ import { useMenuOrder } from "@/store/menuOrderStore";
 import "swiper/css";
 import "swiper/css/pagination";
 
-const defaultFallbackOffers = [
-  {
-    id: "f-1",
-    type: "repeat_order",
-    discount: "10% OFF",
-    label: "Repeat Customer Special",
-    title: "10% OFF · Return Visit",
-    description: "Re-order within 7 days to unlock",
-    gradient: "from-primary to-primary-hover",
-  },
-  {
-    id: "f-2",
-    type: "order_value",
-    discount: "15% OFF",
-    label: "Orders above ₹1,500",
-    title: "15% OFF · Order Bonus",
-    description: "Add items worth ₹1,500 or more to unlock",
-    gradient: "from-emerald-600 to-teal-700",
-  },
-  {
-    id: "f-3",
-    type: "low_traffic",
-    discount: "20% OFF",
-    label: "Weekday Treat",
-    title: "20% OFF · Tuesday Special",
-    description: "Available on orders above ₹1,000",
-    gradient: "from-amber-600 to-orange-700",
-  },
-];
-
 function mapOfferToCarousel(offer, idx) {
   const discount =
     offer.benefit?.type === "flat"
@@ -140,12 +110,12 @@ export default function OfferCarousel() {
     if (Array.isArray(storeOffers) && storeOffers.length > 0) {
       return storeOffers.map(mapOfferToCarousel);
     }
-    return defaultFallbackOffers;
+    return [];
   });
 
   // Keep in sync with store offers
   useEffect(() => {
-    if (Array.isArray(storeOffers) && storeOffers.length > 0) {
+    if (Array.isArray(storeOffers)) {
       setCarouselOffers(storeOffers.map(mapOfferToCarousel));
     }
   }, [storeOffers]);
@@ -160,8 +130,12 @@ export default function OfferCarousel() {
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
-        if (json?.success && Array.isArray(json.data) && json.data.length > 0) {
-          setCarouselOffers(json.data.map(mapOfferToCarousel));
+        if (json?.success) {
+          if (Array.isArray(json.data) && json.data.length > 0) {
+            setCarouselOffers(json.data.map(mapOfferToCarousel));
+          } else {
+            setCarouselOffers([]);
+          }
         }
       })
       .catch(() => {});

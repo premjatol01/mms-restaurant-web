@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { toast } from "sonner";
 
 const STORAGE_KEY = "menu-order-v1";
 
@@ -115,9 +116,9 @@ function deriveActiveOrder(session, orders, acknowledgedOrderIds = [], selectedO
     .map((item) => {
       const liveQty = Math.max(0, (item.quantity || 0) - (item.cancelledQty || 0));
       return {
-        id: item._id || item.id || item.menuItemId || item.name,
+        id: item.menuItemId || item.itemId || item._id || item.id || item.name,
         _id: item._id || item.id,
-        menuItemId: item.menuItemId,
+        menuItemId: item.menuItemId || item.itemId,
         title: item.name || item.title,
         name: item.name || item.title,
         price: Number(item.price) || 0,
@@ -216,6 +217,8 @@ export const useMenuOrderStore = create(
 
       offersModalOpen: false,
       offersModalContext: "offers",
+      waiterModalOpen: false,
+      gamesModalOpen: false,
       mobile: initialMobile,
       appliedOffer: null,
       isOfferApplied: false,
@@ -226,9 +229,33 @@ export const useMenuOrderStore = create(
       // ---------------------------------------------------------------
       // Offer actions
       // ---------------------------------------------------------------
-      setAppliedOffer: (offer) => set({ appliedOffer: offer, isOfferApplied: true }),
+      setAppliedOffer: (offer) => {
+        const { mobile, openOffersModal } = get();
+        const cleanMobile = (mobile?.number || "").replace(/\D/g, "");
+        if (!mobile?.verified && cleanMobile.length < 10) {
+          toast.info("Please enter your mobile number to apply this offer.");
+          openOffersModal("offers");
+          return false;
+        }
+        set({ appliedOffer: offer, isOfferApplied: true });
+        return true;
+      },
       removeOffer: () => set({ isOfferApplied: false }),
-      applyOffer: () => set({ isOfferApplied: true }),
+      applyOffer: () => {
+        const { mobile, appliedOffer, openOffersModal } = get();
+        const cleanMobile = (mobile?.number || "").replace(/\D/g, "");
+        if (!mobile?.verified && cleanMobile.length < 10) {
+          toast.info("Please enter your mobile number to apply this offer.");
+          openOffersModal("offers");
+          return false;
+        }
+        if (!appliedOffer) {
+          toast.info("Please select an offer to apply.");
+          return false;
+        }
+        set({ isOfferApplied: true });
+        return true;
+      },
 
       // ---------------------------------------------------------------
       // Cart actions
@@ -672,6 +699,12 @@ export const useMenuOrderStore = create(
         set({ offersModalOpen: false, offersModalContext: "offers" }),
       setOffersModalContext: (context) => set({ offersModalContext: context }),
 
+      openWaiterModal: () => set({ waiterModalOpen: true }),
+      closeWaiterModal: () => set({ waiterModalOpen: false }),
+
+      openGamesModal: () => set({ gamesModalOpen: true }),
+      closeGamesModal: () => set({ gamesModalOpen: false }),
+
       setMobileNumber: (number) =>
         set((state) => ({ mobile: { ...state.mobile, number } })),
 
@@ -801,8 +834,16 @@ export const useMenuOrderStore = create(
           0
         );
 
+        const effectiveMobile =
+          mobile ||
+          (get().mobile?.verified
+            ? get().mobile.number
+            : get().mobile?.number || null);
+        const cleanDigits = (effectiveMobile || "").replace(/\D/g, "");
+        const canApplyOffer = isOfferApplied && appliedOffer && cleanDigits.length >= 10;
+
         let discount = 0;
-        if (isOfferApplied && appliedOffer) {
+        if (canApplyOffer) {
           if (appliedOffer.benefit?.type === "flat") {
             discount = Math.min(Number(appliedOffer.benefit.value) || 0, subtotal);
           } else {
@@ -829,12 +870,8 @@ export const useMenuOrderStore = create(
                   imageUrl,
                 })
               ),
-              mobile:
-                mobile ||
-                (get().mobile?.verified
-                  ? get().mobile.number
-                  : get().mobile?.number || null),
-              appliedOffer: isOfferApplied ? appliedOffer : null,
+              mobile: effectiveMobile,
+              appliedOffer: canApplyOffer ? appliedOffer : null,
               discount,
             }),
           });

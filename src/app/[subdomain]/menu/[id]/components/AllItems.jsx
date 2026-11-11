@@ -2,8 +2,8 @@
 
 import FoodCard from "@/components/menuComp/FoodCard";
 import EmptyState from "@/components/menuComp/EmptyState";
-import { SearchX } from "lucide-react";
-import React, { useMemo } from "react";
+import { SearchX, ChevronDown } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useMenuOrder } from "@/store/menuOrderStore";
 
 export default function AllItems() {
@@ -15,6 +15,13 @@ export default function AllItems() {
     categories,
     menuLoading,
   } = useMenuOrder();
+
+  const [showAll, setShowAll] = useState(false);
+
+  // Reset pagination limit when switching category or searching
+  useEffect(() => {
+    setShowAll(false);
+  }, [searchQuery, selectedCategoryId]);
 
   const visible = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -90,11 +97,26 @@ export default function AllItems() {
           onAction={searchQuery ? () => setSearchQuery("") : undefined}
         />
       ) : (
-        <div className="grid grid-cols-2 gap-3">
-          {visible.map((item) => (
-            <FoodCard key={item.id} item={item} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            {(showAll ? visible : visible.slice(0, 8)).map((item) => (
+              <FoodCard key={item.id} item={item} />
+            ))}
+          </div>
+
+          {visible.length > 8 && (
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setShowAll(!showAll)}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-surface-soft hover:bg-border-light text-text-primary text-xs font-bold border border-border-light shadow-xs active:scale-95 transition-all cursor-pointer"
+              >
+                <span>{showAll ? "Show Less" : `Show More (${visible.length - 8} more)`}</span>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${showAll ? "rotate-180" : ""}`} />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </section>
   );

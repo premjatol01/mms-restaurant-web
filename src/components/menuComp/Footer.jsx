@@ -6,18 +6,20 @@ import { useMenuOrder } from "@/store/menuOrderStore";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 
-const navItems = [
-  { name: "Home", icon: Home },
-  { name: "Menu", icon: Utensils },
-  { name: "Offers", icon: Tag },
-  { name: "Table", icon: CreditCard },
-];
-
 export default function Footer() {
-  const { activeTab, setActiveTab } = useMenuOrder();
+  const { activeTab, setActiveTab, offers } = useMenuOrder();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const hasOffers = Array.isArray(offers) && offers.length > 0;
+
+  const currentNavItems = [
+    { name: "Home", icon: Home },
+    { name: "Menu", icon: Utensils },
+    ...(hasOffers ? [{ name: "Offers", icon: Tag }] : []),
+    { name: "Table", icon: CreditCard },
+  ];
 
   const handleTabClick = (name) => {
     // Update store immediately for instant UI response
@@ -31,7 +33,7 @@ export default function Footer() {
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50 max-w-md mx-auto bg-surface/95 backdrop-blur-xl border-t border-border-light pb-safe">
       <div className="relative flex items-center justify-around max-w-md mx-auto px-2 h-[64px]">
-        {navItems.map((item) => {
+        {currentNavItems.map((item) => {
           const isActive = activeTab === item.name;
           const Icon = item.icon;
 

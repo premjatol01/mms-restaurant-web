@@ -62,10 +62,10 @@ export default function Header() {
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Table Badge */}
           {displayTable && (
-            <div className="flex items-center gap-1 bg-success-light text-primary text-[11px] font-bold px-2.5 py-1.5 rounded-full border border-primary/20">
+            <div className="hidden sm:flex items-center gap-1 bg-success-light text-primary text-[11px] font-bold px-2.5 py-1.5 rounded-full border border-primary/20">
               <MapPin size={12} />
               <span>{displayTable}</span>
             </div>

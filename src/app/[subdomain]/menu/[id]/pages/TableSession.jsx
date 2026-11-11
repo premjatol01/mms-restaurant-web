@@ -24,10 +24,6 @@ import { motion } from "framer-motion";
 import { formatTableName } from "@/utils/formatTableName";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
-const APPLIED_PROMO = "WELCOME10";
-const PROMO_RATE = 0.1;
-
-
 const STEPS = [
   {
     key: "received",
@@ -78,6 +74,8 @@ export default function TableSession() {
     removeOffer,
     applyOffer,
     openOffersModal,
+    openWaiterModal,
+    offers,
   } = useMenuOrder();
 
   const router = useRouter();
@@ -453,7 +451,7 @@ export default function TableSession() {
             </div>
           )}
 
-          {/* Offer Section */}
+          {/* Offer Section — only shown if restaurant offers exist or offer is applied */}
           {isOfferApplied ? (
             <div className="bg-surface rounded-2xl p-4 border border-border-light shadow-sm">
               <div className="flex items-center gap-2.5 mb-2">
@@ -472,28 +470,39 @@ export default function TableSession() {
                   <span className="text-sm font-bold text-primary">
                     -₹{discount}
                   </span>
-                  <button onClick={removeOffer} className="p-1.5 hover:bg-danger/10 text-text-muted hover:text-danger rounded-full transition-colors active:scale-95">
+                  <button onClick={removeOffer} className="p-1.5 hover:bg-danger/10 text-text-muted hover:text-danger rounded-full transition-colors active:scale-95 cursor-pointer">
                     <Trash2 size={16} />
                   </button>
                 </div>
               </div>
             </div>
-          ) : (
+          ) : Array.isArray(offers) && offers.length > 0 ? (
             <div className="bg-surface rounded-2xl p-4 border border-border-light shadow-sm flex justify-between items-center">
                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-surface-soft border border-border-light flex items-center justify-center">
-                    <Tag size={15} className="text-text-secondary" />
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <Sparkles size={16} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-text-primary">Have a promo code?</h3>
-                    <p className="text-[11px] text-text-muted">Apply offers to get a discount</p>
+                    <h3 className="text-sm font-bold text-text-primary">Available Table Offers</h3>
+                    <p className="text-[11px] text-text-muted">Save on your total dining bill</p>
                   </div>
                </div>
-                <button onClick={handleApplyPromo} className="text-primary text-xs font-bold px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-xl transition-all active:scale-95">
-                  Apply
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("Offers");
+                    if (pathname) {
+                      const newParams = new URLSearchParams(searchParams?.toString() || "");
+                      newParams.set("tab", "offers");
+                      router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
+                    }
+                  }}
+                  className="text-primary text-xs font-bold px-3.5 py-2 bg-primary/10 hover:bg-primary/20 rounded-xl transition-all active:scale-95 cursor-pointer"
+                >
+                  View Offers
                 </button>
             </div>
-          )}
+          ) : null}
 
           {/* Mobile Verification to Avail Offers */}
           <div className="bg-surface rounded-2xl p-4 border border-border-light shadow-sm">
@@ -598,6 +607,26 @@ export default function TableSession() {
         </>
       )}
 
+      {/* Request Waiter for Help */}
+      <button
+        type="button"
+        onClick={openWaiterModal}
+        className="w-full bg-surface rounded-2xl p-4 border border-border-light shadow-sm flex items-center gap-3 active:scale-[0.98] transition-all text-left cursor-pointer hover:border-primary/40"
+      >
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+          <Bell size={18} />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-sm font-bold text-text-primary">
+            Request Waiter for Help
+          </h3>
+          <p className="text-[11px] text-text-muted mt-0.5">
+            Need water, napkins, bill or assistance?
+          </p>
+        </div>
+        <span className="text-primary text-xs font-bold">Call →</span>
+      </button>
+
       {/* Rate Experience */}
       <button
         type="button"
@@ -626,20 +655,107 @@ export default function TableSession() {
       </button>
 
       {/* Social Media Links */}
-      <div className="pt-2 pb-6 flex flex-col items-center justify-center gap-3">
-        <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest">Connect with us</p>
-        <div className="flex items-center gap-4">
-          <a href="#" className="w-10 h-10 rounded-full bg-surface shadow-sm border border-border-light flex items-center justify-center text-text-muted hover:text-primary hover:border-primary transition-all active:scale-95">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-          </a>
-          <a href="#" className="w-10 h-10 rounded-full bg-surface shadow-sm border border-border-light flex items-center justify-center text-text-muted hover:text-primary hover:border-primary transition-all active:scale-95">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
-          </a>
-          <a href="#" className="w-10 h-10 rounded-full bg-surface shadow-sm border border-border-light flex items-center justify-center text-text-muted hover:text-primary hover:border-primary transition-all active:scale-95">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path></svg>
-          </a>
-        </div>
-      </div>
+      {(() => {
+        const rawSocial = verifiedRestaurant?.socialLinks || {};
+        const normalize = (val, type) => {
+          if (!val || typeof val !== "string") return "";
+          const trimmed = val.trim();
+          if (!trimmed) return "";
+          if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+          if (type === "whatsapp") {
+            const digits = trimmed.replace(/\D/g, "");
+            return digits ? `https://wa.me/${digits.length === 10 ? `91${digits}` : digits}` : "";
+          }
+          if (type === "instagram") return `https://instagram.com/${trimmed.replace(/^@/, "")}`;
+          if (type === "facebook") return `https://facebook.com/${trimmed}`;
+          if (type === "twitter") return `https://x.com/${trimmed.replace(/^@/, "")}`;
+          if (type === "youtube") return trimmed.startsWith("@") ? `https://youtube.com/${trimmed}` : `https://youtube.com/@${trimmed}`;
+          return `https://${trimmed}`;
+        };
+
+        const channels = [
+          {
+            key: "instagram",
+            name: "Instagram",
+            url: normalize(rawSocial.instagram, "instagram"),
+            icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+            ),
+            hoverClass: "hover:text-[#E1306C] hover:border-[#E1306C]/40",
+          },
+          {
+            key: "facebook",
+            name: "Facebook",
+            url: normalize(rawSocial.facebook, "facebook"),
+            icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+              </svg>
+            ),
+            hoverClass: "hover:text-[#1877F2] hover:border-[#1877F2]/40",
+          },
+          {
+            key: "twitter",
+            name: "Twitter",
+            url: normalize(rawSocial.twitter, "twitter"),
+            icon: (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+              </svg>
+            ),
+            hoverClass: "hover:text-sky-500 hover:border-sky-500/40",
+          },
+          {
+            key: "youtube",
+            name: "YouTube",
+            url: normalize(rawSocial.youtube, "youtube"),
+            icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"></path>
+                <polygon points="10 15 15 12 10 9 10 15"></polygon>
+              </svg>
+            ),
+            hoverClass: "hover:text-red-600 hover:border-red-600/40",
+          },
+          {
+            key: "whatsapp",
+            name: "WhatsApp",
+            url: normalize(rawSocial.whatsapp, "whatsapp"),
+            icon: (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+              </svg>
+            ),
+            hoverClass: "hover:text-green-600 hover:border-green-600/40",
+          },
+        ].filter((ch) => Boolean(ch.url));
+
+        if (channels.length === 0) return null;
+
+        return (
+          <div className="pt-2 pb-6 flex flex-col items-center justify-center gap-3">
+            <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest">Connect with us</p>
+            <div className="flex items-center gap-3.5 flex-wrap justify-center">
+              {channels.map((ch) => (
+                <a
+                  key={ch.key}
+                  href={ch.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={ch.name}
+                  className={`w-10 h-10 rounded-full bg-surface shadow-xs border border-border-light flex items-center justify-center text-text-muted ${ch.hoverClass} transition-all active:scale-95`}
+                >
+                  {ch.icon}
+                </a>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
