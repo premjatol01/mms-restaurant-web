@@ -15,6 +15,7 @@ export default function FloatingCartBar() {
     isCartExpanded,
     setCartExpanded,
     setActiveTab,
+    verifiedRestaurant,
   } = useMenuOrder();
 
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function FloatingCartBar() {
     }
   };
 
+  if (verifiedRestaurant?.portalSettings?.operations?.enableFloatingCart === false) return null;
   if (totalItems === 0) return null;
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Bell, 
   X, 
@@ -10,41 +10,112 @@ import {
   Sparkles, 
   CheckCircle2, 
   Loader2,
-  HandHelping
+  HandHelping,
+  Clock,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMenuOrder } from "@/store/menuOrderStore";
 import { formatTableName } from "@/utils/formatTableName";
 
-const SERVICES = [
-  { id: "General Help", label: "Call Waiter", icon: Bell, desc: "General help at your table" },
+const DEFAULT_SERVICES = [
+  { id: "Call Waiter", label: "Call Waiter", icon: Bell, desc: "General help at your table" },
   { id: "Water Refill", label: "Water Refill", icon: Droplets, desc: "Need fresh drinking water" },
-  { id: "Cutlery & Napkins", label: "Extra Cutlery", icon: UtensilsCrossed, desc: "Spoons, forks or napkins" },
-  { id: "Bill Request", label: "Request Bill", icon: Receipt, desc: "Ready to pay the bill" },
+  { id: "Extra Cutlery & Napkins", label: "Extra Cutlery", icon: UtensilsCrossed, desc: "Spoons, forks or napkins" },
+  { id: "Request Bill & Pay", label: "Request Bill", icon: Receipt, desc: "Ready to pay the bill" },
   { id: "Clean Table", label: "Clean Table", icon: Sparkles, desc: "Clear empty plates/spills" },
 ];
 
+function pickIconForLabel(label = "") {
+  const l = label.toLowerCase();
+  if (l.includes("water") || l.includes("drink")) return Droplets;
+  if (l.includes("bill") || l.includes("pay") || l.includes("cheque")) return Receipt;
+  if (l.includes("cutlery") || l.includes("spoon") || l.includes("fork") || l.includes("napkin")) return UtensilsCrossed;
+  if (l.includes("clean") || l.includes("clear") || l.includes("spill")) return Sparkles;
+  return Bell;
+}
+
 export default function RequestWaiterModal({ isOpen, onClose }) {
   const { tableId, tableName, verifiedTable, verifiedRestaurant } = useMenuOrder();
-  const [selectedService, setSelectedService] = useState("General Help");
+
+  const waiterSettings = verifiedRestaurant?.portalSettings?.waiterRequest;
+  const configuredOptions = waiterSettings?.options;
+  const instructionsText =
+    waiterSettings?.instructionsText ||
+    "A service captain has been notified and is heading to your table.";
+  const cooldownMinutes = Math.max(1, Number(waiterSettings?.cooldownMinutes) || 2);
+
+  // Build service list from portalSettings or fallback
+  const services = React.useMemo(() => {
+    if (Array.isArray(configuredOptions) && configuredOptions.length > 0) {
+      return configuredOptions.map((opt) => ({
+        id: opt.label || opt.id,
+        label: opt.label,
+        icon: pickIconForLabel(opt.label),
+        desc: "Assistance to your table",
+      }));
+    }
+    return DEFAULT_SERVICES;
+  }, [configuredOptions]);
+
+  const [selectedService, setSelectedService] = useState(services[0]?.id || "Call Waiter");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-
-  if (!isOpen) return null;
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
   const rawTable = verifiedTable?.tableName || verifiedTable?.tableNo || verifiedTable?.name || tableName;
   const displayTable = formatTableName(rawTable, "Table");
   const subdomain = verifiedRestaurant?.subdomain || (typeof window !== "undefined" ? window.location.pathname.split("/")[1] : "");
+  const resolvedTableId =
+    verifiedTable?.tableId ||
+    verifiedTable?.id ||
+    verifiedTable?._id ||
+    tableId;
+
+  // Check cooldown on mount and when modal opens
+  useEffect(() => {
+    if (!isOpen || !resolvedTableId) return;
+    try {
+      const lastTimeStr = localStorage.getItem(`tablly_last_waiter_req_${resolvedTableId}`);
+      if (lastTimeStr) {
+        const lastTime = Number(lastTimeStr);
+        const elapsedSec = Math.floor((Date.now() - lastTime) / 1000);
+        const totalCooldownSec = cooldownMinutes * 60;
+        if (elapsedSec < totalCooldownSec) {
+          setCooldownRemaining(totalCooldownSec - elapsedSec);
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [isOpen, resolvedTableId, cooldownMinutes]);
+
+  // Tick cooldown countdown
+  useEffect(() => {
+    if (cooldownRemaining <= 0) return;
+    const interval = setInterval(() => {
+      setCooldownRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldownRemaining]);
+
+  if (!isOpen) return null;
 
   const handleRequest = async () => {
+    if (cooldownRemaining > 0) {
+      toast.info(`Please wait ${cooldownRemaining}s before sending another waiter request.`);
+      return;
+    }
+
     setSubmitting(true);
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-    const resolvedTableId =
-      verifiedTable?.tableId ||
-      verifiedTable?.id ||
-      verifiedTable?._id ||
-      tableId;
 
     try {
       const res = await fetch(`${apiUrl}/orders/public/request-waiter`, {
@@ -62,11 +133,17 @@ export default function RequestWaiterModal({ isOpen, onClose }) {
 
       if (res.ok && json?.success) {
         setSuccess(true);
+        try {
+          localStorage.setItem(`tablly_last_waiter_req_${resolvedTableId}`, String(Date.now()));
+          setCooldownRemaining(cooldownMinutes * 60);
+        } catch (e) {
+          // ignore
+        }
         toast.success(`🛎️ Waiter requested for ${displayTable}! Staff has been notified.`);
         setTimeout(() => {
           setSuccess(false);
           onClose();
-        }, 1800);
+        }, 2200);
       } else {
         toast.error(json?.message || "Failed to notify staff. Please call a waiter directly.");
       }
@@ -95,7 +172,7 @@ export default function RequestWaiterModal({ isOpen, onClose }) {
             </div>
             <div>
               <h2 className="text-base font-bold text-text-primary">
-                Request Waiter Help
+                Request Table Assistance
               </h2>
               <p className="text-xs text-text-muted">
                 Assistance for {displayTable}
@@ -119,19 +196,30 @@ export default function RequestWaiterModal({ isOpen, onClose }) {
             <h3 className="text-base font-bold text-text-primary">
               Staff Has Been Notified!
             </h3>
-            <p className="text-xs text-text-muted max-w-xs mx-auto">
-              A staff member is on their way to {displayTable} to assist you with {selectedService}.
+            <p className="text-xs text-text-muted max-w-xs mx-auto leading-relaxed">
+              {instructionsText}
             </p>
           </div>
         ) : (
           <>
+            {/* Cooldown active banner */}
+            {cooldownRemaining > 0 && (
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2.5">
+                <Clock size={16} className="text-amber-600 shrink-0" />
+                <p className="leading-snug">
+                  A request was recently sent. Cooldown active:{" "}
+                  <span className="font-bold">{cooldownRemaining}s</span> remaining.
+                </p>
+              </div>
+            )}
+
             {/* Service Options */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-text-secondary">
                 What do you need help with?
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {SERVICES.map((srv) => {
+                {services.map((srv) => {
                   const Icon = srv.icon;
                   const isSelected = selectedService === srv.id;
 
@@ -195,13 +283,22 @@ export default function RequestWaiterModal({ isOpen, onClose }) {
               <button
                 type="button"
                 onClick={handleRequest}
-                disabled={submitting}
-                className="flex-1 py-3 px-4 rounded-xl bg-primary hover:bg-primary-hover active:scale-[0.98] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                disabled={submitting || cooldownRemaining > 0}
+                className={`flex-1 py-3 px-4 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer ${
+                  cooldownRemaining > 0
+                    ? "bg-gray-400 cursor-not-allowed opacity-80"
+                    : "bg-primary hover:bg-primary-hover active:scale-[0.98]"
+                }`}
               >
                 {submitting ? (
                   <>
                     <Loader2 size={14} className="animate-spin" />
                     Notifying Staff...
+                  </>
+                ) : cooldownRemaining > 0 ? (
+                  <>
+                    <Clock size={14} />
+                    Wait {cooldownRemaining}s
                   </>
                 ) : (
                   <>
@@ -217,4 +314,3 @@ export default function RequestWaiterModal({ isOpen, onClose }) {
     </div>
   );
 }
-

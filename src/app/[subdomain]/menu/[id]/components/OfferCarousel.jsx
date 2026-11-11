@@ -161,10 +161,19 @@ export default function OfferCarousel() {
     router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
   };
 
-  if (!carouselOffers || carouselOffers.length === 0) return null;
+  const offersEnabled = verifiedRestaurant?.portalSettings?.offers?.enabled !== false;
+  const bannerAnnouncement = verifiedRestaurant?.portalSettings?.offers?.bannerAnnouncement;
+
+  if (!offersEnabled || !carouselOffers || carouselOffers.length === 0) return null;
 
   return (
-    <section className="h-fit">
+    <section className="h-fit space-y-2">
+      {bannerAnnouncement && bannerAnnouncement.trim() && (
+        <div className="bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl flex items-center gap-2 text-[11px] font-medium text-primary">
+          <Sparkles size={13} className="shrink-0 animate-pulse" />
+          <span className="truncate">{bannerAnnouncement}</span>
+        </div>
+      )}
       <Swiper
         modules={[Pagination, Autoplay]}
         slidesPerView={1}

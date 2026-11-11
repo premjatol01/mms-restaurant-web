@@ -676,6 +676,20 @@ export const useMenuOrderStore = create(
               menuItems,
               combos,
               offers: rawOffers,
+              verifiedRestaurant: json.data?.restaurant
+                ? {
+                    ...(get().verifiedRestaurant || {}),
+                    ...json.data.restaurant,
+                    portalSettings: {
+                      ...((get().verifiedRestaurant?.portalSettings) || {}),
+                      ...(json.data.restaurant.portalSettings || {}),
+                    },
+                    socialLinks: {
+                      ...((get().verifiedRestaurant?.socialLinks) || {}),
+                      ...(json.data.restaurant.socialLinks || {}),
+                    },
+                  }
+                : get().verifiedRestaurant,
               selectedCategoryId: validCategory
                 ? currentSelected
                 : defaultCategory,
