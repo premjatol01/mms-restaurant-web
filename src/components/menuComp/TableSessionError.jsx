@@ -161,7 +161,7 @@ export default function TableSessionError({ error, subdomain, tableId, onRetry }
           )}
 
           <a
-            href="http://localhost:3000"
+            href="/"
             className="inline-flex items-center gap-1.5 text-xs text-[#786154] hover:text-[#d9480f] transition-colors pt-2"
           >
             <Home className="w-3.5 h-3.5" />

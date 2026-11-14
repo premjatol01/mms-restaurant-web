@@ -1313,7 +1313,7 @@ export default function MarketingPage() {
               <ul className="space-y-1.5 text-xs text-[#786154]">
                 <li><Link href="/login" className="hover:text-[#d9480f]">Restaurant Login</Link></li>
                 <li><button onClick={() => handleOpenTrial("Standard")} className="hover:text-[#d9480f] cursor-pointer">Start Free Trial</button></li>
-                <li><a href="http://localhost:3002" className="hover:text-[#d9480f]">Admin Panel</a></li>
+                <li><a href={process.env.NEXT_PUBLIC_ADMIN_URL || "https://mms-restaurant-admin.vercel.app"} className="hover:text-[#d9480f]">Admin Panel</a></li>
               </ul>
             </div>
           </div>
