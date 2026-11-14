@@ -80,17 +80,18 @@ const INDIAN_STATE_OPTIONS = INDIAN_STATES.map((state) => ({
 }));
 
 const PACKAGE_OPTIONS = [
+  { value: "free_trial", label: "🎁 1 Month Free Trial (30 Days • ₹0)" },
+  { value: "Starter", label: "Starter Plan (Up to 10 Tables • ₹499/mo)" },
+  { value: "Standard", label: "Pro Growth Plan (Up to 35 Tables • Most Popular • ₹1,499/mo)" },
+  { value: "Enterprise", label: "Enterprise Plan (Up to 100 Tables • ₹3,499/mo)" },
   { value: "skip", label: "— Skip for now (Decide later) —" },
-  { value: "Basic", label: "Basic Plan (Up to 15 Tables)" },
-  { value: "Standard", label: "Standard Plan (Up to 50 Tables • Most Popular)" },
-  { value: "Premium", label: "Premium Plan (Up to 150 Tables)" },
 ];
 
 const DURATION_OPTIONS = [
-  { value: "skip", label: "— Skip for now (Decide later) —" },
+  { value: "free_trial", label: "🎁 1 Month Free Trial (30 Days • ₹0 Free)" },
   { value: "1_month", label: "1 Month (30 Days)" },
-  { value: "6_months", label: "6 Months (180 Days • Save ~17%)" },
-  { value: "12_months", label: "12 Months / 1 Year (Save up to 25%)" },
+  { value: "12_months", label: "12 Months / 1 Year (Best Value)" },
+  { value: "skip", label: "— Skip for now (Decide later) —" },
 ];
 
 const customSelectStyles = {
@@ -311,7 +312,7 @@ export default function CtaTrialModal({
         <div className="bg-gradient-to-r from-[#d9480f] to-[#f76707] text-white px-5 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-amber-200" />
-            <h3 className="font-bold text-base sm:text-lg">Connect With Us & Start Free Trial</h3>
+            <h3 className="font-bold text-base sm:text-lg">Connect With Us & Start 1-Month Free Trial</h3>
           </div>
           <button
             onClick={onClose}
@@ -353,7 +354,7 @@ export default function CtaTrialModal({
         ) : (
           <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-3.5 max-h-[82vh] overflow-y-auto">
             <p className="text-xs text-[#786154]">
-              Fill your restaurant details below to connect with our team and activate your 14-day free trial.
+              Fill your restaurant details below to connect with our team and activate your 1-Month Free Trial (30 Days full access).
             </p>
 
             {errorMsg && (
@@ -548,7 +549,7 @@ export default function CtaTrialModal({
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    <span>Connect to Us & Start 14-Day Free Trial</span>
+                    <span>Connect to Us & Start 1-Month Free Trial</span>
                   </>
                 )}
               </button>

@@ -190,10 +190,10 @@ export default function MarketingPage() {
               Restaurant Login
             </Link>
             <button
-              onClick={() => handleOpenTrial("Standard")}
+              onClick={() => handleOpenTrial("1 Month Free Trial")}
               className="text-sm font-semibold bg-[#d9480f] hover:bg-[#c93b07] text-white px-4 py-2 rounded-lg shadow-lg shadow-[#d9480f]/25 transition-all hover:shadow-[#d9480f]/40 hover:-translate-y-0.5 cursor-pointer"
             >
-              Start Free 14-Day Trial
+              Start 1-Month Free Trial
             </button>
           </div>
 
@@ -255,11 +255,11 @@ export default function MarketingPage() {
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  handleOpenTrial("Standard");
+                  handleOpenTrial("1 Month Free Trial");
                 }}
                 className="w-full text-center py-2.5 rounded-lg bg-[#d9480f] font-semibold text-white shadow-md shadow-[#d9480f]/20 cursor-pointer"
               >
-                Start Free 14-Day Trial
+                Start 1-Month Free Trial
               </button>
             </div>
           </div>
@@ -297,10 +297,10 @@ export default function MarketingPage() {
             {/* CTAs */}
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
               <button
-                onClick={() => handleOpenTrial("Standard")}
+                onClick={() => handleOpenTrial("1 Month Free Trial")}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-[#d9480f] hover:bg-[#c93b07] text-white font-bold text-base shadow-xl shadow-[#d9480f]/25 transition-all hover:shadow-[#d9480f]/40 hover:-translate-y-0.5 cursor-pointer"
               >
-                <span>Start Free 14-Day Trial</span>
+                <span>Start 1-Month Free Trial</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button
@@ -822,7 +822,7 @@ export default function MarketingPage() {
       {/* ───────────────── PRICING PLANS (UPDATED BACKEND PACKAGES) ───────────────── */}
       <section id="pricing" className="py-24 bg-[#fff4e6]/40 border-y border-[#ede4dc]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto space-y-4 mb-16">
+          <div className="text-center max-w-2xl mx-auto space-y-4 mb-12">
             <h2 className="text-xs sm:text-sm font-semibold tracking-wider text-[#d9480f] uppercase">
               Transparent Pricing Plans
             </h2>
@@ -830,82 +830,83 @@ export default function MarketingPage() {
               Pick the Perfect Plan for Your Restaurant
             </h3>
             <p className="text-[#786154] text-sm sm:text-base">
-              No hidden fees, no costly hardware locking. Start with a 14-day free trial on any plan.
+              No hidden fees, no costly hardware locking. Start with a 1-Month Free Trial on any plan.
             </p>
 
-            {/* Billing Duration Switcher: 1 Month | 6 Months | 12 Months */}
+            {/* Billing Duration Switcher: 1 Month | 12 Months */}
             <div className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-white border border-[#ede4dc] mt-4 shadow-sm max-w-full overflow-x-auto">
               <button
                 type="button"
                 onClick={() => setBillingCycle("1_month")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                className={`px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   billingCycle === "1_month"
                     ? "bg-[#d9480f] text-white shadow-xs"
                     : "text-[#786154] hover:text-[#2b2118]"
                 }`}
               >
-                1 Month
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillingCycle("6_months")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-                  billingCycle === "6_months"
-                    ? "bg-[#d9480f] text-white shadow-xs"
-                    : "text-[#786154] hover:text-[#2b2118]"
-                }`}
-              >
-                <span>6 Months</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
-                  billingCycle === "6_months" ? "bg-white/20 text-white" : "bg-[#ffe8cc] text-[#d9480f]"
-                }`}>
-                  Save ~17%
-                </span>
+                Monthly Billing
               </button>
               <button
                 type="button"
                 onClick={() => setBillingCycle("12_months")}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
                   billingCycle === "12_months"
                     ? "bg-[#d9480f] text-white shadow-xs"
                     : "text-[#786154] hover:text-[#2b2118]"
                 }`}
               >
-                <span>12 Months / 1 Year</span>
+                <span>Annual Billing</span>
                 <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
                   billingCycle === "12_months" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
                 }`}>
-                  Save up to 25% ✨
+                  Save 2 Months Free ✨
                 </span>
               </button>
             </div>
           </div>
 
+          {/* 1 Month Free Trial Hero Banner */}
+          <div className="mb-12 max-w-5xl mx-auto rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-6 sm:p-8 text-white shadow-xl shadow-emerald-600/20 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+            <div className="absolute -right-8 -bottom-8 w-48 h-48 bg-white/10 rounded-full pointer-events-none" />
+            <div className="space-y-2 text-center md:text-left">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold uppercase tracking-wider backdrop-blur-xs">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                Special 30-Day Welcome Offer
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-black tracking-tight">
+                Get 1 Month 100% Free Trial
+              </h3>
+              <p className="text-xs sm:text-sm text-white/90 max-w-xl leading-relaxed">
+                Experience full access to digital QR ordering, interactive table games, waiter request calls, and branded menus with <strong>zero credit card required</strong>.
+              </p>
+            </div>
+            <button
+              onClick={() => handleOpenTrial("1 Month Free Trial")}
+              className="px-6 py-3.5 rounded-xl bg-white text-emerald-800 font-black text-sm shadow-md hover:bg-white/90 transition-all cursor-pointer whitespace-nowrap shrink-0 hover:scale-105 active:scale-95"
+            >
+              Start 1-Month Free Trial →
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
-            {/* Plan 1: Basic */}
+            {/* Plan 1: Starter Plan */}
             <div className="p-8 rounded-2xl bg-white border border-[#ede4dc] flex flex-col justify-between hover:border-[#d9480f]/40 hover:shadow-md transition-all shadow-sm">
               <div>
-                <h4 className="text-xl font-bold text-[#2b2118]">Basic Plan</h4>
+                <h4 className="text-xl font-bold text-[#2b2118]">Starter Plan</h4>
                 <p className="text-xs text-[#786154] mt-1">Ideal for cafes, small bakeries, and quick-serve outlets.</p>
                 
                 <div className="mt-6 mb-6">
                   <span className="text-4xl font-extrabold text-[#2b2118]">
-                    {billingCycle === "1_month" ? "₹999" : billingCycle === "6_months" ? "₹833" : "₹750"}
+                    {billingCycle === "1_month" ? "₹499" : "₹416"}
                   </span>
                   <span className="text-xs text-[#786154]"> / month</span>
-                  {billingCycle === "1_month" && (
+                  {billingCycle === "1_month" ? (
                     <p className="text-[11px] text-[#786154] font-medium mt-1">
-                      Billed monthly at ₹999
+                      Billed monthly at ₹499
                     </p>
-                  )}
-                  {billingCycle === "6_months" && (
-                    <p className="text-[11px] text-amber-700 font-semibold mt-1">
-                      Billed ₹4,999 for 6 months (Save ₹995)
-                    </p>
-                  )}
-                  {billingCycle === "12_months" && (
+                  ) : (
                     <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-                      Billed annually at ₹8,999 (Save ₹2,989)
+                      Billed annually at ₹4,999 (Save ₹989)
                     </p>
                   )}
                 </div>
@@ -913,67 +914,65 @@ export default function MarketingPage() {
                 <ul className="space-y-3 text-xs sm:text-sm text-[#4a3b32]">
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Up to <strong>15 Restaurant Tables</strong></span>
+                    <span>Up to <strong>10 Restaurant Tables</strong></span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Printable Table QR Codes</span>
+                    <span>Digital QR Menu & Contactless Ordering</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Contactless Digital Menu & Ordering</span>
+                    <span>Printable QR Generation & Sharp PNG Downloads</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Active Table Sessions & Bill Management</span>
+                    <span>Live Table Sessions & Bill Calculation</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Branded Restaurant Portfolio Website</span>
+                    <span>Request Waiter Assistance (Water, Call Captain)</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Standard Email Support</span>
+                    <span>Dedicated Restaurant Website & Subdomain</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
+                    <span>Standard Email & Community Support</span>
                   </li>
                 </ul>
               </div>
 
               <button
-                onClick={() => handleOpenTrial("Basic", billingCycle)}
+                onClick={() => handleOpenTrial("Starter", billingCycle)}
                 className="mt-8 block w-full text-center py-3 rounded-xl border-2 border-[#d9480f] bg-white text-[#d9480f] font-bold text-sm hover:bg-[#d9480f] hover:text-white transition-colors shadow-sm cursor-pointer"
               >
-                Choose Basic Plan
+                Choose Starter Plan
               </button>
             </div>
 
-            {/* Plan 2: Standard (Most Popular) */}
+            {/* Plan 2: Pro Growth (Most Popular) */}
             <div className="p-8 rounded-2xl bg-white border-2 border-[#d9480f] flex flex-col justify-between relative shadow-xl shadow-[#d9480f]/15 scale-105">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#d9480f] text-white text-[11px] font-extrabold uppercase px-4 py-1 rounded-full shadow-md">
                 Most Popular
               </div>
 
               <div>
-                <h4 className="text-xl font-bold text-[#2b2118]">Standard Plan</h4>
+                <h4 className="text-xl font-bold text-[#2b2118]">Pro Growth Plan</h4>
                 <p className="text-xs text-[#786154] mt-1">For busy dining restaurants, bistros, and cocktail lounges.</p>
 
                 <div className="mt-6 mb-6">
                   <span className="text-4xl font-extrabold text-[#2b2118]">
-                    {billingCycle === "1_month" ? "₹2,499" : billingCycle === "6_months" ? "₹2,083" : "₹1,916"}
+                    {billingCycle === "1_month" ? "₹1,499" : "₹1,249"}
                   </span>
                   <span className="text-xs text-[#786154]"> / month</span>
-                  {billingCycle === "1_month" && (
+                  {billingCycle === "1_month" ? (
                     <p className="text-[11px] text-[#786154] font-medium mt-1">
-                      Billed monthly at ₹2,499
+                      Billed monthly at ₹1,499
                     </p>
-                  )}
-                  {billingCycle === "6_months" && (
-                    <p className="text-[11px] text-amber-700 font-semibold mt-1">
-                      Billed ₹12,499 for 6 months (Save ₹2,495)
-                    </p>
-                  )}
-                  {billingCycle === "12_months" && (
+                  ) : (
                     <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-                      Billed annually at ₹22,999 (Save ₹6,989)
+                      Billed annually at ₹14,990 (Save ₹2,998)
                     </p>
                   )}
                 </div>
@@ -981,27 +980,35 @@ export default function MarketingPage() {
                 <ul className="space-y-3 text-xs sm:text-sm text-[#4a3b32]">
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Up to <strong>50 Restaurant Tables</strong></span>
+                    <span>Up to <strong>35 Restaurant Tables</strong></span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Premium Designer QR Standee Templates</span>
+                    <span>Custom Branded Designer QR Standee Templates</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Live Kitchen Display System (KOT)</span>
+                    <span>Interactive Table Games Hub (Trivia, Spin, Tic-Tac-Toe)</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Promotional Offers & Coupon Engine</span>
+                    <span>Promotional Offers & Coupon Code Engine</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Customer Google Review Booster</span>
+                    <span>Instagram Follow & Win 10% Discount Campaign</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Customer Inquiry Lead Capture</span>
+                    <span>Guest Wi-Fi QR Code Sharing</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
+                    <span>Google Review Booster (Boost 5-Star Ratings)</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
+                    <span>Biz Growth Hub (Video Masterclasses & Playbooks)</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
@@ -1014,34 +1021,28 @@ export default function MarketingPage() {
                 onClick={() => handleOpenTrial("Standard", billingCycle)}
                 className="mt-8 block w-full text-center py-3.5 rounded-xl bg-[#d9480f] hover:bg-[#c93b07] text-white font-extrabold text-sm shadow-lg shadow-[#d9480f]/30 transition-all hover:-translate-y-0.5 cursor-pointer"
               >
-                Choose Standard Plan
+                Choose Pro Growth Plan
               </button>
             </div>
 
-            {/* Plan 3: Premium */}
+            {/* Plan 3: Enterprise Plan */}
             <div className="p-8 rounded-2xl bg-white border border-[#ede4dc] flex flex-col justify-between hover:border-[#d9480f]/40 hover:shadow-md transition-all shadow-sm">
               <div>
-                <h4 className="text-xl font-bold text-[#2b2118]">Premium Plan</h4>
+                <h4 className="text-xl font-bold text-[#2b2118]">Enterprise Plan</h4>
                 <p className="text-xs text-[#786154] mt-1">For multi-floor dining venues, large resorts & high-volume spaces.</p>
 
                 <div className="mt-6 mb-6">
                   <span className="text-4xl font-extrabold text-[#2b2118]">
-                    {billingCycle === "1_month" ? "₹4,999" : billingCycle === "6_months" ? "₹4,166" : "₹3,750"}
+                    {billingCycle === "1_month" ? "₹3,499" : "₹2,915"}
                   </span>
                   <span className="text-xs text-[#786154]"> / month</span>
-                  {billingCycle === "1_month" && (
+                  {billingCycle === "1_month" ? (
                     <p className="text-[11px] text-[#786154] font-medium mt-1">
-                      Billed monthly at ₹4,999
+                      Billed monthly at ₹3,499
                     </p>
-                  )}
-                  {billingCycle === "6_months" && (
-                    <p className="text-[11px] text-amber-700 font-semibold mt-1">
-                      Billed ₹24,999 for 6 months (Save ₹4,995)
-                    </p>
-                  )}
-                  {billingCycle === "12_months" && (
+                  ) : (
                     <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-                      Billed annually at ₹44,999 (Save ₹14,989)
+                      Billed annually at ₹34,990 (Save ₹6,998)
                     </p>
                   )}
                 </div>
@@ -1049,36 +1050,40 @@ export default function MarketingPage() {
                 <ul className="space-y-3 text-xs sm:text-sm text-[#4a3b32]">
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Up to <strong>150 Restaurant Tables</strong></span>
+                    <span>Up to <strong>100 Restaurant Tables</strong></span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Unlimited Additional Custom QR Standees</span>
+                    <span>Everything in Pro Growth Plan</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Multi-Floor / Multi-Section Management</span>
+                    <span>AI Menu Engineering & Smart Marketing Prompts</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Customer Visit & Lifetime Spend CRM</span>
+                    <span>Multi-Staff Access & Role Management</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Advanced Floor, GST & Revenue Reports</span>
+                    <span>Advanced Billing, GST Management & Sales Reports</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
-                    <span>Dedicated Onboarding Manager & 24/7 SLA</span>
+                    <span>Custom QR Standee Graphic Design Requests</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <Check className="w-4 h-4 text-[#d9480f] shrink-0" />
+                    <span>Dedicated Account Manager & 24/7 VIP Support</span>
                   </li>
                 </ul>
               </div>
 
               <button
-                onClick={() => handleOpenTrial("Premium", billingCycle)}
+                onClick={() => handleOpenTrial("Enterprise", billingCycle)}
                 className="mt-8 block w-full text-center py-3 rounded-xl border-2 border-[#d9480f] bg-white text-[#d9480f] font-bold text-sm hover:bg-[#d9480f] hover:text-white transition-colors shadow-sm cursor-pointer"
               >
-                Choose Premium Plan
+                Choose Enterprise Plan
               </button>
             </div>
           </div>

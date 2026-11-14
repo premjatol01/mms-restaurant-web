@@ -22,16 +22,16 @@ const FAQ_KNOWLEDGE_BASE = [
     keywords: ["qr", "scan", "camera", "app", "download", "ordering", "table", "mobile"],
     q: "How does QR ordering work?",
     a: "Diners scan the unique QR code on their table using any mobile camera—**no app download required!** 📱\n\n1. It instantly opens your digital menu in their mobile browser\n2. Diners browse photos, select add-ons or spice level, and place orders\n3. Kitchen gets an instant KOT ticket with the exact table number!",
-    chips: ["What are your pricing plans?", "How do kitchen KOTs work?", "🚀 Start 14-Day Free Trial"],
-    cta: { title: "🚀 Start Free 14-Day Trial", plan: "Standard" }
+    chips: ["What are your pricing plans?", "How do kitchen KOTs work?", "🚀 Start 1-Month Free Trial"],
+    cta: { title: "🚀 Start Free 1-Month Trial", plan: "1 Month Free Trial" }
   },
   {
     id: "pricing",
     keywords: ["price", "pricing", "cost", "charge", "plan", "subscription", "fee", "month"],
     q: "What are your pricing plans?",
-    a: "Tablly offers transparent, budget-friendly pricing with **zero setup fees**:\n\n• **Starter (₹499/mo)**: Up to 10 tables, digital QR menu, basic analytics\n• **Pro Growth (₹1,499/mo)**: Up to 35 tables, live KOT sync, Google reviews boost, custom subdomain & CRM\n• **Enterprise (₹3,499/mo)**: Unlimited tables, multi-staff accounts & priority support\n\n🎁 **All plans include a 14-day free trial** with zero commitment!",
-    chips: ["🎁 Claim 14-Day Free Trial", "How fast is setup?", "Can I customize branding?"],
-    cta: { title: "🎁 Activate 14-Day Free Trial", plan: "Standard" }
+    a: "Tablly offers transparent, budget-friendly pricing with **zero setup fees**:\n\n• **1 Month Free Trial (₹0)**: 30 days full platform access, table games & QR menu\n• **Starter (₹499/mo)**: Up to 10 tables, digital QR menu, waiter calls & basic analytics\n• **Pro Growth (₹1,499/mo)**: Up to 35 tables, designer QR standees, table games, Google reviews boost & Instagram campaign\n• **Enterprise (₹3,499/mo)**: Up to 100 tables, AI menu engineering, multi-staff & VIP concierge\n\n🎁 **Every new restaurant gets a 1-Month Free Trial** with zero commitment!",
+    chips: ["🎁 Claim 1-Month Free Trial", "How fast is setup?", "Can I customize branding?"],
+    cta: { title: "🎁 Activate 1-Month Free Trial", plan: "1 Month Free Trial" }
   },
   {
     id: "kot",
@@ -39,7 +39,7 @@ const FAQ_KNOWLEDGE_BASE = [
     q: "How do kitchen orders (KOT) work?",
     a: "The instant a diner taps 'Place Order', your kitchen receives the KOT in real time 🍳:\n\n• Exact Table number & timestamp\n• Custom cooking notes (e.g. 'less spicy', 'no onions')\n• Itemized order with real-time status updates ('Preparing' ➔ 'Served')\n\nWorks on any tablet, mobile phone, or standard thermal receipt printer!",
     chips: ["Can customers pay online?", "What are your pricing plans?", "🚀 Start Free Trial"],
-    cta: { title: "🚀 Try It in Free Trial", plan: "Standard" }
+    cta: { title: "🚀 Try It in 1-Month Free Trial", plan: "1 Month Free Trial" }
   },
   {
     id: "branding",
@@ -47,15 +47,15 @@ const FAQ_KNOWLEDGE_BASE = [
     q: "Can I customize with our logo & branding?",
     a: "Yes, 100%! 🎨 You get full control over your restaurant's digital presence:\n\n• Upload your custom logo & cover banner\n• Choose your brand colors and theme\n• Your own branded link (e.g. `yourcafe.tablly.com`)\n• Designer printable table QR standee templates with your logo.",
     chips: ["How fast is setup?", "What are your pricing plans?", "🚀 Start Free Trial"],
-    cta: { title: "🎨 Start Free Trial with Custom Branding", plan: "Standard" }
+    cta: { title: "🎨 Start Free Trial with Custom Branding", plan: "1 Month Free Trial" }
   },
   {
     id: "setup",
     keywords: ["setup", "time", "how long", "launch", "start", "onboarding", "menu upload"],
     q: "How long does setup take?",
     a: "Less than 15 minutes! ⚡\n\nYou can upload your menu yourself, or simply send our onboarding team your menu PDF/photos and **we will digitize and set up your menu for free**. You can print table QR codes and start taking orders the very same day!",
-    chips: ["🚀 Start Free 14-Day Trial", "How does QR ordering work?", "What are your pricing plans?"],
-    cta: { title: "⚡ Get Set Up in 15 Mins", plan: "Standard" }
+    chips: ["🚀 Start Free 1-Month Trial", "How does QR ordering work?", "What are your pricing plans?"],
+    cta: { title: "⚡ Get Set Up in 15 Mins", plan: "1 Month Free Trial" }
   },
   {
     id: "payment",
@@ -63,15 +63,15 @@ const FAQ_KNOWLEDGE_BASE = [
     q: "Can customers pay online or cash?",
     a: "Both! 💳 Diners can pay via UPI (Google Pay, PhonePe, Paytm, BHIM), Cards, or choose 'Pay at Counter / Cash'.\n\nYou decide which payment modes to enable for your restaurant, and payments go straight to your bank account with **0% commission**.",
     chips: ["What are your pricing plans?", "How does QR ordering work?", "🚀 Start Free Trial"],
-    cta: { title: "🚀 Start Free 14-Day Trial", plan: "Standard" }
+    cta: { title: "🚀 Start Free 1-Month Trial", plan: "1 Month Free Trial" }
   },
   {
     id: "reviews",
     keywords: ["review", "reviews", "google", "rating", "stars", "feedback"],
     q: "How does Tablly help get Google Reviews?",
     a: "Tablly has a built-in automated review engine ⭐\n\nWhen diners finish their meal, satisfied diners giving 4 or 5 stars are automatically prompted to post directly on your **Google Business profile**. Restaurants using Tablly see a **3x jump in 5-star Google reviews** within the first month!",
-    chips: ["🚀 Start 14-Day Free Trial", "What are your pricing plans?"],
-    cta: { title: "⭐ Boost Your Google Reviews", plan: "Standard" }
+    chips: ["🚀 Start 1-Month Free Trial", "What are your pricing plans?"],
+    cta: { title: "⭐ Boost Your Google Reviews", plan: "1 Month Free Trial" }
   }
 ];
 
@@ -80,7 +80,7 @@ const INITIAL_QUICK_PROMPTS = [
   "What are your pricing plans?",
   "How fast is setup?",
   "Can I customize with our logo?",
-  "🚀 Start 14-Day Free Trial"
+  "🚀 Start 1-Month Free Trial"
 ];
 
 export default function ChatbotWidget({ onOpenTrial }) {
@@ -109,11 +109,11 @@ export default function ChatbotWidget({ onOpenTrial }) {
     }
   }, [isOpen, messages, isTyping]);
 
-  const triggerTrialModal = (plan = "Standard", customConfirmation = null) => {
+  const triggerTrialModal = (plan = "1 Month Free Trial", customConfirmation = null) => {
     // Add user intent message if not already added
     const confirmationText =
       customConfirmation ||
-      "Awesome! Opening your 14-day free trial request form now. Our team will have you up and running in no time! 🚀";
+      "Awesome! Opening your 1-Month Free Trial request form now. Our team will have you up and running in no time! 🚀";
 
     setMessages((prev) => [
       ...prev,
@@ -140,9 +140,9 @@ export default function ChatbotWidget({ onOpenTrial }) {
     const trialTriggers = ["trial", "demo", "start", "sign up", "signup", "register", "contact", "call me", "book", "sales", "expert", "talk to human", "human"];
     if (trialTriggers.some((t) => clean.includes(t))) {
       return {
-        text: "You can test drive Tablly **100% free for 14 days** with no credit card required! 🚀\n\nI can open the setup form right now where you can enter your restaurant name and our team will get in touch to assist with free menu digitization.",
+        text: "You can test drive Tablly **100% free for 1 Month (30 Days)** with no credit card required! 🚀\n\nI can open the setup form right now where you can enter your restaurant name and our team will get in touch to assist with free menu digitization.",
         chips: ["🚀 Open Free Trial Form", "What are your pricing plans?", "How does QR ordering work?"],
-        cta: { title: "🚀 Open Free Trial Setup Form", plan: "Standard" }
+        cta: { title: "🚀 Open Free Trial Setup Form", plan: "1 Month Free Trial" }
       };
     }
 
@@ -182,9 +182,9 @@ export default function ChatbotWidget({ onOpenTrial }) {
 
     // Realistic fallback
     return {
-      text: "Great question! Every restaurant has unique operational needs. 🍽️\n\nOur onboarding specialist can answer this specifically for your restaurant and set you up with a **14-day risk-free trial**.\n\nWould you like me to open the free trial setup form?",
-      chips: ["🚀 Start Free 14-Day Trial", "What are your pricing plans?", "How does QR ordering work?"],
-      cta: { title: "🚀 Start Free 14-Day Trial", plan: "Standard" }
+      text: "Great question! Every restaurant has unique operational needs. 🍽️\n\nOur onboarding specialist can answer this specifically for your restaurant and set you up with a **1-Month Risk-Free Trial**.\n\nWould you like me to open the free trial setup form?",
+      chips: ["🚀 Start Free 1-Month Trial", "What are your pricing plans?", "How does QR ordering work?"],
+      cta: { title: "🚀 Start Free 1-Month Trial", plan: "1 Month Free Trial" }
     };
   };
 
@@ -192,17 +192,19 @@ export default function ChatbotWidget({ onOpenTrial }) {
     const text = textToSend.trim();
     if (!text || isTyping) return;
 
-    // Check if user clicked a direct CTA prompt like "🚀 Start 14-Day Free Trial"
+    // Check if user clicked a direct CTA prompt like "🚀 Start 1-Month Free Trial"
     if (
+      text.includes("Start 1-Month Free Trial") ||
       text.includes("Start 14-Day Free Trial") ||
       text.includes("Start Free Trial") ||
+      text.includes("Claim 1-Month Free Trial") ||
       text.includes("Claim 14-Day Free Trial") ||
       text.includes("Open Free Trial Form")
     ) {
       const userMsg = {
         id: "msg-user-" + Date.now(),
         sender: "user",
-        text: "I want to start the 14-day free trial!",
+        text: "I want to start the 1-month free trial!",
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       };
       setMessages((prev) => [...prev, userMsg]);
@@ -211,7 +213,7 @@ export default function ChatbotWidget({ onOpenTrial }) {
 
       setTimeout(() => {
         setIsTyping(false);
-        triggerTrialModal("Standard");
+        triggerTrialModal("1 Month Free Trial");
       }, 700);
       return;
     }
@@ -353,10 +355,10 @@ export default function ChatbotWidget({ onOpenTrial }) {
           <div className="bg-[#fff4e6] border-b border-[#ffe8cc] px-4 py-2 flex items-center justify-between text-xs text-[#d9480f] shrink-0">
             <span className="flex items-center gap-1.5 font-medium">
               <Zap className="w-3.5 h-3.5 fill-[#d9480f]" />
-              14-Day Free Trial available
+              1-Month Free Trial (30 Days) Available
             </span>
             <button
-              onClick={() => triggerTrialModal("Standard")}
+              onClick={() => triggerTrialModal("1 Month Free Trial")}
               className="font-bold underline hover:text-[#b03000] cursor-pointer flex items-center gap-0.5"
             >
               Claim Now <ArrowRight className="w-3 h-3" />
