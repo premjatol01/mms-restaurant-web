@@ -9,41 +9,55 @@ import {
   Trophy, 
   Flame, 
   Clock, 
-  Users 
+  Users,
+  Play
 } from "lucide-react";
-
-const UPCOMING_GAMES = [
-  {
-    id: "trivia",
-    title: "Foodie Trivia Showdown",
-    tagline: "Test culinary trivia with table mates",
-    icon: Trophy,
-    gradient: "from-amber-500 to-orange-600",
-    players: "2 - 6 Players",
-    status: "In Development",
-  },
-  {
-    id: "wheel",
-    title: "Table Dare & Spin",
-    tagline: "Spin the wheel for fun dinner challenges",
-    icon: Flame,
-    gradient: "from-pink-500 to-rose-600",
-    players: "Everyone",
-    status: "Coming Soon",
-  },
-  {
-    id: "tictactoe",
-    title: "Table Tic-Tac-Toe",
-    tagline: "Quick matches while waiting for your order",
-    icon: Dices,
-    gradient: "from-blue-500 to-indigo-600",
-    players: "2 Players",
-    status: "Coming Soon",
-  },
-];
+import { useMenuOrder } from "@/store/menuOrderStore";
 
 export default function GamesModal({ isOpen, onClose }) {
+  const { setActiveTab, verifiedRestaurant } = useMenuOrder();
+
   if (!isOpen) return null;
+
+  const tableGamesConfig = verifiedRestaurant?.portalSettings?.tableGames || {};
+
+  const games = [
+    {
+      id: "trivia",
+      title: tableGamesConfig.trivia?.title || "Foodie Trivia Showdown",
+      tagline: tableGamesConfig.trivia?.tagline || "Test culinary trivia with table mates",
+      icon: Trophy,
+      gradient: "from-amber-500 to-orange-600",
+      players: "2 - 6 Players",
+      status: tableGamesConfig.trivia?.status || "Active",
+      enabled: tableGamesConfig.trivia?.enabled !== false,
+    },
+    {
+      id: "wheel",
+      title: tableGamesConfig.dareSpin?.title || "Table Dare & Spin",
+      tagline: tableGamesConfig.dareSpin?.tagline || "Spin the wheel for fun dinner challenges",
+      icon: Flame,
+      gradient: "from-pink-500 to-rose-600",
+      players: "Everyone",
+      status: tableGamesConfig.dareSpin?.status || "Active",
+      enabled: tableGamesConfig.dareSpin?.enabled !== false,
+    },
+    {
+      id: "tictactoe",
+      title: tableGamesConfig.ticTacToe?.title || "Table Tic-Tac-Toe",
+      tagline: tableGamesConfig.ticTacToe?.tagline || "Quick matches while waiting for your order",
+      icon: Dices,
+      gradient: "from-blue-500 to-indigo-600",
+      players: tableGamesConfig.ticTacToe?.mode === "bot" ? "vs Chef Bot" : "2 Players",
+      status: tableGamesConfig.ticTacToe?.status || "Active",
+      enabled: tableGamesConfig.ticTacToe?.enabled !== false,
+    },
+  ];
+
+  const handlePlayGame = () => {
+    setActiveTab("Games");
+    onClose();
+  };
 
   return (
     <div
@@ -65,12 +79,12 @@ export default function GamesModal({ isOpen, onClose }) {
                 <h2 className="text-base font-extrabold text-text-primary">
                   Table Games &amp; Fun
                 </h2>
-                <span className="text-[10px] font-extrabold bg-purple-100 dark:bg-purple-950/60 text-purple-700 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                  Future Preview
+                <span className="text-[10px] font-extrabold bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  Live &amp; Ready
                 </span>
               </div>
               <p className="text-xs text-text-muted">
-                Play casual games with friends while your food prepares!
+                Play casual games with table mates while your food prepares!
               </p>
             </div>
           </div>
@@ -91,31 +105,32 @@ export default function GamesModal({ isOpen, onClose }) {
             Interactive Dining Experience
           </div>
           <h3 className="text-sm font-bold leading-tight">
-            Play while you wait! Exciting table multiplayer games are coming soon.
+            Play while you wait! 3 fun multiplayer table games are live.
           </h3>
           <p className="text-[11px] text-white/80">
-            Compete for table bragging rights, answer trivia, and enjoy fun casual challenges directly on your phone.
+            Compete for table bragging rights, answer foodie trivia, and spin for dinner dares on your phone.
           </p>
         </div>
 
-        {/* Upcoming Games Grid */}
+        {/* Available Games Grid */}
         <div className="space-y-2.5 pt-1">
           <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-            Featured Games in Development
+            Choose a Game to Play
           </h4>
 
           <div className="space-y-2.5">
-            {UPCOMING_GAMES.map((game) => {
+            {games.map((game) => {
               const Icon = game.icon;
 
               return (
                 <div
                   key={game.id}
-                  className="bg-surface rounded-xl p-3.5 border border-border-light flex items-center justify-between gap-3 hover:border-purple-300 transition-all shadow-xs"
+                  onClick={handlePlayGame}
+                  className="bg-surface rounded-xl p-3.5 border border-border-light flex items-center justify-between gap-3 hover:border-purple-300 transition-all shadow-xs cursor-pointer group hover:bg-purple-50/20"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`w-10 h-10 rounded-xl bg-gradient-to-br ${game.gradient} text-white flex items-center justify-center shrink-0 shadow-xs`}
+                      className={`w-10 h-10 rounded-xl bg-gradient-to-br ${game.gradient} text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform`}
                     >
                       <Icon size={18} />
                     </div>
@@ -134,9 +149,17 @@ export default function GamesModal({ isOpen, onClose }) {
                     </div>
                   </div>
 
-                  <span className="text-[10px] font-extrabold text-purple-600 bg-purple-50 dark:bg-purple-950/40 px-2.5 py-1 rounded-full border border-purple-200/50 whitespace-nowrap">
-                    {game.status}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePlayGame();
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-primary text-white text-[11px] font-bold shadow-xs hover:bg-primary-hover flex items-center gap-1 shrink-0 cursor-pointer"
+                  >
+                    <Play size={11} className="fill-current" />
+                    <span>Play</span>
+                  </button>
                 </div>
               );
             })}
@@ -150,11 +173,10 @@ export default function GamesModal({ isOpen, onClose }) {
             onClick={onClose}
             className="w-full py-2.5 rounded-xl bg-surface-soft hover:bg-border-light text-text-primary text-xs font-bold transition-all cursor-pointer"
           >
-            Got it, take me back to menu
+            Back to Menu
           </button>
         </div>
       </div>
     </div>
   );
 }
-
