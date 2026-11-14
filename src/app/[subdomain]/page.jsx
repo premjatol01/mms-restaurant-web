@@ -21,6 +21,13 @@ import {
   Percent,
 } from "lucide-react";
 
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");
+const resolveMediaUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `${API_BASE}${url.startsWith("/") ? url : `/${url}`}`;
+};
+
 async function getRestaurantData(subdomain, previewToken) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
   try {
@@ -324,7 +331,7 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
             {logo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={logo.startsWith("http") ? logo : `http://localhost:5000${logo}`}
+                src={resolveMediaUrl(logo)}
                 alt={name}
                 className="w-10 h-10 rounded-xl object-cover border"
                 style={{ borderColor: "var(--theme-border)" }}
@@ -413,7 +420,7 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
             <div className="absolute inset-0 z-0 opacity-20">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={heroCover.startsWith("http") ? heroCover : `http://localhost:5000${heroCover}`}
+                src={resolveMediaUrl(heroCover)}
                 alt={name}
                 className="w-full h-full object-cover blur-sm"
               />
@@ -589,11 +596,7 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={
-                        aboutImage.startsWith("http")
-                          ? aboutImage
-                          : `http://localhost:5000${aboutImage}`
-                      }
+                      src={resolveMediaUrl(aboutImage)}
                       alt={aboutTitle}
                       className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                     />
@@ -778,7 +781,7 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={img.url?.startsWith("http") ? img.url : `http://localhost:5000${img.url}`}
+                    src={resolveMediaUrl(img.url)}
                     alt={img.caption || `Gallery ${idx + 1}`}
                     className="w-full h-full object-cover transition-transform hover:scale-105 duration-200"
                   />

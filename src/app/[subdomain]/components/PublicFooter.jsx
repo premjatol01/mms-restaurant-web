@@ -175,6 +175,9 @@ export default function PublicFooter({
   const displayAltEmail = contact?.alternateEmail;
   const displayWhatsapp = contact?.whatsapp || socialLinksData?.whatsapp;
 
+  const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");
+  const logoSrc = logo ? (logo.startsWith("http://") || logo.startsWith("https://") ? logo : `${API_BASE}${logo.startsWith("/") ? logo : `/${logo}`}`) : null;
+
   return (
     <footer
       style={{
@@ -189,10 +192,10 @@ export default function PublicFooter({
           {/* Brand & Bio (5 cols) */}
           <div className="lg:col-span-5 space-y-4">
             <div className="flex items-center gap-3.5">
-              {logo ? (
+              {logoSrc ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={logo.startsWith("http") ? logo : `http://localhost:5000${logo}`}
+                  src={logoSrc}
                   alt={title}
                   className="w-12 h-12 rounded-2xl object-cover border shadow-sm shrink-0"
                   style={{ borderColor: "var(--theme-border)" }}

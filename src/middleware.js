@@ -18,21 +18,26 @@ export function middleware(req) {
   ).toLowerCase();
 
   const isLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
-  const isRootDomain = currentHost === envRootDomain || currentHost === `www.${envRootDomain}`;
 
-  // ── PATH-BASED routing on localhost (dev) ──────────────────────────────────
-  // localhost:3000/restaurant         → app/[subdomain]/page.jsx (slug = "restaurant")
-  // localhost:3000/restaurant/preview → app/[subdomain]/preview/page.jsx
-  // localhost:3000/                   → app/(main)/page.jsx  (marketing)
-  // localhost:3000/login              → app/(main)/login/page.jsx
-  if (isLocalhost) {
-    // Next.js file-system routing handles [subdomain] naturally for path-based slugs.
-    // We just need to make sure reserved app paths are NOT treated as restaurant slugs.
-    // Since Next.js resolves (main)/login before [subdomain]/page, no rewrite needed.
+  // Detect shared free hosting platforms (Vercel, Render) where wildcard DNS is not available
+  const isVercelOrRender =
+    currentHost.endsWith('.vercel.app') ||
+    currentHost.endsWith('.onrender.com');
+
+  const isForcedPathMode =
+    process.env.NEXT_PUBLIC_ROUTING_MODE === 'path' ||
+    process.env.ROUTING_MODE === 'path';
+
+  // ── 1. PATH-BASED ROUTING (Localhost, Vercel, Render, or Forced Path Mode) ──
+  // URL format: https://tablly-web.vercel.app/[subdomain]/menu/[id]
+  // Next.js maps [subdomain] directly to the folder route parameter.
+  // No host rewrites needed!
+  if (isLocalhost || isVercelOrRender || isForcedPathMode) {
     return NextResponse.next();
   }
 
-  // ── SUBDOMAIN-BASED routing on production ──────────────────────────────────
+  // ── 2. WILDCARD SUBDOMAIN ROUTING (Custom domain e.g. tablly.com) ───────────
+  const isRootDomain = currentHost === envRootDomain || currentHost === `www.${envRootDomain}`;
   if (isRootDomain) {
     return NextResponse.next();
   }
@@ -50,7 +55,7 @@ export function middleware(req) {
     return NextResponse.next();
   }
 
-  // Rewrite subdomain.domain.com/path → /subdomain/path
+  // Rewrite subdomain.tablly.com/menu/... → /[subdomain]/menu/...
   return NextResponse.rewrite(new URL(`/${subdomain}${url.pathname}`, req.url));
 }
 

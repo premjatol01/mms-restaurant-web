@@ -42,7 +42,11 @@ export default function Header() {
           {verifiedRestaurant?.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={verifiedRestaurant.logo.startsWith("http") ? verifiedRestaurant.logo : `http://localhost:5000${verifiedRestaurant.logo}`}
+              src={
+                verifiedRestaurant.logo.startsWith("http://") || verifiedRestaurant.logo.startsWith("https://")
+                  ? verifiedRestaurant.logo
+                  : `${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "")}${verifiedRestaurant.logo.startsWith("/") ? verifiedRestaurant.logo : `/${verifiedRestaurant.logo}`}`
+              }
               alt={restaurantName}
               className="w-11 h-11 rounded-2xl object-cover border border-border-light shadow-sm"
             />
