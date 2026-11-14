@@ -1340,7 +1340,7 @@ export default function MarketingPage() {
       />
 
       <ChatbotWidget
-        onOpenTrial={() => handleOpenTrial("Standard")}
+        onOpenTrial={(plan) => handleOpenTrial(plan || "Standard")}
       />
     </div>
   );
