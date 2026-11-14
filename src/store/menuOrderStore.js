@@ -722,13 +722,45 @@ export const useMenuOrderStore = create(
       setMobileNumber: (number) =>
         set((state) => ({ mobile: { ...state.mobile, number } })),
 
-      sendOtp: () => {
+      sendOtp: async () => {
         const { number } = get().mobile;
-        if (!/^[6-9]\d{9}$/.test(number)) {
+        const cleanDigits = (number || "").replace(/\D/g, "").slice(-10);
+        if (!/^[6-9]\d{9}$/.test(cleanDigits)) {
           return { ok: false, error: "Enter a valid 10-digit mobile number" };
         }
-        set((state) => ({ mobile: { ...state.mobile, otpSent: true } }));
-        return { ok: true };
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+        try {
+          const res = await fetch(`${apiUrl}/otp/send`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mobile: cleanDigits, channel: "whatsapp" }),
+          });
+
+          const json = await res.json().catch(() => null);
+
+          if (!res.ok || !json?.success) {
+            return {
+              ok: false,
+              error: json?.message || "Failed to send OTP. Please try again.",
+            };
+          }
+
+          set((state) => ({
+            mobile: {
+              ...state.mobile,
+              number: cleanDigits,
+              otpSent: true,
+              devCode: json.devCode,
+            },
+          }));
+
+          return { ok: true, devCode: json.devCode, message: json.message };
+        } catch (err) {
+          console.error("sendOtp error:", err);
+          return { ok: false, error: "Network error sending OTP. Please check your connection." };
+        }
       },
 
       syncCustomerSession: async ({ mobile, name } = {}) => {
@@ -801,15 +833,41 @@ export const useMenuOrderStore = create(
       },
 
       verifyOtp: async (code) => {
-        if (!code || code.trim().length < 4) {
-          return { ok: false, error: "Enter the 4-digit code sent on WhatsApp" };
+        const cleanCode = (code || "").trim();
+        if (!cleanCode || cleanCode.length < 4) {
+          return { ok: false, error: "Enter the verification code sent on WhatsApp" };
         }
-        set((state) => ({
-          mobile: { ...state.mobile, verified: true },
-          offersModalOpen: false,
-        }));
-        // Sync customer mobile to active session and Customer collection
-        return await get().syncCustomerSession();
+
+        const cleanMobile = (get().mobile?.number || "").replace(/\D/g, "").slice(-10);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+        try {
+          const res = await fetch(`${apiUrl}/otp/verify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mobile: cleanMobile, code: cleanCode }),
+          });
+
+          const json = await res.json().catch(() => null);
+
+          if (!res.ok || !json?.success) {
+            return {
+              ok: false,
+              error: json?.message || "Invalid or expired OTP. Please try again.",
+            };
+          }
+
+          set((state) => ({
+            mobile: { ...state.mobile, verified: true },
+            offersModalOpen: false,
+          }));
+
+          // Sync customer mobile to active session and Customer collection
+          return await get().syncCustomerSession();
+        } catch (err) {
+          console.error("verifyOtp error:", err);
+          return { ok: false, error: "Network error verifying OTP." };
+        }
       },
 
       skipLogin: () => set({ offersModalOpen: false }),

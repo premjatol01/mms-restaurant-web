@@ -14,6 +14,7 @@ const UnlockOffersModal = ({ onClose }) => {
   );
   const [otpValue, setOtpValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Prevent background page scrolling while modal is open
   useEffect(() => {
@@ -24,17 +25,44 @@ const UnlockOffersModal = ({ onClose }) => {
     };
   }, []);
 
-  const handleContinue = () => {
-    setSubmitting(true);
-    const result = sendOtp();
-    setSubmitting(false);
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
+  const handleContinue = async () => {
+    setSubmitting(true);
+    try {
+      const result = await sendOtp();
+      setSubmitting(false);
+
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success(result.message || "OTP sent on WhatsApp");
+      if (result.devCode) {
+        toast.info(`[Dev Mock] Your OTP code is: ${result.devCode}`, {
+          duration: 9000,
+        });
+        setOtpValue(result.devCode); // Auto-fill in dev mode for maximum testing speed!
+      }
+      setResendCooldown(30);
+      setStep("otp");
+    } catch {
+      setSubmitting(false);
+      toast.error("Failed to send OTP. Please try again.");
     }
-    toast.success("OTP sent on WhatsApp");
-    setStep("otp");
+  };
+
+  const handleResend = async () => {
+    if (resendCooldown > 0 || submitting) return;
+    await handleContinue();
   };
 
   const handleVerify = async () => {
@@ -157,7 +185,7 @@ const UnlockOffersModal = ({ onClose }) => {
                 Enter the code we sent
               </h2>
               <p className="text-text-muted text-sm leading-relaxed">
-                We sent a 4-digit code on WhatsApp to{" "}
+                We sent a verification code on WhatsApp to{" "}
                 <span className="font-semibold text-text-primary">
                   +91 {mobile.number}
                 </span>
@@ -175,16 +203,36 @@ const UnlockOffersModal = ({ onClose }) => {
                   type="tel"
                   value={otpValue}
                   onChange={(e) =>
-                    setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 4))
+                    setOtpValue(e.target.value.replace(/\D/g, "").slice(0, 6))
                   }
-                  placeholder="4-digit code"
+                  placeholder="Enter 6-digit code"
                   autoFocus
-                  className="flex-1 px-3 py-4 text-sm tracking-[0.3em] text-text-primary placeholder:tracking-normal placeholder:text-text-muted focus:outline-none w-full"
+                  className="flex-1 px-3 py-4 text-sm tracking-[0.25em] text-text-primary placeholder:tracking-normal placeholder:text-text-muted focus:outline-none w-full"
                 />
               </div>
-              <p className="text-[11px] text-text-muted mt-2">
-                Any 4 digits work in this demo.
-              </p>
+
+              <div className="flex items-center justify-between mt-2.5">
+                <p className="text-[11px] text-text-muted">
+                  {mobile.devCode
+                    ? `Dev Mock Code: ${mobile.devCode}`
+                    : "Check your WhatsApp for the code"}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendCooldown > 0 || submitting}
+                  className={`text-[11px] font-semibold transition-colors ${
+                    resendCooldown > 0
+                      ? "text-text-muted cursor-not-allowed"
+                      : "text-primary hover:underline cursor-pointer"
+                  }`}
+                >
+                  {resendCooldown > 0
+                    ? `Resend in ${resendCooldown}s`
+                    : "Resend on WhatsApp"}
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
