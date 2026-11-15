@@ -4,7 +4,7 @@ import React from "react";
 import { Heart, ShoppingBag, MapPin } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { formatTableName } from "@/utils/formatTableName";
+import { formatTableName, formatShortTableLabel } from "@/utils/formatTableName";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 export default function Header() {
@@ -33,12 +33,13 @@ export default function Header() {
 
   const rawTable = verifiedTable?.tableName || verifiedTable?.tableNo || verifiedTable?.name || (tableName && tableName.length !== 24 ? tableName : null);
   const displayTable = formatTableName(rawTable, "");
+  const shortTable = formatShortTableLabel(rawTable, verifiedTable?.label);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 max-w-md mx-auto bg-surface/95 backdrop-blur-xl border-b border-border-light">
       <div className="flex items-center justify-between px-4 py-3">
         {/* Brand */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           {verifiedRestaurant?.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -48,30 +49,33 @@ export default function Header() {
                   : `${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "")}${verifiedRestaurant.logo.startsWith("/") ? verifiedRestaurant.logo : `/${verifiedRestaurant.logo}`}`
               }
               alt={restaurantName}
-              className="w-11 h-11 rounded-2xl object-cover border border-border-light shadow-sm"
+              className="w-11 h-11 rounded-2xl object-cover border border-border-light shadow-sm shrink-0"
             />
           ) : (
-            <div className="w-11 h-11 bg-gradient-to-br from-primary to-primary-hover rounded-2xl flex items-center justify-center text-text-on-primary font-bold text-lg shadow-lg shadow-primary/20">
+            <div className="w-11 h-11 bg-gradient-to-br from-primary to-primary-hover rounded-2xl flex items-center justify-center text-text-on-primary font-bold text-lg shadow-lg shadow-primary/20 shrink-0">
               {initials}
             </div>
           )}
-          <div>
-            <h1 className="text-text-primary font-bold text-[15px] leading-tight">
+          <div className="min-w-0">
+            <h1 className="text-text-primary font-bold text-[15px] leading-tight truncate">
               {restaurantName}
             </h1>
-            <p className="text-text-muted text-[11px] font-medium">
+            <p className="text-text-muted text-[11px] font-medium truncate">
               Dine-in Order Portal
             </p>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1.5">
-          {/* Table Badge */}
-          {displayTable && (
-            <div className="hidden sm:flex items-center gap-1 bg-success-light text-primary text-[11px] font-bold px-2.5 py-1.5 rounded-full border border-primary/20">
-              <MapPin size={12} />
-              <span>{displayTable}</span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Table Badge in Short format (e.g. T-1, T-2) */}
+          {shortTable && (
+            <div
+              className="flex items-center gap-1 bg-primary/10 text-primary text-[11px] font-black px-2.5 py-1.5 rounded-xl border border-primary/25 tracking-wider shadow-2xs"
+              title={displayTable || shortTable}
+            >
+              <MapPin size={12} strokeWidth={2.5} />
+              <span>{shortTable}</span>
             </div>
           )}
 
