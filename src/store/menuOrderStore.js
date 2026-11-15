@@ -11,6 +11,8 @@ const initialMobile = {
   number: "",
   otpSent: false,
   verified: false,
+  otp: "",
+  devCode: "",
 };
 
 function sanitizeOrderHistory(history) {
@@ -747,16 +749,19 @@ export const useMenuOrderStore = create(
             };
           }
 
+          const otpCode = json.otp || json.devCode || "";
+
           set((state) => ({
             mobile: {
               ...state.mobile,
               number: cleanDigits,
               otpSent: true,
-              devCode: json.devCode,
+              devCode: otpCode,
+              otp: otpCode,
             },
           }));
 
-          return { ok: true, devCode: json.devCode, message: json.message };
+          return { ok: true, otp: otpCode, devCode: otpCode, message: json.message };
         } catch (err) {
           console.error("sendOtp error:", err);
           return { ok: false, error: "Network error sending OTP. Please check your connection." };
