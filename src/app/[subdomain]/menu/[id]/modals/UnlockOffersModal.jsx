@@ -45,12 +45,16 @@ const UnlockOffersModal = ({ onClose }) => {
         return;
       }
 
-      toast.success(result.message || "OTP sent on WhatsApp");
       if (result.devCode) {
-        toast.info(`[Dev Mock] Your OTP code is: ${result.devCode}`, {
+        // Development / Testing Mode: Show toast with OTP and auto-fill
+        toast.success(`Your OTP is: ${result.devCode}`, {
+          description: "Development mode - code auto-filled for testing",
           duration: 9000,
         });
-        setOtpValue(result.devCode); // Auto-fill in dev mode for maximum testing speed!
+        setOtpValue(result.devCode); // Auto-fill in dev mode
+      } else {
+        // Production Mode: Standard message, user checks their WhatsApp
+        toast.success(result.message || "OTP sent on WhatsApp");
       }
       setResendCooldown(30);
       setStep("otp");
@@ -211,10 +215,23 @@ const UnlockOffersModal = ({ onClose }) => {
                 />
               </div>
 
+              {/* Dev Mode quick hint & click-to-fill if devCode is provided */}
+              {mobile.devCode && (
+                <div 
+                  onClick={() => setOtpValue(mobile.devCode)}
+                  className="mt-2 py-1.5 px-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between cursor-pointer hover:bg-primary/15 transition-colors"
+                >
+                  <span className="text-xs text-text-secondary">
+                    Dev Testing OTP: <strong className="text-primary font-mono text-sm tracking-wider">{mobile.devCode}</strong>
+                  </span>
+                  <span className="text-[11px] text-primary font-medium">Click to fill</span>
+                </div>
+              )}
+
               <div className="flex items-center justify-between mt-2.5">
                 <p className="text-[11px] text-text-muted">
                   {mobile.devCode
-                    ? `Dev Mock Code: ${mobile.devCode}`
+                    ? `Dev Test Mode: ${mobile.devCode}`
                     : "Check your WhatsApp for the code"}
                 </p>
 
