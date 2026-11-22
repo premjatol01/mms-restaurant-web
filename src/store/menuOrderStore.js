@@ -926,6 +926,23 @@ export const useMenuOrderStore = create(
 
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
+        // Retrieve GPS coordinates if geofencing is enabled on restaurant
+        let clientCoords = null;
+        const geofence = verifiedRestaurant?.portalSettings?.operations?.geofencing;
+        if (geofence?.enabled && typeof window !== "undefined" && navigator?.geolocation) {
+          try {
+            clientCoords = await new Promise((resolve) => {
+              navigator.geolocation.getCurrentPosition(
+                (p) => resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude }),
+                () => resolve(null),
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
+              );
+            });
+          } catch (e) {
+            clientCoords = null;
+          }
+        }
+
         try {
           const res = await fetch(`${apiUrl}/orders/public/place-order`, {
             method: "POST",
@@ -933,6 +950,8 @@ export const useMenuOrderStore = create(
             body: JSON.stringify({
               subdomain: resolvedSubdomain,
               tableId: resolvedTableId,
+              customerLatitude: clientCoords?.latitude,
+              customerLongitude: clientCoords?.longitude,
               items: cartItems.map(
                 ({ id, title, name, price, quantity, imageUrl }) => ({
                   id,
@@ -952,6 +971,14 @@ export const useMenuOrderStore = create(
 
           if (!res.ok || !json?.success) {
             set({ isSubmittingOrder: false });
+            if (json?.errorType === "OUT_OF_RANGE") {
+              toast.error(json.message);
+              const isPathMode = typeof window !== "undefined" && window.location.pathname.startsWith(`/${resolvedSubdomain}`);
+              const websitePath = isPathMode ? `/${resolvedSubdomain}` : "/";
+              setTimeout(() => {
+                if (typeof window !== "undefined") window.location.replace(websitePath);
+              }, 1800);
+            }
             return {
               ok: false,
               error: json?.message || "Failed to place order. Please try again.",
