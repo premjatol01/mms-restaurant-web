@@ -6,6 +6,7 @@ import PublicFooter from "./components/PublicFooter";
 import PopularMenuSection from "./components/PopularMenuSection";
 import PublicReviewsSection from "./components/PublicReviewsSection";
 import GoogleReviewBanner from "./components/GoogleReviewBanner";
+import BackToMenuButton from "./components/BackToMenuButton";
 import MaintenanceScreen from "@/components/MaintenanceScreen";
 import {
   Utensils,
@@ -392,7 +393,8 @@ export default async function RestaurantPortfolioPage({ params, searchParams }) 
             )}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <BackToMenuButton subdomain={subdomain} />
             {contact?.whatsapp && (
               <a
                 href={`https://wa.me/${contact.whatsapp.replace(/[^0-9]/g, "")}`}

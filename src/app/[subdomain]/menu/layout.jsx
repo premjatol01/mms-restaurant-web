@@ -78,6 +78,44 @@ export default function MenuLayout({ children }) {
         setError(null);
         setVerifiedSession(json.data);
         useMenuOrderStore.getState().fetchMenuData(subdomain);
+
+        // Geofencing verification on menu load
+        const rest = json.data?.restaurant;
+        const geofence = rest?.portalSettings?.operations?.geofencing;
+        const restLoc = rest?.location;
+
+        if (geofence?.enabled && restLoc?.latitude && restLoc?.longitude && typeof window !== "undefined" && navigator?.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const custLat = pos.coords.latitude;
+              const custLng = pos.coords.longitude;
+              const toRad = (x) => (x * Math.PI) / 180;
+              const dLat = toRad(restLoc.latitude - custLat);
+              const dLon = toRad(restLoc.longitude - custLng);
+              const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRad(custLat)) * Math.cos(toRad(restLoc.latitude)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+              const dist = 6371e3 * c;
+              const allowed = (Number(geofence.radiusMeters) || 100) + 25; // 25m drift margin
+
+              if (dist > allowed) {
+                toast.error(
+                  `You are outside ${rest.name || "the restaurant"}'s dining area (~${Math.round(dist)}m away). Dine-in orders can only be placed on-site.`
+                );
+                const isPathMode = window.location.pathname.startsWith(`/${subdomain}`);
+                const websitePath = isPathMode ? `/${subdomain}` : "/";
+                setTimeout(() => {
+                  window.location.replace(websitePath);
+                }, 1800);
+              }
+            },
+            (err) => {
+              console.warn("Geofence check GPS skipped:", err?.message);
+            },
+            { enableHighAccuracy: true, timeout: 6000, maximumAge: 30000 }
+          );
+        }
       }
     } catch (err) {
       console.error("Verification network error:", err);
@@ -133,11 +171,29 @@ export default function MenuLayout({ children }) {
           useMenuOrderStore.getState().handleFavoritesUpdated(data.favorites);
         }
       },
-      onSessionCompleted: () => {
+      onSessionCompleted: (data) => {
         toast.info(
           "Your table session has been settled at the counter. Thank you for dining with us!"
         );
         useMenuOrderStore.getState().endLiveSession();
+
+        const subdomain = params?.subdomain;
+        const verifiedRestaurant = useMenuOrderStore.getState().verifiedRestaurant;
+        const redirectTarget = data?.redirectTarget || verifiedRestaurant?.portalSettings?.operations?.sessionEndRedirect?.target || "website";
+        const redirectUrl = data?.redirectUrl || verifiedRestaurant?.googleReviewLink || verifiedRestaurant?.portalSettings?.operations?.sessionEndRedirect?.googleReviewUrl || "";
+
+        const isPathMode = typeof window !== "undefined" && window.location.pathname.startsWith(`/${subdomain}`);
+        const websitePath = isPathMode ? `/${subdomain}` : "/";
+
+        setTimeout(() => {
+          if (typeof window !== "undefined") {
+            if (redirectTarget === "google_review" && redirectUrl) {
+              window.location.replace(redirectUrl);
+            } else {
+              window.location.replace(websitePath);
+            }
+          }
+        }, 1500);
       },
     });
 

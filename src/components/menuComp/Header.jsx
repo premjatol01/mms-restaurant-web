@@ -1,17 +1,29 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Heart, ShoppingBag, MapPin } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatTableName, formatShortTableLabel } from "@/utils/formatTableName";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
 
 export default function Header() {
   const { totalItems, favorites, tableId, tableName, setActiveTab, verifiedRestaurant, verifiedTable } = useMenuOrder();
+  const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const subdomain = params?.subdomain || verifiedRestaurant?.subdomain || "";
+  const currentTable = params?.id || tableId || verifiedTable?.id || "";
+
+  // Calculate restaurant website URL
+  // In path mode (/spicegarden/menu/table-1) -> /spicegarden
+  // In subdomain mode (spicegarden.tablly.com/menu/table-1) -> /
+  const isPathMode = typeof window !== "undefined" && window.location.pathname.startsWith(`/${subdomain}`);
+  const baseWebsitePath = isPathMode ? `/${subdomain}` : "/";
+  const websiteUrl = `${baseWebsitePath}${currentTable ? `?from=menu&table=${encodeURIComponent(currentTable)}` : "?from=menu"}`;
 
   const handleNav = (tab) => {
     setActiveTab(tab);
@@ -38,8 +50,12 @@ export default function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 max-w-md mx-auto bg-surface/95 backdrop-blur-xl border-b border-border-light">
       <div className="flex items-center justify-between px-4 py-3">
-        {/* Brand */}
-        <div className="flex items-center gap-3 min-w-0">
+        {/* Brand / Logo (Click to visit restaurant website) */}
+        <Link
+          href={websiteUrl}
+          title={`Visit ${restaurantName} website`}
+          className="flex items-center gap-3 min-w-0 group cursor-pointer active:scale-95 transition-all text-left"
+        >
           {verifiedRestaurant?.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -49,22 +65,22 @@ export default function Header() {
                   : `${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "")}${verifiedRestaurant.logo.startsWith("/") ? verifiedRestaurant.logo : `/${verifiedRestaurant.logo}`}`
               }
               alt={restaurantName}
-              className="w-11 h-11 rounded-2xl object-cover border border-border-light shadow-sm shrink-0"
+              className="w-11 h-11 rounded-2xl object-cover border border-border-light shadow-sm shrink-0 group-hover:border-primary/50 transition-colors"
             />
           ) : (
-            <div className="w-11 h-11 bg-gradient-to-br from-primary to-primary-hover rounded-2xl flex items-center justify-center text-text-on-primary font-bold text-lg shadow-lg shadow-primary/20 shrink-0">
+            <div className="w-11 h-11 bg-gradient-to-br from-primary to-primary-hover rounded-2xl flex items-center justify-center text-text-on-primary font-bold text-lg shadow-lg shadow-primary/20 shrink-0 group-hover:opacity-95 transition-opacity">
               {initials}
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-text-primary font-bold text-[15px] leading-tight truncate">
+            <h1 className="text-text-primary font-bold text-[15px] leading-tight truncate group-hover:text-primary transition-colors">
               {restaurantName}
             </h1>
             <p className="text-text-muted text-[11px] font-medium truncate">
               Dine-in Order Portal
             </p>
           </div>
-        </div>
+        </Link>
 
         {/* Actions */}
         <div className="flex items-center gap-1.5 shrink-0">
