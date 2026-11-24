@@ -9,7 +9,7 @@ import { formatTableName, formatShortTableLabel } from "@/utils/formatTableName"
 import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
 
 export default function Header() {
-  const { totalItems, favorites, tableId, tableName, setActiveTab, verifiedRestaurant, verifiedTable } = useMenuOrder();
+  const { totalItems, favorites, tableId, tableName, setActiveTab, verifiedRestaurant, verifiedTable, locationStatus } = useMenuOrder();
   const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -84,14 +84,32 @@ export default function Header() {
 
         {/* Actions */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {/* Table Badge in Short format (e.g. T-1, T-2) */}
+          {/* Table Badge in Short format (e.g. T-1, T-2) with Location Verified indicator */}
           {shortTable && (
             <div
-              className="flex items-center gap-1 bg-primary/10 text-primary text-[11px] font-black px-2.5 py-1.5 rounded-xl border border-primary/25 tracking-wider shadow-2xs"
-              title={displayTable || shortTable}
+              className={`flex items-center gap-1.5 text-[11px] font-black px-2.5 py-1.5 rounded-xl border tracking-wider shadow-2xs transition-colors ${
+                locationStatus?.verified
+                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
+                  : "bg-primary/10 text-primary border-primary/25"
+              }`}
+              title={
+                locationStatus?.verified
+                  ? `${displayTable || shortTable} • Location Verified (${locationStatus.distance ?? 0}m on-site)`
+                  : displayTable || shortTable
+              }
             >
-              <MapPin size={12} strokeWidth={2.5} />
+              <MapPin
+                size={12}
+                strokeWidth={2.5}
+                className={locationStatus?.verified ? "text-emerald-600 dark:text-emerald-400" : ""}
+              />
               <span>{shortTable}</span>
+              {locationStatus?.verified && (
+                <span
+                  className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"
+                  title="Device location active & verified on-site"
+                />
+              )}
             </div>
           )}
 

@@ -15,6 +15,7 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
+  Phone,
 } from "lucide-react";
 import { useMenuOrder } from "@/store/menuOrderStore";
 import PageHeader from "@/components/menuComp/PageHeader";
@@ -116,17 +117,31 @@ const Cart = () => {
     removeItem,
     placeOrder,
     mobile,
+    setMobileNumber,
+    openOffersModal,
     activeOrder,
     currentSession,
     isSubmittingOrder,
   } = useMenuOrder();
+
+  const [mobileInput, setMobileInput] = useState(
+    mobile?.number ? String(mobile.number).replace(/\D/g, "").slice(-10) : ""
+  );
+
+  useEffect(() => {
+    if (mobile?.number) {
+      setMobileInput(String(mobile.number).replace(/\D/g, "").slice(-10));
+    }
+  }, [mobile?.number]);
+
+  const cleanDigits = String(mobileInput || mobile?.number || "").replace(/\D/g, "").slice(-10);
 
   const rawTable = verifiedTable?.tableName || verifiedTable?.tableNo || verifiedTable?.name || (tableName && tableName.length !== 24 ? tableName : null);
   const displayTableName = formatTableName(rawTable, "Table");
 
   // If no offer is selected, check eligibility and auto-suggest the best qualified offer (strictly requires verified phone)
   useEffect(() => {
-    const hasPhone = mobile?.verified || (mobile?.number && String(mobile.number).replace(/\D/g, "").length >= 10);
+    const hasPhone = mobile?.verified || (cleanDigits.length >= 10);
     if (!subdomain || cartItems.length === 0 || appliedOffer || !hasPhone) return;
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -137,7 +152,7 @@ const Cart = () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         restaurantId: subdomain,
-        mobile: mobile?.verified ? mobile.number : null,
+        mobile: cleanDigits.length === 10 ? cleanDigits : null,
         currentOrderTotal: tableSpend,
         items: cartItems
       })
@@ -147,20 +162,28 @@ const Cart = () => {
         if (json?.success && Array.isArray(json.data)) {
           const eligibleOffers = json.data.filter((o) => o.isEligible);
           if (eligibleOffers.length > 0) {
-            // Sort by highest potential discount
             eligibleOffers.sort((a, b) => (b.potentialDiscount || 0) - (a.potentialDiscount || 0));
             setAppliedOffer(eligibleOffers[0]);
           }
         }
       })
       .catch(() => {});
-  }, [subdomain, cartItems.length, appliedOffer, subtotal, activeOrder?.total, mobile?.verified, mobile?.number, setAppliedOffer]);
+  }, [subdomain, cartItems.length, appliedOffer, subtotal, activeOrder?.total, cleanDigits, setAppliedOffer]);
 
   const handlePlaceOrder = async () => {
+    if (!cleanDigits || cleanDigits.length !== 10) {
+      toast.error("Please enter a valid 10-digit mobile number to place your order.");
+      return;
+    }
+
+    if (setMobileNumber) {
+      setMobileNumber(cleanDigits);
+    }
+
     const result = await placeOrder({
       subdomain,
       tableId: params?.id || tableId,
-      mobile: mobile?.verified ? mobile.number : (mobile?.number || null),
+      mobile: cleanDigits,
     });
     if (!result.ok) {
       toast.error(result.error ?? "Couldn't place the order");
@@ -340,6 +363,62 @@ const Cart = () => {
             )}
           </div>
 
+          {/* Customer Mobile Number (Compulsory) */}
+          <div className="bg-surface rounded-2xl p-4 border border-border-light shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                  <Phone size={15} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-text-primary flex items-center gap-1">
+                    Mobile Number <span className="text-danger font-black">*</span>
+                  </h4>
+                  <p className="text-[10px] text-text-muted">
+                    Compulsory to track orders & shift tables
+                  </p>
+                </div>
+              </div>
+              {mobile?.verified && cleanDigits.length === 10 ? (
+                <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 shrink-0">
+                  <CheckCircle2 size={12} />
+                  Verified
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold text-primary/80 bg-primary/10 px-2 py-0.5 rounded-full shrink-0">
+                  Required
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center bg-surface-soft border border-border focus-within:border-primary rounded-xl px-3 py-2.5 transition-colors">
+              <span className="text-xs font-bold text-text-secondary mr-2 shrink-0 select-none">
+                +91
+              </span>
+              <input
+                type="tel"
+                maxLength={10}
+                placeholder="Enter 10-digit mobile number"
+                value={mobileInput}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  setMobileInput(val);
+                  if (setMobileNumber) setMobileNumber(val);
+                }}
+                className="w-full text-xs font-medium bg-transparent outline-none text-text-primary placeholder:text-text-muted"
+              />
+              {cleanDigits.length === 10 && !mobile?.verified && (
+                <button
+                  type="button"
+                  onClick={() => openOffersModal("phone")}
+                  className="text-[11px] font-bold text-primary hover:underline shrink-0 ml-2"
+                >
+                  Verify OTP
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Bill Summary */}
           <div className="bg-surface rounded-2xl p-5 border border-border-light shadow-sm">
             <div className="flex items-center gap-2 mb-4">
@@ -419,6 +498,8 @@ const Cart = () => {
                   ? "Orders Paused"
                   : isSubmittingOrder
                   ? "Placing order..."
+                  : cleanDigits.length !== 10
+                  ? "Enter Mobile to Order"
                   : "Place order"}
               </span>
               <span className="font-extrabold">₹{finalTotal}</span>

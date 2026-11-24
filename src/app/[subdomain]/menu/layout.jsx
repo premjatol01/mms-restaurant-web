@@ -10,6 +10,7 @@ import { useMenuOrder, useMenuOrderStore } from "@/store/menuOrderStore";
 import UnlockOffersModal from "./[id]/modals/UnlockOffersModal";
 import RequestWaiterModal from "./[id]/modals/RequestWaiterModal";
 import GamesModal from "./[id]/modals/GamesModal";
+import ChangeTableModal from "@/components/menuComp/ChangeTableModal";
 import { connectTableSocket, disconnectTableSocket } from "@/services/socket";
 import { toast } from "sonner";
 
@@ -54,10 +55,12 @@ export default function MenuLayout({ children }) {
     setVerificationLoading();
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    const currentMobile = useMenuOrderStore.getState().mobile?.number;
+    const mobQuery = currentMobile ? `?customerMobile=${encodeURIComponent(currentMobile)}` : "";
 
     try {
       const res = await fetch(
-        `${apiUrl}/restaurants/verify-table/${encodeURIComponent(subdomain)}/${encodeURIComponent(tableId)}`,
+        `${apiUrl}/restaurants/verify-table/${encodeURIComponent(subdomain)}/${encodeURIComponent(tableId)}${mobQuery}`,
         { cache: "no-store" }
       );
 
@@ -99,19 +102,65 @@ export default function MenuLayout({ children }) {
               const dist = 6371e3 * c;
               const allowed = (Number(geofence.radiusMeters) || 100) + 25; // 25m drift margin
 
-              if (dist > allowed) {
+              if (dist <= allowed) {
+                // Mobile device has location ON and is inside the dining area
+                useMenuOrderStore.getState().setLocationStatus({
+                  checked: true,
+                  enabled: true,
+                  verified: true,
+                  distance: Math.round(dist),
+                  coords: { latitude: custLat, longitude: custLng },
+                  message: `Dining area verified (~${Math.round(dist)}m)`,
+                });
+                toast.success(
+                  `📍 Location verified: You are in ${rest.name || "the restaurant"}'s dining area (~${Math.round(dist)}m). Happy dining!`,
+                  { id: "geofence-status", duration: 4000 }
+                );
+              } else {
+                // Mobile device has location ON, but customer is outside the dining area
+                useMenuOrderStore.getState().setLocationStatus({
+                  checked: true,
+                  enabled: true,
+                  verified: false,
+                  distance: Math.round(dist),
+                  coords: { latitude: custLat, longitude: custLng },
+                  message: `Outside dining area (~${Math.round(dist)}m away)`,
+                });
                 toast.error(
-                  `You are outside ${rest.name || "the restaurant"}'s dining area (~${Math.round(dist)}m away). Dine-in orders can only be placed on-site.`
+                  `📍 Location detected: You are outside ${rest.name || "the restaurant"}'s dining area (~${Math.round(dist)}m away). Dine-in orders can only be placed on-site.`,
+                  { id: "geofence-status", duration: 5000 }
                 );
                 const isPathMode = window.location.pathname.startsWith(`/${subdomain}`);
                 const websitePath = isPathMode ? `/${subdomain}` : "/";
                 setTimeout(() => {
                   window.location.replace(websitePath);
-                }, 1800);
+                }, 2000);
               }
             },
             (err) => {
-              console.warn("Geofence check GPS skipped:", err?.message);
+              console.warn("Geofence check GPS error/skipped:", err?.code, err?.message);
+              useMenuOrderStore.getState().setLocationStatus({
+                checked: true,
+                enabled: false,
+                verified: false,
+                distance: null,
+                coords: null,
+                message: err?.code === 1 ? "Permission denied" : "Location off",
+              });
+
+              if (err?.code === 1) {
+                // Permission Denied
+                toast.warning(
+                  `📍 Location permission is off. Please enable device location / GPS to verify you are at ${rest.name || "the restaurant"}.`,
+                  { id: "geofence-status", duration: 5000 }
+                );
+              } else if (err?.code === 2) {
+                // Position Unavailable / GPS Off
+                toast.warning(
+                  "📍 Mobile device location is turned off. Please turn on GPS in your phone settings to verify your table.",
+                  { id: "geofence-status", duration: 5000 }
+                );
+              }
             },
             { enableHighAccuracy: true, timeout: 6000, maximumAge: 30000 }
           );
@@ -243,6 +292,7 @@ export default function MenuLayout({ children }) {
       {offersModalOpen && <UnlockOffersModal onClose={closeOffersModal} />}
       {waiterModalOpen && <RequestWaiterModal isOpen={waiterModalOpen} onClose={closeWaiterModal} />}
       {gamesModalOpen && <GamesModal isOpen={gamesModalOpen} onClose={closeGamesModal} />}
+      <ChangeTableModal />
     </div>
   );
 }

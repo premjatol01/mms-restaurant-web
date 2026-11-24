@@ -208,6 +208,20 @@ export const useMenuOrderStore = create(
       orderHistory: [], // completed historical orders
       isSubmittingOrder: false,
 
+      // Mobile Device Geolocation & Geofence Verification Status
+      locationStatus: {
+        checked: false,
+        enabled: false,
+        verified: false,
+        distance: null,
+        coords: null,
+        message: null,
+      },
+      setLocationStatus: (status) =>
+        set((state) => ({
+          locationStatus: { ...state.locationStatus, ...status },
+        })),
+
       // Live menu data fetched from the restaurant's dashboard
       categories: [],
       menuItems: [],
@@ -220,6 +234,9 @@ export const useMenuOrderStore = create(
       waiterModalOpen: false,
       gamesModalOpen: false,
       mobile: initialMobile,
+      pendingTableShift: null, // { fromTableId, fromTableName, toTableId, toTableName }
+      setPendingTableShift: (data) => set({ pendingTableShift: data }),
+      clearPendingTableShift: () => set({ pendingTableShift: null }),
       appliedOffer: null,
       isOfferApplied: false,
 
@@ -383,7 +400,7 @@ export const useMenuOrderStore = create(
         });
       },
 
-      setVerifiedSession: ({ restaurant, table, session, orders }) => {
+      setVerifiedSession: ({ restaurant, table, session, orders, otherActiveTable }) => {
         const acknowledgedIds = get().acknowledgedOrderIds || [];
         const previousSessionId = get().currentSession?._id;
         const currentSessionId = session?._id;
@@ -401,10 +418,12 @@ export const useMenuOrderStore = create(
               verified: true,
               name: session.customerName || "",
             }
-          : initialMobile;
+          : get().mobile?.verified
+          ? get().mobile
+          : (get().mobile?.number ? { ...get().mobile } : initialMobile);
 
         // When a customer scans QR and session is new (no mobile yet), prompt verify popup!
-        const shouldOpenOffersModal = !sessionMobile;
+        const shouldOpenOffersModal = !sessionMobile && !get().mobile?.verified && (!get().mobile?.number || get().mobile.number.length < 10);
 
         // Derive completed order history strictly from the current table session's orders
         const sessionHistory = deriveSessionOrderHistory(orders);
@@ -416,23 +435,53 @@ export const useMenuOrderStore = create(
           table?.name ||
           (table?.tableId && table.tableId.length !== 24 ? table.tableId : null);
 
+        const newTableId = table?.id || table?.tableId || table?._id || null;
+        const previousTableId = get().tableId;
+        const prevSession = get().currentSession;
+        const prevOrders = get().sessionOrders;
+        const hasPrevOrders = prevSession && prevSession.status === 'active' && Array.isArray(prevOrders) && prevOrders.length > 0;
+
+        // Check if customer moved tables with active orders
+        let shiftData = null;
+        if (hasPrevOrders && previousTableId && newTableId && String(previousTableId) !== String(newTableId)) {
+          shiftData = {
+            fromTableId: previousTableId,
+            fromTableName: get().tableName || 'Previous Table',
+            toTableId: newTableId,
+            toTableName: resolvedTableName || 'New Table',
+            orders: prevOrders,
+            session: prevSession
+          };
+        } else if (otherActiveTable) {
+          shiftData = {
+            fromTableId: otherActiveTable.tableId,
+            fromTableName: otherActiveTable.tableName,
+            toTableId: newTableId,
+            toTableName: resolvedTableName || 'New Table',
+            orderCount: otherActiveTable.orderCount
+          };
+        }
+
+        const keepPrevSession = hasPrevOrders && previousTableId && newTableId && String(previousTableId) !== String(newTableId);
+
         set({
           verifiedRestaurant: restaurant,
           verifiedTable: table,
-          tableId: table?.id || table?.tableId || table?._id || null,
+          tableId: newTableId,
           tableName: resolvedTableName || get().tableName || null,
-          currentSession: session || null,
-          sessionOrders: orders || [],
+          currentSession: keepPrevSession ? prevSession : (session || null),
+          sessionOrders: keepPrevSession ? prevOrders : (orders || []),
           selectedOrderId: selectedId || (derived ? derived.orderId : null),
           activeOrder: derived,
           orderHistory: sessionHistory,
-          items: isNewSession ? {} : get().items,
+          items: isNewSession && !hasPrevOrders ? {} : get().items,
           favorites: session?.favorites ? session.favorites.map(String) : [],
-          acknowledgedOrderIds: isNewSession ? [] : acknowledgedIds,
+          acknowledgedOrderIds: isNewSession && !hasPrevOrders ? [] : acknowledgedIds,
           mobile: resolvedMobile,
           appliedOffer: sessionOffer || null,
           isOfferApplied: Boolean(sessionOffer),
           offersModalOpen: shouldOpenOffersModal,
+          pendingTableShift: shiftData,
           verificationStatus: "success",
           verificationError: null,
         });
@@ -799,6 +848,7 @@ export const useMenuOrderStore = create(
           const json = await res.json().catch(() => null);
 
           if (res.ok && json?.success) {
+            const otherActive = json.data?.otherActiveTable;
             set((state) => ({
               favorites: Array.isArray(json.data?.favorites) ? json.data.favorites.map(String) : state.favorites,
               mobile: {
@@ -811,6 +861,15 @@ export const useMenuOrderStore = create(
               },
               appliedOffer: json.data?.appliedOffer || state.appliedOffer,
               isOfferApplied: Boolean(json.data?.appliedOffer || state.isOfferApplied),
+              pendingTableShift: otherActive
+                ? {
+                    fromTableId: otherActive.tableId,
+                    fromTableName: otherActive.tableName,
+                    toTableId: tableId,
+                    toTableName: state.tableName || "New Table",
+                    orderCount: otherActive.orderCount,
+                  }
+                : state.pendingTableShift,
               currentSession: state.currentSession
                 ? {
                     ...state.currentSession,
@@ -875,6 +934,74 @@ export const useMenuOrderStore = create(
       logoutMobile: () => set({ mobile: initialMobile }),
 
       // ---------------------------------------------------------------
+      // Change Table: Transfers active session and orders to new table
+      // ---------------------------------------------------------------
+      changeTable: async ({ subdomain, toTableId } = {}) => {
+        const resolvedSubdomain = subdomain || get().verifiedRestaurant?.subdomain;
+        const targetTableId = toTableId || get().pendingTableShift?.toTableId;
+        const fromTableId = get().pendingTableShift?.fromTableId || get().tableId;
+        const mobileNumber = get().mobile?.number || get().currentSession?.customerMobile;
+        const cleanMobile = String(mobileNumber || "").replace(/\D/g, "").slice(-10);
+
+        if (!cleanMobile || cleanMobile.length !== 10) {
+          return { ok: false, error: "A valid 10-digit mobile number is required to shift tables." };
+        }
+
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+        try {
+          const res = await fetch(`${apiUrl}/orders/public/change-table`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              subdomain: resolvedSubdomain,
+              fromTableId,
+              toTableId: targetTableId,
+              mobile: cleanMobile,
+            }),
+          });
+
+          const json = await res.json().catch(() => null);
+          if (!res.ok || !json?.success) {
+            return { ok: false, error: json?.message || "Failed to shift table." };
+          }
+
+          const { session, orders, table } = json.data;
+          const acknowledgedIds = get().acknowledgedOrderIds || [];
+          const derived = deriveActiveOrder(session, orders, acknowledgedIds, get().selectedOrderId);
+          const sessionHistory = deriveSessionOrderHistory(orders);
+
+          const resolvedTableName =
+            table?.tableName ||
+            table?.tableNo ||
+            table?.name ||
+            get().pendingTableShift?.toTableName ||
+            "Table";
+
+          set({
+            currentSession: session,
+            sessionOrders: orders || [],
+            activeOrder: derived,
+            orderHistory: sessionHistory,
+            tableId: table?._id || table?.id || targetTableId,
+            tableName: resolvedTableName,
+            verifiedTable: {
+              ...get().verifiedTable,
+              ...table,
+              id: table?._id || table?.id || targetTableId,
+              tableNo: table?.tableNo || resolvedTableName,
+              tableName: resolvedTableName,
+            },
+            pendingTableShift: null,
+          });
+
+          return { ok: true, data: json.data };
+        } catch (err) {
+          console.error("changeTable error:", err);
+          return { ok: false, error: "Network error while shifting tables." };
+        }
+      },
+
+      // ---------------------------------------------------------------
       // Place Order: Posts to live backend API & links to table session
       // ---------------------------------------------------------------
       placeOrder: async ({ subdomain, tableId, mobile } = {}) => {
@@ -892,6 +1019,22 @@ export const useMenuOrderStore = create(
           return { ok: false, error: "This restaurant is currently not accepting new orders." };
         }
 
+        const effectiveMobile =
+          mobile ||
+          (get().mobile?.verified
+            ? get().mobile.number
+            : get().mobile?.number || null);
+        const cleanDigits = (effectiveMobile || "").replace(/\D/g, "").slice(-10);
+
+        if (!cleanDigits || cleanDigits.length !== 10) {
+          toast.error("Please enter a valid 10-digit mobile number to place your order.");
+          return {
+            ok: false,
+            errorType: "MOBILE_REQUIRED",
+            error: "A valid 10-digit mobile number is mandatory to place your order.",
+          };
+        }
+
         set({ isSubmittingOrder: true });
 
         const resolvedSubdomain = subdomain || verifiedRestaurant?.subdomain;
@@ -906,12 +1049,6 @@ export const useMenuOrderStore = create(
           0
         );
 
-        const effectiveMobile =
-          mobile ||
-          (get().mobile?.verified
-            ? get().mobile.number
-            : get().mobile?.number || null);
-        const cleanDigits = (effectiveMobile || "").replace(/\D/g, "");
         const canApplyOffer = isOfferApplied && appliedOffer && cleanDigits.length >= 10;
 
         let discount = 0;
@@ -930,16 +1067,31 @@ export const useMenuOrderStore = create(
         let clientCoords = null;
         const geofence = verifiedRestaurant?.portalSettings?.operations?.geofencing;
         if (geofence?.enabled && typeof window !== "undefined" && navigator?.geolocation) {
-          try {
-            clientCoords = await new Promise((resolve) => {
-              navigator.geolocation.getCurrentPosition(
-                (p) => resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude }),
-                () => resolve(null),
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
-              );
-            });
-          } catch (e) {
-            clientCoords = null;
+          // Check if device coordinates were already verified on mount
+          const cached = get().locationStatus?.coords;
+          if (cached?.latitude && cached?.longitude) {
+            clientCoords = cached;
+          } else {
+            try {
+              clientCoords = await new Promise((resolve) => {
+                navigator.geolocation.getCurrentPosition(
+                  (p) => resolve({ latitude: p.coords.latitude, longitude: p.coords.longitude }),
+                  () => resolve(null),
+                  { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
+                );
+              });
+            } catch (e) {
+              clientCoords = null;
+            }
+          }
+
+          if (!clientCoords) {
+            set({ isSubmittingOrder: false });
+            toast.error("📍 Please turn on mobile device location / GPS to verify you are at the table before placing an order.");
+            return {
+              ok: false,
+              error: "Device location is required to verify table presence.",
+            };
           }
         }
 
@@ -971,7 +1123,9 @@ export const useMenuOrderStore = create(
 
           if (!res.ok || !json?.success) {
             set({ isSubmittingOrder: false });
-            if (json?.errorType === "OUT_OF_RANGE") {
+            if (json?.errorType === "LOCATION_REQUIRED") {
+              toast.error(json.message || "Please allow device location to verify you are at the dining table.");
+            } else if (json?.errorType === "OUT_OF_RANGE") {
               toast.error(json.message);
               const isPathMode = typeof window !== "undefined" && window.location.pathname.startsWith(`/${resolvedSubdomain}`);
               const websitePath = isPathMode ? `/${resolvedSubdomain}` : "/";
@@ -1000,6 +1154,20 @@ export const useMenuOrderStore = create(
             selectedOrderId: newOrderId,
             activeOrder: derived,
             isSubmittingOrder: false,
+
+      // Mobile Device Geolocation & Geofence Verification Status
+      locationStatus: {
+        checked: false,
+        enabled: false,
+        verified: false,
+        distance: null,
+        coords: null,
+        message: null,
+      },
+      setLocationStatus: (status) =>
+        set((state) => ({
+          locationStatus: { ...state.locationStatus, ...status },
+        })),
           });
 
           return { ok: true, data: json.data };
