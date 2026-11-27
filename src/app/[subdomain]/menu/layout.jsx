@@ -12,6 +12,7 @@ import RequestWaiterModal from "./[id]/modals/RequestWaiterModal";
 import GamesModal from "./[id]/modals/GamesModal";
 import ChangeTableModal from "@/components/menuComp/ChangeTableModal";
 import { connectTableSocket, disconnectTableSocket } from "@/services/socket";
+import { registerCustomerServiceWorker, dispatchCustomerNotification } from "@/utils/customerNotification";
 import { toast } from "sonner";
 
 export default function MenuLayout({ children }) {
@@ -201,12 +202,40 @@ export default function MenuLayout({ children }) {
       useMenuOrderStore.getState().verifiedTable?._id ||
       tableId;
 
+    registerCustomerServiceWorker().catch(() => {});
+
     connectTableSocket(resolvedTableId, {
       onSessionUpdated: (data) => {
         if (data?.session && data?.orders) {
+          const prevActiveOrder = useMenuOrderStore.getState().activeOrder;
+          const prevStatus = prevActiveOrder?.status;
+
           useMenuOrderStore
             .getState()
             .updateLiveSession(data.session, data.orders);
+
+          const newActiveOrder = useMenuOrderStore.getState().activeOrder;
+          const newStatus = newActiveOrder?.status;
+
+          // Dispatch mobile notification popup if status advanced
+          if (newStatus && newStatus !== prevStatus) {
+            const rawTable = useMenuOrderStore.getState().verifiedTable?.tableNo || "your table";
+            const tableLabel = `Table ${rawTable}`;
+
+            if (newStatus === "preparing" || newStatus === "cooking") {
+              dispatchCustomerNotification({
+                title: "🍳 Cooking in Progress!",
+                body: `The kitchen has started preparing your order for ${tableLabel}.`,
+                data: { orderId: newActiveOrder?.orderId }
+              });
+            } else if (newStatus === "ready" || newStatus === "delivered" || newStatus === "served") {
+              dispatchCustomerNotification({
+                title: "🍲 Order Ready & Served!",
+                body: `Your food has been delivered to ${tableLabel}. Enjoy your meal!`,
+                data: { orderId: newActiveOrder?.orderId }
+              });
+            }
+          }
         }
       },
       onCustomerSynced: (data) => {
@@ -221,6 +250,11 @@ export default function MenuLayout({ children }) {
         }
       },
       onSessionCompleted: (data) => {
+        dispatchCustomerNotification({
+          title: "✨ Table Bill Settled",
+          body: "Your table session has been settled at the counter. Thank you for dining with us!",
+        });
+
         toast.info(
           "Your table session has been settled at the counter. Thank you for dining with us!"
         );

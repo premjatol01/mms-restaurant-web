@@ -20,6 +20,7 @@ import {
 import { useMenuOrder } from "@/store/menuOrderStore";
 import PageHeader from "@/components/menuComp/PageHeader";
 import EmptyState from "@/components/menuComp/EmptyState";
+import OrderAlertsBanner from "@/components/menuComp/OrderAlertsBanner";
 import GuestWifiCard from "../components/GuestWifiCard";
 import FollowCampaignBanner from "../components/FollowCampaignBanner";
 import { motion } from "framer-motion";
@@ -177,6 +178,9 @@ export default function TableSession() {
         />
       ) : (
         <>
+          {/* Live Mobile Order Alerts Opt-In */}
+          <OrderAlertsBanner tableName={displayTableName} />
+
           {/* Info Box */}
           <div className="bg-success-light border border-primary-light/30 rounded-2xl p-3.5 flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-surface flex items-center justify-center shrink-0 mt-0.5">
