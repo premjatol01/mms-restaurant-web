@@ -180,12 +180,24 @@ const Cart = () => {
       setMobileNumber(cleanDigits);
     }
 
+    // Strictly enforce mobile verification before ordering
+    if (!mobile?.verified) {
+      toast.info("Please verify your mobile number with OTP to place your order.");
+      openOffersModal("phone");
+      return;
+    }
+
     const result = await placeOrder({
       subdomain,
       tableId: params?.id || tableId,
       mobile: cleanDigits,
     });
     if (!result.ok) {
+      if (result.errorType === "MOBILE_NOT_VERIFIED") {
+        toast.info("Please verify your mobile number with OTP first.");
+        openOffersModal("phone");
+        return;
+      }
       toast.error(result.error ?? "Couldn't place the order");
       return;
     }
@@ -500,6 +512,8 @@ const Cart = () => {
                   ? "Placing order..."
                   : cleanDigits.length !== 10
                   ? "Enter Mobile to Order"
+                  : !mobile?.verified
+                  ? "Verify Mobile to Place Order"
                   : "Place order"}
               </span>
               <span className="font-extrabold">₹{finalTotal}</span>

@@ -1035,6 +1035,16 @@ export const useMenuOrderStore = create(
           };
         }
 
+        if (!get().mobile?.verified) {
+          toast.info("Please verify your mobile number with OTP to place your order.");
+          get().openOffersModal("phone");
+          return {
+            ok: false,
+            errorType: "MOBILE_NOT_VERIFIED",
+            error: "Please verify your mobile number with OTP before placing your order.",
+          };
+        }
+
         set({ isSubmittingOrder: true });
 
         const resolvedSubdomain = subdomain || verifiedRestaurant?.subdomain;
