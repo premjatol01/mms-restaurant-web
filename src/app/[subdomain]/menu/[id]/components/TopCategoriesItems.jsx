@@ -96,30 +96,19 @@ export default function TopCategoriesItems() {
     );
   }
 
-  // Top categories: prioritize categories marked as isTopCategory by admin
-  const topOnly = (categories || []).filter((c) => Boolean(c.isTopCategory));
-  const topCategories =
-    topOnly.length > 0 ? topOnly.slice(0, 5) : (categories || []).slice(0, 5);
-  const displayCategories = [...topCategories];
-
-  // If the user actively selected a category beyond top categories (e.g. from AllCategories), include it as well
-  if (
-    selectedCategoryId &&
-    !topCategories.some((c) => String(c.id) === String(selectedCategoryId))
-  ) {
-    const extra = (categories || []).find(
-      (c) => String(c.id) === String(selectedCategoryId)
-    );
-    if (extra) {
-      displayCategories.push(extra);
-    }
-  }
+  // Display all active categories in Menu tab (with top categories first, then other active categories)
+  const allActiveCategories = (categories || []).filter((c) => c.status !== "inactive");
+  const displayCategories = [...allActiveCategories].sort((a, b) => {
+    if (a.isTopCategory && !b.isTopCategory) return -1;
+    if (!a.isTopCategory && b.isTopCategory) return 1;
+    return 0;
+  });
 
   // Map each category to its active items
   const categoriesWithItems = displayCategories
     .map((cat) => {
       const items = (menuItems || []).filter(
-        (i) => String(i.categoryId) === String(cat.id)
+        (i) => String(i.categoryId) === String(cat.id || cat._id) && i.status !== "inactive" && !i.isDeleted
       );
       return { ...cat, items };
     })

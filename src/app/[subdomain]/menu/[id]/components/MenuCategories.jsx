@@ -19,15 +19,14 @@ export default function MenuCategories({ onCategoryClick }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Filter to show ONLY top-rated / featured categories (max 5)
+  // Show all active categories (top categories first)
   const displayCategories = useMemo(() => {
-    const all = categories || [];
-    const topOnly = all.filter((c) => Boolean(c.isTopCategory));
-    if (topOnly.length > 0) {
-      return topOnly.slice(0, 5);
-    }
-    // Fallback if none flagged as top: show first 5
-    return all.slice(0, 5);
+    const all = (categories || []).filter((c) => c.status !== "inactive");
+    return [...all].sort((a, b) => {
+      if (a.isTopCategory && !b.isTopCategory) return -1;
+      if (!a.isTopCategory && b.isTopCategory) return 1;
+      return 0;
+    });
   }, [categories]);
 
   if (!categories || categories.length === 0) return null;
