@@ -202,7 +202,7 @@ export default function MenuLayout({ children }) {
       useMenuOrderStore.getState().verifiedTable?._id ||
       tableId;
 
-    registerCustomerServiceWorker().catch(() => {});
+    registerCustomerServiceWorker().catch(() => { });
 
     connectTableSocket(resolvedTableId, {
       onSessionUpdated: (data) => {
