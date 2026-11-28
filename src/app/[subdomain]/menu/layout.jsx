@@ -222,7 +222,7 @@ export default function MenuLayout({ children }) {
             const rawTable = useMenuOrderStore.getState().verifiedTable?.tableNo || "your table";
             const tableLabel = `Table ${rawTable}`;
 
-            if (newStatus === "preparing" || newStatus === "cooking") {
+            if (newStatus === "preparing" || newStatus === "cooking" || newStatus === "processing") {
               dispatchCustomerNotification({
                 title: "🍳 Cooking in Progress!",
                 body: `The kitchen has started preparing your order for ${tableLabel}.`,
@@ -277,6 +277,16 @@ export default function MenuLayout({ children }) {
             }
           }
         }, 1500);
+      },
+      onWaiterAcknowledged: (data) => {
+        const waiter = data?.staffName || "A team member";
+        toast.success(`👋 ${waiter} is on the way to assist your table!`, {
+          duration: 6000,
+        });
+        dispatchCustomerNotification({
+          title: "👋 Waiter on the Way!",
+          body: `${waiter} is coming to assist your table right now.`,
+        });
       },
     });
 

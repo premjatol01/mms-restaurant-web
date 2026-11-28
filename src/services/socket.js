@@ -51,6 +51,10 @@ export function connectTableSocket(tableId, callbacks = {}) {
     socket.on("session:completed", callbacks.onSessionCompleted);
   }
 
+  if (callbacks.onWaiterAcknowledged) {
+    socket.on("waiter:acknowledged", callbacks.onWaiterAcknowledged);
+  }
+
   return socket;
 }
 
